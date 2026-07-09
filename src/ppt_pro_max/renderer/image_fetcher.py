@@ -205,17 +205,15 @@ class ImageFetcher:
             base_url = self.llm_base_url or "https://ark.cn-beijing.volces.com/api/v3"
             model = self.llm_model or "doubao-seedream-5-0-pro-260628"
 
-            size_map = {
-                (True, True): "1K",
-                (True, False): "1K",
-                (False, True): "1K",
-            }
             if max(width, height) >= 2048:
                 img_size = "2K"
-            elif max(width, height) >= 1024:
-                img_size = "1K"
             else:
                 img_size = "1K"
+
+            cache_key = f"seedream:{model}:{prompt[:80]}:{img_size}"
+            cached = self._check_cache(cache_key)
+            if cached:
+                return cached
 
             payload = json.dumps({
                 "model": model,
@@ -257,6 +255,11 @@ class ImageFetcher:
                 size = "1024x1536"
             else:
                 size = "1024x1024"
+
+            cache_key = f"gpt-image:{model}:{prompt[:80]}:{size}"
+            cached = self._check_cache(cache_key)
+            if cached:
+                return cached
 
             payload = json.dumps({
                 "model": model,
@@ -306,6 +309,11 @@ class ImageFetcher:
             size = "1792x1024" if width > height else "1024x1792"
             if width <= 1024:
                 size = "1024x1024"
+
+            cache_key = f"dalle:{self.llm_model or 'dall-e-3'}:{prompt[:80]}:{size}"
+            cached = self._check_cache(cache_key)
+            if cached:
+                return cached
 
             payload = json.dumps({
                 "model": self.llm_model or "dall-e-3",
