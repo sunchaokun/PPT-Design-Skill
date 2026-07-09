@@ -24,31 +24,31 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 
 ### 🏢 Professional Modern — Enterprise Investor Pitch
 
-<img src="showcase-professional-slide1.jpg" width="45%"/> <img src="showcase-professional-slide2.jpg" width="45%"/>
+<img src="showcase/showcase-professional-slide1.jpg" width="45%"/> <img src="showcase/showcase-professional-slide2.jpg" width="45%"/>
 
 *Navy blue corporate · Gold accents · Left sidebar navigation · 2×2 metric cards*
 
 ### 🌌 Dark Tech — AI Product Launch
 
-<img src="showcase-dark-tech-slide1.jpg" width="45%"/> <img src="showcase-dark-tech-slide2.jpg" width="45%"/>
+<img src="showcase/showcase-dark-tech-slide1.jpg" width="45%"/> <img src="showcase/showcase-dark-tech-slide2.jpg" width="45%"/>
 
 *Cyberpunk dark · Neon blue/purple/pink · Consolas monospace · 3-column feature cards*
 
 ### 🏛️ Warm Elegant — Luxury Brand Strategy
 
-<img src="showcase-warm-elegant-slide1.jpg" width="45%"/> <img src="showcase-warm-elegant-slide2.jpg" width="45%"/>
+<img src="showcase/showcase-warm-elegant-slide1.jpg" width="45%"/> <img src="showcase/showcase-warm-elegant-slide2.jpg" width="45%"/>
 
 *Golden marble · Georgia serif · Centered editorial layout · Diamond bullet points*
 
 ### 🚀 Vibrant Startup — Fundraising Pitch Deck
 
-<img src="showcase-vibrant-startup-slide1.jpg" width="45%"/> <img src="showcase-vibrant-startup-slide2.jpg" width="45%"/>
+<img src="showcase/showcase-vibrant-startup-slide1.jpg" width="45%"/> <img src="showcase/showcase-vibrant-startup-slide2.jpg" width="45%"/>
 
 *Purple-pink gradient · Segoe UI · Progress bar metrics · Semi-transparent stat pills*
 
 ### 🌿 Nature Calm — Sustainability Impact Report
 
-<img src="showcase-nature-calm-slide1.jpg" width="45%"/> <img src="showcase-nature-calm-slide2.jpg" width="45%"/>
+<img src="showcase/showcase-nature-calm-slide1.jpg" width="45%"/> <img src="showcase/showcase-nature-calm-slide2.jpg" width="45%"/>
 
 *Forest green · Circle accents · 4-column impact cards · Narrow left sidebar*
 
