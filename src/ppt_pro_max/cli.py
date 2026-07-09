@@ -4,6 +4,14 @@ import argparse
 import json
 import sys
 
+for _stream_name in ("stdout", "stderr"):
+    _stream = getattr(sys, _stream_name)
+    if _stream and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
 from ppt_pro_max import generate_ppt
 
 

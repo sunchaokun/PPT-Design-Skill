@@ -14,11 +14,20 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+for _stream_name in ("stdout", "stderr"):
+    _stream = getattr(sys, _stream_name)
+    if _stream and hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
 
 REPO_URL = "https://github.com/sunchaokun/PPT-Design-Skill"
 SKILL_NAME = "ppt-design-skill"
