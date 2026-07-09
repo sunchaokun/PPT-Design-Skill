@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 from datetime import datetime
 from pathlib import Path
@@ -112,18 +113,52 @@ class PPTRenderer:
         slide_layout = prs.slide_layouts[6] if len(prs.slide_layouts) > 6 else prs.slide_layouts[0]
         slide = prs.slides.add_slide(slide_layout)
 
-        self._apply_background(slide, design, theme)
+        is_hero_slide = layout_def.get("name") in ("Title Slide", "CTA Closing")
 
-        if design.full_bleed:
-            self._apply_full_bleed_bg(slide, content, theme)
-
-        if design.break_pattern:
-            self._apply_pattern_break(slide, theme)
-
-        for ph_name, ph_def in layout_def.get("placeholders", {}).items():
-            self._render_placeholder(slide, ph_name, ph_def, content, theme, design)
+        if is_hero_slide:
+            self._apply_background(slide, design, theme)
+            hero_image_rendered = False
+            for ph_name, ph_def in layout_def.get("placeholders", {}).items():
+                if ph_def.get("type") == "image":
+                    self._render_image_placeholder(slide, ph_def, content, theme)
+                    hero_image_rendered = True
+            if hero_image_rendered:
+                self._apply_dark_overlay(slide)
+            for ph_name, ph_def in layout_def.get("placeholders", {}).items():
+                if ph_def.get("type") != "image":
+                    self._render_placeholder(slide, ph_name, ph_def, content, theme, design)
+        else:
+            self._apply_background(slide, design, theme)
+            if design.full_bleed:
+                self._apply_full_bleed_bg(slide, content, theme)
+            if design.break_pattern:
+                self._apply_pattern_break(slide, theme)
+            for ph_name, ph_def in layout_def.get("placeholders", {}).items():
+                self._render_placeholder(slide, ph_name, ph_def, content, theme, design)
 
         self._apply_transition(slide, design.transition)
+
+    def _apply_dark_overlay(self, slide) -> None:
+        overlay = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0), Inches(0), Inches(SLIDE_WIDTH), Inches(SLIDE_HEIGHT),
+        )
+        fill = overlay.fill
+        fill.solid()
+        fill.fore_color.rgb = RGBColor(0x00, 0x00, 0x00)
+        overlay.line.fill.background()
+        overlay.rotation = 0
+
+        try:
+            sp_pr = overlay._element.find(qn("p:spPr"))
+            solid_fill = sp_pr.find(qn("a:solidFill"))
+            if solid_fill is not None:
+                srgb = solid_fill.find(qn("a:srgbClr"))
+                if srgb is not None:
+                    alpha = etree.SubElement(srgb, qn("a:alpha"))
+                    alpha.set("val", "55000")
+        except Exception:
+            pass
 
     def _apply_background(self, slide, design: PageDesign, theme: dict) -> None:
         bg_color = theme.get("colors", {}).get("background", "#FFFFFF")
@@ -494,7 +529,7 @@ class PPTRenderer:
 
         if image_path and os.path.exists(image_path):
             try:
-                slide.shapes.add_picture(image_path, left, top, width, height)
+                self._add_picture_cover(slide, image_path, ph_def)
                 return
             except Exception:
                 pass
@@ -505,7 +540,7 @@ class PPTRenderer:
         )
         if generated:
             try:
-                slide.shapes.add_picture(generated, left, top, width, height)
+                self._add_picture_cover(slide, generated, ph_def)
                 return
             except Exception:
                 pass
@@ -531,6 +566,46 @@ class PPTRenderer:
         p.font.size = Pt(12)
         p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
         p.alignment = PP_ALIGN.CENTER
+
+    def _add_picture_cover(self, slide, image_path: str, ph_def: dict) -> None:
+        box_w = ph_def["width"]
+        box_h = ph_def["height"]
+        box_ratio = box_w / box_h
+
+        from PIL import Image as PILImage
+        img = PILImage.open(image_path)
+        img_w, img_h = img.size
+        img_ratio = img_w / img_h
+
+        if img_ratio > box_ratio:
+            crop_w = int(img_h * box_ratio)
+            crop_h = img_h
+            left = (img_w - crop_w) // 2
+            top = 0
+        else:
+            crop_w = img_w
+            crop_h = int(img_w / box_ratio)
+            left = 0
+            top = (img_h - crop_h) // 2
+
+        cropped = img.crop((left, top, left + crop_w, top + crop_h))
+
+        import tempfile
+        cache_dir = os.path.join(tempfile.gettempdir(), "ppt-cropped")
+        os.makedirs(cache_dir, exist_ok=True)
+        crop_key = f"crop:{image_path}:{box_w}x{box_h}"
+        crop_hash = hashlib.md5(crop_key.encode()).hexdigest()
+        cropped_path = os.path.join(cache_dir, f"{crop_hash}.png")
+        if not os.path.exists(cropped_path):
+            cropped.save(cropped_path, "PNG")
+
+        slide.shapes.add_picture(
+            cropped_path,
+            Inches(ph_def["x"]),
+            Inches(ph_def["y"]),
+            Inches(box_w),
+            Inches(box_h),
+        )
 
     def _generate_placeholder_image(self, keywords: str, w_inches: float, h_inches: float, theme: dict) -> str | None:
         try:
