@@ -487,20 +487,38 @@ class ThemeComposer:
         }
 
     def _detect_moods(self, text: str) -> list[str]:
-        text_lower = text.lower()
+        text_lower = " " + text.lower() + " "
         moods = []
-        for mood in _MOOD_PALETTE_MAP:
-            if mood in text_lower:
-                moods.append(mood)
+        mood_words = {
+            "professional": ["professional", "corporate", "business", "formal"],
+            "tech": ["tech", "technology", "software", "developer", "engineering"],
+            "dark": ["dark", "cyberpunk", "noir", "shadow"],
+            "warm": ["warm", "cozy", "inviting", "friendly"],
+            "elegant": ["elegant", "refined", "sophisticated", "graceful"],
+            "luxury": ["luxury", "premium", "exclusive", "opulent"],
+            "vibrant": ["vibrant", "energetic", "dynamic", "bold"],
+            "startup": ["startup", "launch", "founder"],
+            "nature": ["nature", "organic", "natural", "earthy"],
+            "calm": ["calm", "serene", "peaceful", "tranquil"],
+            "minimal": ["minimal", "minimalist", "clean", "simple"],
+            "bold": ["bold", "daring", "fearless", "strong"],
+            "fresh": ["fresh", "modern", "new", "innovative"],
+            "industrial": ["industrial", "manufacturing", "factory"],
+            "fintech": ["fintech", "finance", "banking", "trading"],
+            "health": ["health", "medical", "healthcare", "wellness"],
+            "education": ["education", "learning", "academic", "university"],
+            "sustainability": ["sustainability", "sustainable", "esg"],
+            "creative": ["creative", "design", "artistic"],
+        }
+        for mood, words in mood_words.items():
+            if any(f" {w} " in text_lower for w in words):
+                if mood not in moods:
+                    moods.append(mood)
+
         industry_hints = {
-            "fintech": "fintech", "finance": "fintech", "bank": "fintech", "invest": "professional",
-            "health": "health", "medical": "health", "bio": "health",
-            "edu": "education", "university": "education", "school": "education",
-            "sustainability": "sustainability", "esg": "sustainability", "green": "nature",
-            "creative": "creative", "design": "creative", "art": "creative",
-            "saas": "tech", "ai": "tech", "ml": "tech", "cloud": "tech",
-            "luxury": "luxury", "premium": "elegant", "brand": "elegant",
-            "startup": "startup", "pitch": "startup", "fundrais": "startup",
+            "investor": "fintech", "pitch": "startup", "fundrais": "startup",
+            "saas": "tech", "ai ": "tech", " ml ": "tech", "cloud": "tech",
+            "luxury": "luxury", "brand": "elegant",
         }
         for hint, mood in industry_hints.items():
             if hint in text_lower and mood not in moods:
