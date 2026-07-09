@@ -75,7 +75,35 @@
 
 ## 🚀 快速开始
 
-### 安装
+### 一键安装（推荐）
+
+```bash
+# 克隆仓库
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+
+# 一键安装 — 自动检测AI平台 + 安装skill文件 + pip依赖
+python install.py
+
+# 指定平台
+python install.py --platform claude     # Claude Code only
+python install.py --platform opencode   # OpenCode only
+python install.py --platform all        # 所有平台
+
+# 检查安装状态
+python install.py --check
+
+# 全局安装（安装到 home 目录）
+python install.py --global
+```
+
+安装脚本会自动：
+1. **检测** 当前项目使用的AI编程平台（Claude Code / OpenCode / Codex / Cursor...）
+2. **复制** SKILL.md + scripts 到对应平台的 skills 目录
+3. **安装** Python 依赖（python-pptx, Pillow）
+4. **生成** AGENTS.md / CLAUDE.md 项目指令文件
+
+### 手动安装
 
 ```bash
 pip install -e .
@@ -371,7 +399,35 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 
 ## 🚀 Quick Start
 
-### Install
+### One-Click Install (Recommended)
+
+```bash
+# Clone repository
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+
+# One-click install — auto-detect AI platform + install skill files + pip deps
+python install.py
+
+# Specify platform
+python install.py --platform claude     # Claude Code only
+python install.py --platform opencode   # OpenCode only
+python install.py --platform all        # All platforms
+
+# Check installation status
+python install.py --check
+
+# Global install (install to home directory)
+python install.py --global
+```
+
+The installer automatically:
+1. **Detects** which AI coding platforms are in use (Claude Code / OpenCode / Codex / Cursor...)
+2. **Copies** SKILL.md + scripts to each platform's skills directory
+3. **Installs** Python dependencies (python-pptx, Pillow)
+4. **Generates** AGENTS.md / CLAUDE.md project instruction files
+
+### Manual Install
 
 ```bash
 pip install -e .
