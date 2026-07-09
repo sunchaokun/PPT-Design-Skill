@@ -68,7 +68,7 @@ class QAGates:
         }
 
     def _check_no_empty_titles(self, contents: list[PageContent]) -> dict[str, Any]:
-        placeholder_titles = [c.position for c in contents if c.title.startswith("[")]
+        placeholder_titles = [c.position for c in contents if c.title and c.title.startswith("[")]
         return {
             "name": "no_placeholder_titles",
             "passed": len(placeholder_titles) == 0,

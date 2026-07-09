@@ -415,7 +415,7 @@ _MOOD_LAYOUT_MAP: dict[str, list[str]] = {
     "startup": ["grid-2x2", "wide-cards", "asymmetric"],
     "nature": ["standard", "sidebar-left", "grid-2x2"],
     "calm": ["standard", "centered", "sidebar-left"],
-    "minimal": ["standard", "centered", "no-decoration"],
+    "minimal": ["standard", "centered", "full-width"],
     "bold": ["full-width", "asymmetric", "wide-cards"],
     "fresh": ["grid-2x2", "standard", "wide-cards"],
     "industrial": ["full-width", "standard", "sidebar-left"],
@@ -512,10 +512,14 @@ class ThemeComposer:
             options = mood_map.get(mood, [])
             if options:
                 return rng.choice(options)
-        all_options = list(mood_map.values())
+        all_options = [v for v in mood_map.values() if v]
         if all_options:
-            return rng.choice(rng.choice(all_options))
-        return list(mood_map.keys())[0] if mood_map else "standard"
+            chosen_list = rng.choice(all_options)
+            if chosen_list:
+                return rng.choice(chosen_list)
+        if mood_map:
+            return list(mood_map.keys())[0]
+        return "standard"
 
     def _is_dark(self, colors: dict[str, str]) -> bool:
         bg = colors.get("background", "#FFFFFF")

@@ -41,7 +41,6 @@ _GOAL_IMAGE_KEYWORDS: dict[str, str] = {
     "pricing": "pricing plans comparison value",
     "offer": "special offer deal value",
     "proof": "data evidence proof results",
-    "agitation": "risk danger loss warning",
 }
 
 
@@ -103,12 +102,12 @@ class ContentGenerator:
         return PageContent(
             position=design.position,
             goal=goal,
-            title=result.get("title", ""),
-            subtitle=result.get("subtitle"),
-            bullets=result.get("bullets", []),
-            metrics=result.get("metrics"),
-            quote=result.get("quote"),
-            chart_data=result.get("chart_data"),
+            title=result.get("title") or "",
+            subtitle=result.get("subtitle") or "",
+            bullets=result.get("bullets") or [],
+            metrics=result.get("metrics") or None,
+            quote=result.get("quote") or None,
+            chart_data=result.get("chart_data") or None,
             image_keywords=image_keywords,
         )
 

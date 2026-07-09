@@ -98,12 +98,18 @@ def install_skill_files(target_dir: Path, platform: str, source_dir: Path, force
 def install_python_package(source_dir: Path) -> bool:
     print("  Installing Python package...")
     try:
-        subprocess.run(
+        result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "-e", str(source_dir)],
             capture_output=True, text=True, timeout=120,
         )
-        print("  [OK] ppt_pro_max installed")
-        return True
+        if result.returncode == 0:
+            print("  [OK] ppt_pro_max installed")
+            return True
+        else:
+            print(f"  [WARN] pip install failed (exit {result.returncode})")
+            print(f"  {result.stderr[:200]}")
+            print(f"  You can install manually: pip install -e {source_dir}")
+            return False
     except Exception as e:
         print(f"  [WARN] pip install failed: {e}")
         print(f"  You can install manually: pip install -e {source_dir}")

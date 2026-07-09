@@ -64,8 +64,6 @@ def main():
         image_config["llm_model"] = args.llm_model
 
     image_mode = args.image_mode
-    if args.fetch_images and image_mode == "placeholder":
-        image_mode = "search"
 
     try:
         result = generate_ppt(

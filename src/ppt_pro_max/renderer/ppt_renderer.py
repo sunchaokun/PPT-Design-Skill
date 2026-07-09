@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -121,7 +122,7 @@ class PPTRenderer:
             hero_image_rendered = False
             for ph_name, ph_def in layout_def.get("placeholders", {}).items():
                 if ph_def.get("type") == "image":
-                    self._render_image_placeholder(slide, ph_def, content, theme)
+                    self._render_image_placeholder(slide, ph_def, content, theme, design)
                     hero_image_rendered = True
             if hero_image_rendered:
                 self._apply_dark_overlay(slide)
@@ -333,7 +334,12 @@ class PPTRenderer:
                 p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
 
     def _render_card(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
-        card_index = int(ph_name.replace("card", "")) - 1
+        try:
+            card_index = int(ph_name.replace("card", "")) - 1
+            if card_index < 0:
+                return
+        except ValueError:
+            return
         bullets = content.bullets
         card_text = bullets[card_index] if bullets and card_index < len(bullets) else f"Point {card_index + 1}"
 
@@ -376,7 +382,12 @@ class PPTRenderer:
         p.space_after = Pt(6)
 
     def _render_metric(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
-        metric_index = int(ph_name.replace("metric", "")) - 1
+        try:
+            metric_index = int(ph_name.replace("metric", "")) - 1
+            if metric_index < 0:
+                return
+        except ValueError:
+            return
         metrics = content.metrics or []
 
         if metric_index < len(metrics):
@@ -514,7 +525,7 @@ class PPTRenderer:
 
         self.effects.add_shadow(button, blur_pt=8, offset_pt=3, color="#000000", alpha=20)
 
-    def _render_image_placeholder(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
+    def _render_image_placeholder(self, slide, ph_def: dict, content: PageContent, theme: dict, design: PageDesign | None = None) -> None:
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
         width = Inches(ph_def["width"])
@@ -522,7 +533,7 @@ class PPTRenderer:
 
         image_path = self.image_fetcher.fetch(
             keywords=content.image_keywords or content.goal,
-            emotion=content.goal,
+            emotion=design.emotion if design else content.goal,
             goal=content.goal,
             width=int(ph_def["width"] * 96),
             height=int(ph_def["height"] * 96),
@@ -611,7 +622,6 @@ class PPTRenderer:
     def _generate_placeholder_image(self, keywords: str, w_inches: float, h_inches: float, theme: dict) -> str | None:
         try:
             from PIL import Image, ImageDraw, ImageFont
-            import tempfile, hashlib
 
             primary = theme.get("colors", {}).get("primary", "#2563EB")
             accent = theme.get("colors", {}).get("accent", "#F97316")
@@ -621,7 +631,7 @@ class PPTRenderer:
             px_w = max(int(w_inches * 96), 200)
             px_h = max(int(h_inches * 96), 150)
 
-            img = Image.new("RGB", (px_w, px_h))
+            img = Image.new("RGBA", (px_w, px_h))
             draw = ImageDraw.Draw(img)
 
             r1, g1, b1 = int(primary[1:3], 16), int(primary[3:5], 16), int(primary[5:7], 16)
@@ -708,23 +718,30 @@ class PPTRenderer:
         if not _PPTX_AVAILABLE:
             return
         try:
-            transition_xml_map = {
-                "fade": "<p:fade/>",
-                "fade-slow": "<p:fade/>",
-                "push": '<p:push dir="l"/>',
-                "push-left": '<p:push dir="l"/>',
-                "push-right": '<p:push dir="r"/>',
-                "wipe": '<p:wipe dir="d"/>',
-                "wipe-down": '<p:wipe dir="d"/>',
-                "cut": "<p:cut/>",
-            }
-            child_xml = transition_xml_map.get(transition_name, "<p:fade/>")
             transition = etree.SubElement(slide._element, qn("p:transition"))
             if transition_name == "fade-slow":
                 transition.set("spd", "slow")
             else:
                 transition.set("spd", "med")
-            child = etree.fromstring(child_xml)
-            transition.append(child)
+
+            transition_child_map = {
+                "fade": "p:fade",
+                "fade-slow": "p:fade",
+                "push": "p:push",
+                "push-left": "p:push",
+                "push-right": "p:push",
+                "wipe": "p:wipe",
+                "wipe-down": "p:wipe",
+                "cut": "p:cut",
+            }
+            child_tag = transition_child_map.get(transition_name, "p:fade")
+            child = etree.SubElement(transition, qn(child_tag))
+
+            if transition_name in ("push", "push-left"):
+                child.set("dir", "l")
+            elif transition_name == "push-right":
+                child.set("dir", "r")
+            elif transition_name in ("wipe", "wipe-down"):
+                child.set("dir", "d")
         except Exception:
             pass
