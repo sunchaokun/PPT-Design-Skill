@@ -7,12 +7,14 @@ from ppt_pro_max.content.content_generator import PageContent
 
 def test_qa_passes_good_ppt():
     designs = [
-        PageDesign(position=1, goal="hook", emotion="curiosity", layout="title-slide", title="Test"),
+        PageDesign(position=1, goal="hook", emotion="curiosity", layout="title-slide"),
         PageDesign(position=2, goal="problem", emotion="frustration", layout="content-with-title"),
+        PageDesign(position=3, goal="cta", emotion="urgency", layout="cta-closing"),
     ]
     contents = [
         PageContent(position=1, goal="hook", title="Welcome"),
         PageContent(position=2, goal="problem", title="The Problem"),
+        PageContent(position=3, goal="cta", title="Take Action"),
     ]
     qa = QAGates()
     result = qa.check("test.pptx", designs, contents)

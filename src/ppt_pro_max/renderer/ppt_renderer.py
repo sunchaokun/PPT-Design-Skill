@@ -20,7 +20,9 @@ try:
     from pptx.util import Inches, Pt, Emu
     from pptx.dml.color import RGBColor
     from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-    from pptx.enum.transitions import PP_TRANSITION_TYPE
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.oxml.ns import qn
+    from lxml import etree
 
     _PPTX_AVAILABLE = True
 except ImportError:
@@ -43,16 +45,17 @@ class PPTRenderer:
         page_contents: list[PageContent],
         output_path: str | None = None,
         fetch_images: bool = False,
+        theme_name: str | None = None,
     ) -> dict[str, Any]:
         if not page_designs:
             raise ValueError("No page designs to render")
 
         design_system = self._extract_design_system(page_designs[0])
-        ppt_theme = self.theme_mapper.map(design_system)
+        ppt_theme = self.theme_mapper.map(design_system, theme_name=theme_name)
 
         prs = Presentation()
-        prs.slide_width = SLIDE_WIDTH
-        prs.slide_height = SLIDE_HEIGHT
+        prs.slide_width = Inches(SLIDE_WIDTH)
+        prs.slide_height = Inches(SLIDE_HEIGHT)
 
         self.theme_mapper.apply_theme(prs, ppt_theme)
 
@@ -74,7 +77,7 @@ class PPTRenderer:
         return {
             "output_path": os.path.abspath(output_path),
             "page_count": len(page_designs),
-            "strategy": page_designs[0].goal if page_designs else "unknown",
+            "strategy": "generated",
             "theme": ppt_theme.get("name", "default"),
             "qa": qa_result,
         }
@@ -183,7 +186,7 @@ class PPTRenderer:
         height = Inches(ph_def["height"])
 
         shape = slide.shapes.add_shape(
-            1,
+            MSO_SHAPE.RECTANGLE,
             left, top, width, height,
         )
         shape.fill.solid()
@@ -199,16 +202,19 @@ class PPTRenderer:
         p.alignment = PP_ALIGN.CENTER
 
     def _apply_transition(self, slide, transition_name: str) -> None:
+        if not _PPTX_AVAILABLE:
+            return
         try:
-            transition_map = {
-                "fade": PP_TRANSITION_TYPE.FADE,
-                "push": PP_TRANSITION_TYPE.PUSH,
-                "wipe": PP_TRANSITION_TYPE.WIPE,
-                "cut": PP_TRANSITION_TYPE.CUT,
+            transition_xml_map = {
+                "fade": "<p:fade/>",
+                "push": '<p:push dir="l"/>',
+                "wipe": '<p:wipe dir="d"/>',
+                "cut": "<p:cut/>",
             }
-            if transition_name in transition_map:
-                slide.transition = transition_map[transition_name]
-            else:
-                slide.transition = PP_TRANSITION_TYPE.FADE
+            child_xml = transition_xml_map.get(transition_name, "<p:fade/>")
+            transition = etree.SubElement(slide._element, qn("p:transition"))
+            transition.set("spd", "med")
+            child = etree.fromstring(child_xml)
+            transition.append(child)
         except Exception:
             pass

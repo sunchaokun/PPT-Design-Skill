@@ -1,0 +1,2 @@
+[console_scripts]
+ppt-design = ppt_pro_max.cli:main

@@ -140,12 +140,8 @@ class ThemeMapper:
         colors = theme.get("colors", {})
         typography = theme.get("typography", {})
 
-        try:
-            theme_element = prs.slide_masters[0].slide_layouts[0].slide_master.element
-        except (IndexError, AttributeError):
-            pass
-
         self._apply_default_fonts(prs, typography)
+        self._apply_theme_colors(prs, colors)
 
     def _apply_default_fonts(self, prs: Presentation, typography: dict[str, str]) -> None:
         if not _PPTX_AVAILABLE:
@@ -156,8 +152,18 @@ class ThemeMapper:
 
         try:
             for master in prs.slide_masters:
-                theme = master.element.find(qn("p:cSld"))
-                if theme is not None:
+                theme_elem = master.element.find(qn("p:cSld"))
+                if theme_elem is None:
+                    continue
+        except Exception:
+            pass
+
+    def _apply_theme_colors(self, prs: Presentation, colors: dict[str, str]) -> None:
+        if not _PPTX_AVAILABLE:
+            return
+        try:
+            for master in prs.slide_masters:
+                for layout in master.slide_layouts:
                     pass
         except Exception:
             pass

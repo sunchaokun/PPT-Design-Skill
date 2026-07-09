@@ -88,6 +88,6 @@ class StoryPlanner:
             return "YC Seed Deck"
         if any(kw in q for kw in ["产品", "demo", "product", "展示", "介绍"]):
             return "Product Demo"
-        if any(kw in q for kw in ["销售", "sales", "报价", "报价", "offer"]):
+        if any(kw in q for kw in ["销售", "sales", "报价", "offer"]):
             return "Sales Pitch"
         return "YC Seed Deck"

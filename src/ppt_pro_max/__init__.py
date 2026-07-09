@@ -48,7 +48,7 @@ def generate_ppt(
         }
 
     renderer = PPTRenderer()
-    result = renderer.render(page_designs, page_contents, output_path=output, fetch_images=fetch_images)
+    result = renderer.render(page_designs, page_contents, output_path=output, fetch_images=fetch_images, theme_name=theme)
 
     if persist:
         pass
