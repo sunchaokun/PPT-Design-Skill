@@ -129,7 +129,10 @@ _PRESET_THEMES: dict[str, dict[str, Any]] = {
 
 
 class ThemeMapper:
-    def map(self, design_system: dict[str, Any], theme_name: str | None = None) -> dict[str, Any]:
+    def map(self, design_system: dict[str, Any], theme_name: str | None = None, composed_theme: dict[str, Any] | None = None) -> dict[str, Any]:
+        if composed_theme:
+            return composed_theme
+
         if theme_name and theme_name in _PRESET_THEMES:
             return _PRESET_THEMES[theme_name]
 

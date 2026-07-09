@@ -49,12 +49,13 @@ class PPTRenderer:
         fetch_images: bool = False,
         theme_name: str | None = None,
         design_system: dict[str, Any] | None = None,
+        composed_theme: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not page_designs:
             raise ValueError("No page designs to render")
 
         ds = design_system or self._default_design_system()
-        ppt_theme = self.theme_mapper.map(ds, theme_name=theme_name)
+        ppt_theme = self.theme_mapper.map(ds, theme_name=theme_name, composed_theme=composed_theme)
 
         prs = Presentation()
         prs.slide_width = Inches(SLIDE_WIDTH)

@@ -14,7 +14,14 @@ def main():
     )
     parser.add_argument("query", help='Presentation topic, e.g. "AI产品融资路演"')
     parser.add_argument("--strategy", help="Override presentation strategy")
-    parser.add_argument("--theme", help="Theme preset name")
+    parser.add_argument("--theme", help="Theme preset name (backward compatible)")
+    parser.add_argument("--style", help='Natural language style, e.g. "warm fintech pitch" or "dark cyberpunk"')
+    parser.add_argument("--palette", help="Color palette name (25+ options: ocean-blue, cyber-neon, golden-luxury, ...)")
+    parser.add_argument("--fonts", help="Font pair name (20+ options: modern-sans, serif-editorial, tech-mono, ...)")
+    parser.add_argument("--decoration", help="Decoration style (10+ options: accent-bar, neon-lines, gold-trim, ...)")
+    parser.add_argument("--layout-variant", help="Layout variant (8+ options: sidebar-left, centered, grid-2x2, ...)")
+    parser.add_argument("--mood", help="Mood hint (professional, tech, warm, elegant, vibrant, nature, ...)")
+    parser.add_argument("--style-seed", type=int, help="Random seed for reproducible style combinations")
     parser.add_argument("--slides", type=int, help="Override slide count")
     parser.add_argument("--content", help="JSON file with real content")
     parser.add_argument("--variance", type=int, choices=range(1, 11), help="Design variance 1-10")
@@ -31,7 +38,7 @@ def main():
     img_group.add_argument("--fetch-images", action="store_true", help="Shortcut for --image-mode search")
     img_group.add_argument("--unsplash-key", help="Unsplash API access key (or set UNSPLASH_ACCESS_KEY)")
     img_group.add_argument("--pexels-key", help="Pexels API key (or set PEXELS_API_KEY)")
-    img_group.add_argument("--llm-provider", choices=["dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot"], help="LLM image provider")
+    img_group.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot"], help="LLM image provider")
     img_group.add_argument("--llm-api-key", help="LLM API key (or set PPT_IMAGE_LLM_API_KEY)")
     img_group.add_argument("--llm-base-url", help="LLM API base URL override")
     img_group.add_argument("--llm-model", help="LLM model name override")
@@ -65,6 +72,13 @@ def main():
             query=args.query,
             strategy=args.strategy,
             theme=args.theme,
+            style=args.style,
+            palette=args.palette,
+            fonts=args.fonts,
+            decoration=args.decoration,
+            layout_variant=args.layout_variant,
+            mood=args.mood,
+            style_seed=args.style_seed,
             slides=args.slides,
             content_file=args.content,
             variance=args.variance,
@@ -88,6 +102,9 @@ def main():
         print(f"Pages: {result['page_count']}")
         print(f"Strategy: {result['strategy']}")
         print(f"Theme: {result.get('theme', 'default')}")
+        if result.get("theme_atoms"):
+            atoms = result["theme_atoms"]
+            print(f"Style: palette={atoms.get('palette')}, fonts={atoms.get('fonts')}, decoration={atoms.get('decoration')}, layout={atoms.get('layout')}")
 
 
 if __name__ == "__main__":

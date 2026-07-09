@@ -19,28 +19,24 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Title Slide",
         "goal_mapping": ["hook"],
         "placeholders": {
-            "accent_bar": {
-                "x": 0, "y": 2.8, "width": 13.333, "height": 0.06,
-                "type": "decoration", "decoration_type": "accent_bar",
+            "hero_image": {
+                "x": 0, "y": 0, "width": 13.333, "height": 7.5,
+                "type": "image",
             },
             "title": {
-                "x": 1.2, "y": 1.6, "width": 10.933, "height": 1.2,
-                "font_size": 40, "font_weight": "bold", "alignment": "center",
-                "color_role": "foreground", "font_role": "heading",
+                "x": 1.0, "y": 2.2, "width": 11.333, "height": 1.4,
+                "font_size": 44, "font_weight": "bold", "alignment": "center",
+                "color_role": "on-primary", "font_role": "heading",
             },
             "subtitle": {
-                "x": 2.0, "y": 3.2, "width": 9.333, "height": 0.7,
+                "x": 2.0, "y": 3.8, "width": 9.333, "height": 0.7,
                 "font_size": 18, "font_weight": "normal", "alignment": "center",
-                "color_role": "muted-foreground", "font_role": "body",
+                "color_role": "on-primary", "font_role": "body",
             },
             "date": {
                 "x": 4.5, "y": 6.3, "width": 4.333, "height": 0.4,
                 "font_size": 12, "font_weight": "normal", "alignment": "center",
-                "color_role": "muted-foreground", "font_role": "body",
-            },
-            "logo": {
-                "x": 5.917, "y": 0.4, "width": 1.5, "height": 0.5,
-                "type": "image",
+                "color_role": "on-primary", "font_role": "body",
             },
         },
     },
@@ -281,25 +277,25 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "CTA Closing",
         "goal_mapping": ["cta", "offer", "pricing"],
         "placeholders": {
-            "accent_bar": {
-                "x": 0, "y": 0, "width": 13.333, "height": 0.06,
-                "type": "decoration", "decoration_type": "accent_bar",
+            "hero_image": {
+                "x": 0, "y": 0, "width": 13.333, "height": 7.5,
+                "type": "image",
             },
             "title": {
                 "x": 1.5, "y": 2.0, "width": 10.333, "height": 1.2,
-                "font_size": 40, "font_weight": "bold", "alignment": "center",
-                "color_role": "foreground", "font_role": "heading",
+                "font_size": 44, "font_weight": "bold", "alignment": "center",
+                "color_role": "on-primary", "font_role": "heading",
             },
             "subtitle": {
                 "x": 2.5, "y": 3.5, "width": 8.333, "height": 0.7,
                 "font_size": 18, "font_weight": "normal", "alignment": "center",
-                "color_role": "muted-foreground", "font_role": "body",
+                "color_role": "on-primary", "font_role": "body",
             },
             "cta_button": {
                 "x": 4.667, "y": 4.8, "width": 4.0, "height": 0.8,
                 "font_size": 18, "font_weight": "bold", "alignment": "center",
                 "color_role": "on-primary", "font_role": "body",
-                "bg_color_role": "primary",
+                "bg_color_role": "accent",
             },
         },
     },

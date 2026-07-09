@@ -4,7 +4,7 @@
 
 **一句话生成专业级 .pptx 演示文稿**
 
-叙事驱动 · 设计智能 · AI配图 · 完全可编辑
+叙事驱动 · 设计智能 · AI配图 · 完全可编辑 · **40,000+ 风格组合**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -60,6 +60,8 @@
 |------|------|
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
 | **设计智能** | 复用 ui-ux-pro-max 5100+ 条设计知识库，上下文感知布局/色彩/字体 |
+| **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 = 无限可能 |
+| **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
 | **12 母版布局** | 13.333"×7.5" 16:9 精确坐标，覆盖 95% 演示场景 |
 | **9 种文案公式** | PAS / FAB / AIDA / Social Proof / Cost of Inaction / Proof Stack... |
@@ -87,7 +89,16 @@ pip install -e ".[search]"
 # 一句话生成 PPT
 ppt-design "AI产品融资路演"
 
-# 指定策略和主题
+# 自然语言风格 — 无限组合！
+ppt-design "AI产品融资路演" --style "warm fintech pitch"
+ppt-design "科技产品发布" --style "dark cyberpunk tech"
+ppt-design "品牌策略" --style "elegant luxury"
+ppt-design "可持续发展报告" --style "calm nature"
+
+# 精确控制设计原子
+ppt-design "融资路演" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
+
+# 指定策略和主题（向后兼容）
 ppt-design "SaaS产品展示" --strategy "Product Demo" --theme "dark-tech"
 
 # AI 生成配图（Seedream Pro）
@@ -118,7 +129,21 @@ from ppt_pro_max import generate_ppt
 result = generate_ppt("AI产品融资路演")
 print(f"生成: {result['output_path']}, {result['page_count']}页")
 
-# 完整配置 — AI 配图
+# 自然语言风格 — 无限组合
+result = generate_ppt("AI产品融资路演", style="warm fintech pitch")
+result = generate_ppt("科技产品发布", style="dark cyberpunk")
+result = generate_ppt("品牌策略", style="elegant luxury minimal")
+
+# 精确控制设计原子
+result = generate_ppt(
+    query="AI产品融资路演",
+    palette="wine-burgundy",
+    fonts="elegant-serif",
+    decoration="gold-trim",
+    layout_variant="centered",
+)
+
+# 完整配置 — AI 配图 + 风格组合
 result = generate_ppt(
     query="AI产品融资路演",
     strategy="YC Seed Deck",
@@ -189,15 +214,45 @@ result = generate_ppt(
 
 ---
 
-## 🎨 5 套预置主题
+## 🎨 设计原子 — 40,000+ 风格组合
 
-| 主题 | 风格 | 背景 | 主色 | 适用场景 |
-|------|------|------|------|----------|
-| Professional Modern | 深蓝商务 | 白色 | #0A1E3D + #1E5AB8 | 企业汇报、融资路演 |
-| Dark Tech | 赛博朋克 | #060B18 | #00D4FF + #8B5CF6 | 科技创业、产品发布 |
-| Warm Elegant | 金色奢华 | #FAF3E8 | #C99A4E | 高端销售、品牌展示 |
-| Vibrant Startup | 紫粉活力 | #120C1E | #6C2BD9 + #FF2D87 | 创业路演、融资展示 |
-| Nature Calm | 森林自然 | #F5F7F0 | #1B5E20 + #4CAF50 | ESG报告、可持续发展 |
+> 5 套预置主题只是冰山一角。通过组合 4 类设计原子，实现无限风格：
+
+| 设计原子 | 数量 | 示例 |
+|----------|------|------|
+| 🎨 色彩方案 | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, terracotta, monochrome-dark... |
+| ✏️ 字体搭配 | 20 | modern-sans, serif-editorial, tech-mono, elegant-serif, bold-sans, contrast-mix... |
+| 🖌️ 装饰风格 | 10 | accent-bar, neon-lines, gold-trim, diamond-bullets, gradient-bar, circle-accent, sidebar-nav... |
+| 📐 布局变体 | 8 | standard, centered, sidebar-left, sidebar-right, grid-2x2, wide-cards, asymmetric, full-width |
+
+**25 × 20 × 10 × 8 = 40,000 种组合** — 还不算自然语言风格的模糊匹配！
+
+### 自然语言风格
+
+```bash
+ppt-design "融资路演" --style "warm fintech"        # 自动匹配: ocean-blue + clean-corporate + accent-bar + sidebar-left
+ppt-design "产品发布" --style "dark cyberpunk"       # 自动匹配: cyber-neon + tech-mono + neon-lines + wide-cards
+ppt-design "品牌策略" --style "elegant luxury"       # 自动匹配: golden-luxury + elegant-serif + gold-trim + centered
+ppt-design "ESG报告" --style "calm nature"           # 自动匹配: sage-calm + humanist-sans + circle-accent + standard
+ppt-design "创业路演" --style "bold startup vibrant"  # 自动匹配: royal-purple + bold-sans + gradient-bar + grid-2x2
+```
+
+### 精确原子控制
+
+```bash
+ppt-design "融资路演" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
+ppt-design "产品发布" --palette copper-industrial --fonts tech-contrast --decoration no-decoration --layout-variant full-width
+```
+
+### 5 套预置主题（向后兼容）
+
+| 主题 | 色彩 | 字体 | 装饰 | 布局 |
+|------|------|------|------|------|
+| Professional | midnight-navy | clean-corporate | accent-bar | sidebar-left |
+| Dark Tech | cyber-neon | tech-mono | neon-lines | wide-cards |
+| Warm Elegant | golden-luxury | serif-editorial | gold-trim | centered |
+| Vibrant Startup | neon-gradient | bold-sans | gradient-bar | grid-2x2 |
+| Nature Calm | forest-green | humanist-sans | circle-accent | sidebar-left |
 
 ---
 
@@ -301,6 +356,8 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 |---------|-------------|
 | **Narrative Engine** | 3 strategies (YC Seed Deck / Product Demo / Sales Pitch) + Duarte Sparkline emotion arcs |
 | **Design Intelligence** | Reuses ui-ux-pro-max 5100+ design knowledge base for context-aware decisions |
+| **40,000+ Style Combos** | 25 palettes × 20 font pairs × 10 decorations × 8 layout variants |
+| **Natural Language Style** | Describe your style: `--style "warm fintech"` / `--style "dark cyberpunk"` |
 | **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
 | **12 Master Layouts** | 13.333"×7.5" 16:9 precise coordinates, covering 95% of scenarios |
 | **9 Copy Formulas** | PAS / FAB / FAB / AIDA / Social Proof / Cost of Inaction / Proof Stack... |
@@ -430,15 +487,45 @@ All AI generation engines include **cache-first** — same image never generated
 
 ---
 
-## 🎨 5 Preset Themes
+## 🎨 Design Atoms — 40,000+ Style Combinations
 
-| Theme | Style | Background | Primary | Use Case |
-|-------|-------|------------|---------|----------|
-| Professional Modern | Navy corporate | White | #0A3D + #1E5AB8 | Business reports, investor pitches |
-| Dark Tech | Cyberpunk dark | #060B18 | #00D4FF + #8B5CF6 | Tech startups, product launches |
-| Warm Elegant | Golden luxury | #FAF3E8 | #C99A4E | Premium sales, brand showcases |
-| Vibrant Startup | Purple-pink energy | #120C1E | #6C2BD9 + #FF2D87 | Startup pitches, fundraising |
-| Nature Calm | Forest organic | #F5F7F0 | #1B5E20 + #4CAF50 | ESG reports, sustainability |
+> 5 presets are just the tip of the iceberg. Compose 4 atom types for infinite styles:
+
+| Atom | Count | Examples |
+|------|-------|----------|
+| 🎨 Color Palettes | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, terracotta, monochrome-dark... |
+| ✏️ Font Pairs | 20 | modern-sans, serif-editorial, tech-mono, elegant-serif, bold-sans, contrast-mix... |
+| 🖌️ Decorations | 10 | accent-bar, neon-lines, gold-trim, diamond-bullets, gradient-bar, circle-accent, sidebar-nav... |
+| 📐 Layout Variants | 8 | standard, centered, sidebar-left, sidebar-right, grid-2x2, wide-cards, asymmetric, full-width |
+
+**25 × 20 × 10 × 8 = 40,000 combinations** — plus fuzzy natural language matching!
+
+### Natural Language Style
+
+```bash
+ppt-design "investor pitch" --style "warm fintech"        # → ocean-blue + clean-corporate + accent-bar + sidebar-left
+ppt-design "product launch" --style "dark cyberpunk"      # → cyber-neon + tech-mono + neon-lines + wide-cards
+ppt-design "brand strategy" --style "elegant luxury"      # → golden-luxury + elegant-serif + gold-trim + centered
+ppt-design "ESG report" --style "calm nature"             # → sage-calm + humanist-sans + circle-accent + standard
+ppt-design "startup pitch" --style "bold startup vibrant"  # → royal-purple + bold-sans + gradient-bar + grid-2x2
+```
+
+### Exact Atom Control
+
+```bash
+ppt-design "pitch" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
+ppt-design "launch" --palette copper-industrial --fonts tech-contrast --decoration no-decoration --layout-variant full-width
+```
+
+### 5 Preset Themes (backward compatible)
+
+| Theme | Palette | Fonts | Decoration | Layout |
+|-------|---------|-------|------------|--------|
+| Professional | midnight-navy | clean-corporate | accent-bar | sidebar-left |
+| Dark Tech | cyber-neon | tech-mono | neon-lines | wide-cards |
+| Warm Elegant | golden-luxury | serif-editorial | gold-trim | centered |
+| Vibrant Startup | neon-gradient | bold-sans | gradient-bar | grid-2x2 |
+| Nature Calm | forest-green | humanist-sans | circle-accent | sidebar-left |
 
 ---
 
@@ -472,6 +559,7 @@ PPT-Design-Skill/
 │   ├── renderer/
 │   │   ├── ppt_renderer.py           # Phase 4: PPT rendering
 │   │   ├── theme_mapper.py           # Theme mapping + CJK fonts
+│   │   ├── theme_composer.py         # 40,000+ style combinations
 │   │   ├── layout_registry.py        # 12 master layouts
 │   │   ├── chart_builder.py          # Chart builder
 │   │   ├── image_fetcher.py          # Image fetching (5 engines)

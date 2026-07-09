@@ -5,18 +5,26 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
 from ppt_pro_max.decider.design_decider import DesignDecider
 from ppt_pro_max.content.content_generator import ContentGenerator
+from ppt_pro_max.renderer.theme_composer import ThemeComposer
 
 
 def generate_ppt(
     query: str,
     strategy: str | None = None,
     theme: str | None = None,
+    style: str | None = None,
+    palette: str | None = None,
+    fonts: str | None = None,
+    decoration: str | None = None,
+    layout_variant: str | None = None,
+    mood: str | None = None,
+    style_seed: int | None = None,
     slides: int | None = None,
     content_file: str | None = None,
     variance: int | None = None,
@@ -77,12 +85,29 @@ def generate_ppt(
         if llm_model:
             image_config["llm_model"] = llm_model
 
+    composed_theme = None
+    if style or palette or fonts or decoration or layout_variant or mood:
+        composer = ThemeComposer()
+        composed_theme = composer.compose(
+            style=style or theme,
+            palette=palette,
+            fonts=fonts,
+            decoration=decoration,
+            layout=layout_variant,
+            mood=mood,
+            seed=style_seed,
+        )
+
     renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
     result = renderer.render(
         page_designs, page_contents,
         output_path=output, fetch_images=fetch_images,
         theme_name=theme, design_system=decider.design_system,
+        composed_theme=composed_theme,
     )
+
+    if composed_theme:
+        result["theme_atoms"] = composed_theme.get("atoms", {})
 
     if persist:
         _persist_design_system(decider.design_system, result.get("output_path", ""))
