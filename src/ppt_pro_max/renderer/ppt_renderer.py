@@ -1,4 +1,4 @@
-"""Phase 4: PPT Renderer — python-pptx direct .pptx generation."""
+"""Phase 4: PPT Renderer — professional python-pptx generation."""
 
 from __future__ import annotations
 
@@ -142,7 +142,7 @@ class PPTRenderer:
         accent = theme.get("colors", {}).get("accent", "#F97316")
         bar = slide.shapes.add_shape(
             MSO_SHAPE.RECTANGLE,
-            Inches(0), Inches(0), Inches(SLIDE_WIDTH), Inches(0.08),
+            Inches(0), Inches(0), Inches(SLIDE_WIDTH), Inches(0.06),
         )
         bar.fill.solid()
         bar.fill.fore_color.rgb = RGBColor.from_string(accent.lstrip("#"))
@@ -152,6 +152,10 @@ class PPTRenderer:
         self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict, design: PageDesign
     ) -> None:
         ph_type = ph_def.get("type", "text")
+
+        if ph_type == "decoration":
+            self._render_decoration(slide, ph_name, ph_def, theme)
+            return
 
         if ph_type == "image":
             self._render_image_placeholder(slide, ph_def, content, theme)
@@ -181,13 +185,53 @@ class PPTRenderer:
             self._render_label(slide, ph_def, content, theme)
             return
 
+        if ph_name == "quote_mark":
+            self._render_quote_mark(slide, ph_def, theme)
+            return
+
         text = self._get_placeholder_text(ph_name, content)
         if text is None:
             return
 
-        self._add_textbox(slide, ph_def, text, theme)
+        is_body = ph_name == "body"
+        self._add_textbox(slide, ph_def, text, theme, is_body=is_body)
 
-    def _add_textbox(self, slide, ph_def: dict, text: str, theme: dict, extra_style: dict | None = None) -> None:
+    def _render_decoration(self, slide, ph_name: str, ph_def: dict, theme: dict) -> None:
+        deco_type = ph_def.get("decoration_type", "")
+        accent = theme.get("colors", {}).get("accent", "#F97316")
+        primary = theme.get("colors", {}).get("primary", "#2563EB")
+
+        if deco_type == "accent_bar":
+            bar = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(ph_def["x"]), Inches(ph_def["y"]),
+                Inches(ph_def["width"]), Inches(ph_def["height"]),
+            )
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = RGBColor.from_string(accent.lstrip("#"))
+            bar.line.fill.background()
+
+        elif deco_type == "left_accent":
+            bar = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(ph_def["x"]), Inches(ph_def["y"]),
+                Inches(ph_def["width"]), Inches(ph_def["height"]),
+            )
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = RGBColor.from_string(primary.lstrip("#"))
+            bar.line.fill.background()
+
+        elif deco_type == "title_underline":
+            bar = slide.shapes.add_shape(
+                MSO_SHAPE.RECTANGLE,
+                Inches(ph_def["x"]), Inches(ph_def["y"]),
+                Inches(ph_def["width"]), Inches(ph_def["height"]),
+            )
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = RGBColor.from_string(accent.lstrip("#"))
+            bar.line.fill.background()
+
+    def _add_textbox(self, slide, ph_def: dict, text: str, theme: dict, extra_style: dict | None = None, is_body: bool = False) -> None:
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
         width = Inches(ph_def["width"])
@@ -197,32 +241,66 @@ class PPTRenderer:
         tf = txBox.text_frame
         tf.word_wrap = True
 
-        p = tf.paragraphs[0]
-        p.text = text
+        if is_body and "\n" in text:
+            lines = text.split("\n")
+            for idx, line in enumerate(lines):
+                if idx == 0:
+                    p = tf.paragraphs[0]
+                else:
+                    p = tf.add_paragraph()
 
-        font_size = ph_def.get("font_size", 16)
-        p.font.size = Pt(font_size)
-        p.font.bold = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
+                clean = line.strip()
+                if clean.startswith("• ") or clean.startswith("- "):
+                    clean = clean[2:]
 
-        alignment = ph_def.get("alignment", "left")
-        align_map = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
-        p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
+                p.text = clean
+                p.level = 1
 
-        color_role = ph_def.get("color_role", "foreground")
-        color_hex = theme.get("colors", {}).get(color_role, "#1E293B")
-        p.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
+                font_size = ph_def.get("font_size", 16)
+                p.font.size = Pt(font_size)
+                p.font.bold = False
 
-        font_name = ph_def.get("font_role", "body")
-        font_family = theme.get("typography", {}).get(font_name, "Inter")
-        p.font.name = font_family
+                alignment = ph_def.get("alignment", "left")
+                align_map = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
+                p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
 
-        if extra_style and extra_style.get("vertical_center"):
-            tf.paragraphs[0].alignment = align_map.get(alignment, PP_ALIGN.LEFT)
+                color_role = ph_def.get("color_role", "foreground")
+                color_hex = theme.get("colors", {}).get(color_role, "#1E293B")
+                p.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
+
+                font_name = ph_def.get("font_role", "body")
+                font_family = theme.get("typography", {}).get(font_name, "Inter")
+                p.font.name = font_family
+
+                p.space_after = Pt(8)
+                p.space_before = Pt(4)
+        else:
+            p = tf.paragraphs[0]
+            p.text = text
+
+            font_size = ph_def.get("font_size", 16)
+            p.font.size = Pt(font_size)
+            p.font.bold = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
+
+            alignment = ph_def.get("alignment", "left")
+            align_map = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
+            p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
+
+            color_role = ph_def.get("color_role", "foreground")
+            color_hex = theme.get("colors", {}).get(color_role, "#1E293B")
+            p.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
+
+            font_name = ph_def.get("font_role", "body")
+            font_family = theme.get("typography", {}).get(font_name, "Inter")
+            p.font.name = font_family
+
+            if extra_style and extra_style.get("vertical_center"):
+                p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
 
     def _render_card(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
         card_index = int(ph_name.replace("card", "")) - 1
         bullets = content.bullets
-        card_text = bullets[card_index] if bullets and card_index < len(bullets) else f"[卡片 {card_index + 1}]"
+        card_text = bullets[card_index] if bullets and card_index < len(bullets) else f"Point {card_index + 1}"
 
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
@@ -232,6 +310,7 @@ class PPTRenderer:
         border_color = theme.get("colors", {}).get("border", "#E2E8F0")
         bg_color = theme.get("colors", {}).get("muted", "#F1F5F9")
         fg_color = theme.get("colors", {}).get("foreground", "#1E293B")
+        accent_color = theme.get("colors", {}).get("accent", "#F97316")
 
         card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
         card.fill.solid()
@@ -239,17 +318,27 @@ class PPTRenderer:
         card.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
         card.line.width = Pt(1)
 
+        accent_bar = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(ph_def["x"] + 0.15), Inches(ph_def["y"] + 0.2),
+            Inches(0.5), Inches(0.06),
+        )
+        accent_bar.fill.solid()
+        accent_bar.fill.fore_color.rgb = RGBColor.from_string(accent_color.lstrip("#"))
+        accent_bar.line.fill.background()
+
         tf = card.text_frame
         tf.word_wrap = True
-        tf.margin_left = Inches(0.2)
-        tf.margin_right = Inches(0.2)
-        tf.margin_top = Inches(0.15)
+        tf.margin_left = Inches(0.25)
+        tf.margin_right = Inches(0.25)
+        tf.margin_top = Inches(0.5)
 
         p = tf.paragraphs[0]
         p.text = card_text
-        p.font.size = Pt(ph_def.get("font_size", 16))
+        p.font.size = Pt(ph_def.get("font_size", 14))
         p.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
-        p.alignment = PP_ALIGN.CENTER
+        p.alignment = PP_ALIGN.LEFT
+        p.space_after = Pt(6)
 
     def _render_metric(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
         metric_index = int(ph_name.replace("metric", "")) - 1
@@ -260,35 +349,46 @@ class PPTRenderer:
             label = metrics[metric_index].get("label", "")
         else:
             value = "—"
-            label = f"[指标 {metric_index + 1}]"
+            label = ""
 
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
         width = Inches(ph_def["width"])
         height = Inches(ph_def["height"])
 
+        muted_color = theme.get("colors", {}).get("muted", "#F1F5F9")
+        border_color = theme.get("colors", {}).get("border", "#E2E8F0")
         accent_color = theme.get("colors", {}).get("accent", "#F97316")
         fg_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
 
-        txBox = slide.shapes.add_textbox(left, top, width, height)
-        tf = txBox.text_frame
+        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+        card.fill.solid()
+        card.fill.fore_color.rgb = RGBColor.from_string(muted_color.lstrip("#"))
+        card.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
+        card.line.width = Pt(1)
+
+        tf = card.text_frame
         tf.word_wrap = True
+        tf.margin_left = Inches(0.15)
+        tf.margin_right = Inches(0.15)
+        tf.margin_top = Inches(0.3)
 
         p_value = tf.paragraphs[0]
         p_value.text = value
-        p_value.font.size = Pt(ph_def.get("font_size", 36))
+        p_value.font.size = Pt(ph_def.get("font_size", 40))
         p_value.font.bold = True
         p_value.font.color.rgb = RGBColor.from_string(accent_color.lstrip("#"))
         p_value.alignment = PP_ALIGN.CENTER
 
         p_label = tf.add_paragraph()
         p_label.text = label
-        p_label.font.size = Pt(14)
+        p_label.font.size = Pt(12)
         p_label.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
         p_label.alignment = PP_ALIGN.CENTER
+        p_label.space_before = Pt(6)
 
     def _render_big_number(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
-        big_text = content.title if content.title else "[大数字]"
+        big_text = content.title if content.title else ""
         self._add_textbox(slide, ph_def, big_text, theme)
 
     def _render_label(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
@@ -296,27 +396,48 @@ class PPTRenderer:
         if not label_text and content.bullets:
             label_text = content.bullets[0]
         if not label_text:
-            label_text = "[标签]"
+            return
         self._add_textbox(slide, ph_def, label_text, theme)
+
+    def _render_quote_mark(self, slide, ph_def: dict, theme: dict) -> None:
+        accent = theme.get("colors", {}).get("accent", "#F97316")
+        left = Inches(ph_def["x"])
+        top = Inches(ph_def["y"])
+        width = Inches(ph_def["width"])
+        height = Inches(ph_def["height"])
+
+        txBox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txBox.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = "\u201C"
+        p.font.size = Pt(72)
+        p.font.bold = True
+        p.font.color.rgb = RGBColor.from_string(accent.lstrip("#"))
+        p.alignment = PP_ALIGN.LEFT
 
     def _render_chart_placeholder(
         self, slide, ph_def: dict, content: PageContent, theme: dict, design: PageDesign
     ) -> None:
         if content.chart_data is None:
+            muted_color = theme.get("colors", {}).get("muted", "#F1F5F9")
+            border_color = theme.get("colors", {}).get("border", "#E2E8F0")
+            hint_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
             left = Inches(ph_def["x"])
             top = Inches(ph_def["y"])
             width = Inches(ph_def["width"])
             height = Inches(ph_def["height"])
-            placeholder = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+            placeholder = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
             placeholder.fill.solid()
-            placeholder.fill.fore_color.rgb = RGBColor(0xF1, 0xF5, 0xF9)
-            placeholder.line.color.rgb = RGBColor(0xE2, 0xE8, 0xF0)
+            placeholder.fill.fore_color.rgb = RGBColor.from_string(muted_color.lstrip("#"))
+            placeholder.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
+            placeholder.line.width = Pt(1)
             tf = placeholder.text_frame
             tf.word_wrap = True
             p = tf.paragraphs[0]
-            p.text = f"[{design.chart_type or 'Chart'} 占位符]"
+            p.text = design.chart_type or "Chart"
             p.font.size = Pt(14)
-            p.font.color.rgb = RGBColor(0x94, 0xA3, 0xB8)
+            p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
             p.alignment = PP_ALIGN.CENTER
             return
 
@@ -332,7 +453,7 @@ class PPTRenderer:
         self.chart_builder.build(slide, chart_type, data, style, position)
 
     def _render_cta_button(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
-        button_text = content.title if content.title else "[行动号召]"
+        button_text = content.title if content.title else "Get Started"
 
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
@@ -352,11 +473,11 @@ class PPTRenderer:
         p = tf.paragraphs[0]
         p.text = button_text
         p.font.size = Pt(ph_def.get("font_size", 18))
-        p.font.bold = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
+        p.font.bold = True
         p.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
         p.alignment = PP_ALIGN.CENTER
 
-        self.effects.add_shadow(button, blur_pt=6, offset_pt=3, color="#000000", alpha=25)
+        self.effects.add_shadow(button, blur_pt=8, offset_pt=3, color="#000000", alpha=20)
 
     def _render_image_placeholder(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
         left = Inches(ph_def["x"])
@@ -384,18 +505,19 @@ class PPTRenderer:
         hint_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
 
         shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE,
+            MSO_SHAPE.ROUNDED_RECTANGLE,
             left, top, width, height,
         )
         shape.fill.solid()
         shape.fill.fore_color.rgb = RGBColor.from_string(muted_color.lstrip("#"))
         shape.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
+        shape.line.width = Pt(1)
 
         tf = shape.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
-        hint = content.image_keywords if content.image_keywords else "\u5728\u6b64\u63d2\u5165\u56fe\u7247"
-        p.text = f"[\u56fe\u7247: {hint}]"
+        hint = content.image_keywords if content.image_keywords else "Image"
+        p.text = hint
         p.font.size = Pt(12)
         p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
         p.alignment = PP_ALIGN.CENTER
@@ -406,7 +528,7 @@ class PPTRenderer:
         if ph_name in ("subtitle", "tagline"):
             return content.subtitle
         if ph_name == "body":
-            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else None
+            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else content.subtitle
         if ph_name == "section_number":
             return str(content.position)
         if ph_name == "section_title":
@@ -416,9 +538,9 @@ class PPTRenderer:
         if ph_name == "quote_author":
             return content.quote.get("author", "") if content.quote else None
         if ph_name == "insight":
-            return "[\u6570\u636e\u6d1e\u5bdf]"
+            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else None
         if ph_name in ("left_col", "right_col"):
-            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else f"[{ph_name} \u5185\u5bb9]"
+            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else None
         return None
 
     def _apply_transition(self, slide, transition_name: str) -> None:
@@ -427,7 +549,7 @@ class PPTRenderer:
         try:
             transition_xml_map = {
                 "fade": "<p:fade/>",
-                "fade-slow": '<p:fade/>',
+                "fade-slow": "<p:fade/>",
                 "push": '<p:push dir="l"/>',
                 "push-left": '<p:push dir="l"/>',
                 "push-right": '<p:push dir="r"/>',

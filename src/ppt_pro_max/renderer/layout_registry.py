@@ -1,4 +1,4 @@
-"""Layout Registry — 12 master layouts with precise inch coordinates."""
+"""Layout Registry — 12 master layouts with professional inch coordinates."""
 
 from __future__ import annotations
 
@@ -10,9 +10,8 @@ from typing import Any
 SLIDE_WIDTH = 13.333
 SLIDE_HEIGHT = 7.5
 
-MARGIN = {"top": 0.5, "bottom": 0.5, "left": 0.75, "right": 0.75}
+MARGIN = {"top": 0.6, "bottom": 0.6, "left": 0.9, "right": 0.9}
 CONTENT_WIDTH = SLIDE_WIDTH - MARGIN["left"] - MARGIN["right"]
-CONTENT_HEIGHT = SLIDE_HEIGHT - MARGIN["top"] - MARGIN["bottom"]
 
 MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "title-slide": {
@@ -20,23 +19,27 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Title Slide",
         "goal_mapping": ["hook"],
         "placeholders": {
+            "accent_bar": {
+                "x": 0, "y": 2.8, "width": 13.333, "height": 0.06,
+                "type": "decoration", "decoration_type": "accent_bar",
+            },
             "title": {
-                "x": 0.75, "y": 2.2, "width": 11.833, "height": 1.5,
-                "font_size": 44, "font_weight": "bold", "alignment": "center",
+                "x": 1.2, "y": 1.6, "width": 10.933, "height": 1.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "foreground", "font_role": "heading",
             },
             "subtitle": {
-                "x": 1.5, "y": 3.9, "width": 10.333, "height": 0.8,
-                "font_size": 20, "font_weight": "normal", "alignment": "center",
+                "x": 2.0, "y": 3.2, "width": 9.333, "height": 0.7,
+                "font_size": 18, "font_weight": "normal", "alignment": "center",
                 "color_role": "muted-foreground", "font_role": "body",
             },
             "date": {
-                "x": 4.0, "y": 6.2, "width": 5.333, "height": 0.4,
-                "font_size": 14, "font_weight": "normal", "alignment": "center",
+                "x": 4.5, "y": 6.3, "width": 4.333, "height": 0.4,
+                "font_size": 12, "font_weight": "normal", "alignment": "center",
                 "color_role": "muted-foreground", "font_role": "body",
             },
             "logo": {
-                "x": 5.917, "y": 0.3, "width": 1.5, "height": 0.5,
+                "x": 5.917, "y": 0.4, "width": 1.5, "height": 0.5,
                 "type": "image",
             },
         },
@@ -61,17 +64,29 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "content-with-title": {
         "id": 2,
         "name": "Content With Title",
-        "goal_mapping": ["problem", "solution", "features", "content"],
+        "goal_mapping": ["problem", "solution", "features", "content", "market", "business", "team", "financial", "agitation", "proof"],
         "placeholders": {
+            "accent_bar": {
+                "x": 0, "y": 0, "width": 0.08, "height": 7.5,
+                "type": "decoration", "decoration_type": "left_accent",
+            },
             "title": {
-                "x": 0.75, "y": 0.4, "width": 11.833, "height": 0.8,
+                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
+            "divider": {
+                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
+                "type": "decoration", "decoration_type": "title_underline",
+            },
             "body": {
-                "x": 0.75, "y": 1.5, "width": 11.833, "height": 5.0,
+                "x": 0.9, "y": 1.6, "width": 7.0, "height": 5.0,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
+            },
+            "side_visual": {
+                "x": 8.5, "y": 1.6, "width": 4.0, "height": 5.0,
+                "type": "image",
             },
         },
     },
@@ -81,17 +96,21 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "goal_mapping": ["comparison", "before-after"],
         "placeholders": {
             "title": {
-                "x": 0.75, "y": 0.4, "width": 11.833, "height": 0.8,
+                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
+            "divider": {
+                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
+                "type": "decoration", "decoration_type": "title_underline",
+            },
             "left_col": {
-                "x": 0.75, "y": 1.5, "width": 5.5, "height": 5.0,
+                "x": 0.9, "y": 1.6, "width": 5.5, "height": 5.0,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
             },
             "right_col": {
-                "x": 6.833, "y": 1.5, "width": 5.5, "height": 5.0,
+                "x": 6.933, "y": 1.6, "width": 5.5, "height": 5.0,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
             },
@@ -100,27 +119,34 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "three-column-cards": {
         "id": 4,
         "name": "Three Column Cards",
-        "goal_mapping": ["features"],
+        "goal_mapping": ["features", "solution"],
         "placeholders": {
             "title": {
-                "x": 0.75, "y": 0.4, "width": 11.833, "height": 0.8,
+                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
+            "divider": {
+                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
+                "type": "decoration", "decoration_type": "title_underline",
+            },
             "card1": {
-                "x": 0.75, "y": 1.8, "width": 3.611, "height": 4.5,
-                "font_size": 16, "font_weight": "normal", "alignment": "center",
+                "x": 0.9, "y": 1.7, "width": 3.644, "height": 4.8,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
+                "type": "card",
             },
             "card2": {
-                "x": 4.861, "y": 1.8, "width": 3.611, "height": 4.5,
-                "font_size": 16, "font_weight": "normal", "alignment": "center",
+                "x": 4.844, "y": 1.7, "width": 3.644, "height": 4.8,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
+                "type": "card",
             },
             "card3": {
-                "x": 8.972, "y": 1.8, "width": 3.611, "height": 4.5,
-                "font_size": 16, "font_weight": "normal", "alignment": "center",
+                "x": 8.789, "y": 1.7, "width": 3.644, "height": 4.8,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
+                "type": "card",
             },
         },
     },
@@ -130,28 +156,32 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "goal_mapping": ["traction", "metrics"],
         "placeholders": {
             "title": {
-                "x": 0.75, "y": 0.4, "width": 11.833, "height": 0.8,
+                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
+            "divider": {
+                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
+                "type": "decoration", "decoration_type": "title_underline",
+            },
             "metric1": {
-                "x": 0.75, "y": 2.5, "width": 2.708, "height": 3.5,
-                "font_size": 36, "font_weight": "bold", "alignment": "center",
+                "x": 0.9, "y": 1.8, "width": 2.708, "height": 3.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "accent", "font_role": "heading",
             },
             "metric2": {
-                "x": 3.958, "y": 2.5, "width": 2.708, "height": 3.5,
-                "font_size": 36, "font_weight": "bold", "alignment": "center",
+                "x": 4.108, "y": 1.8, "width": 2.708, "height": 3.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "accent", "font_role": "heading",
             },
             "metric3": {
-                "x": 7.167, "y": 2.5, "width": 2.708, "height": 3.5,
-                "font_size": 36, "font_weight": "bold", "alignment": "center",
+                "x": 7.317, "y": 1.8, "width": 2.708, "height": 3.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "accent", "font_role": "heading",
             },
             "metric4": {
-                "x": 10.375, "y": 2.5, "width": 2.708, "height": 3.5,
-                "font_size": 36, "font_weight": "bold", "alignment": "center",
+                "x": 10.525, "y": 1.8, "width": 2.708, "height": 3.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "accent", "font_role": "heading",
             },
         },
@@ -163,29 +193,39 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "placeholders": {
             "big_number": {
                 "x": 2.0, "y": 1.5, "width": 9.333, "height": 2.5,
-                "font_size": 120, "font_weight": "bold", "alignment": "center",
+                "font_size": 96, "font_weight": "bold", "alignment": "center",
                 "color_role": "accent", "font_role": "heading",
             },
             "label": {
-                "x": 2.0, "y": 4.5, "width": 9.333, "height": 0.8,
-                "font_size": 24, "font_weight": "normal", "alignment": "center",
+                "x": 2.0, "y": 4.3, "width": 9.333, "height": 0.8,
+                "font_size": 22, "font_weight": "normal", "alignment": "center",
                 "color_role": "foreground", "font_role": "body",
+            },
+            "body": {
+                "x": 2.5, "y": 5.3, "width": 8.333, "height": 1.5,
+                "font_size": 14, "font_weight": "normal", "alignment": "center",
+                "color_role": "muted-foreground", "font_role": "body",
             },
         },
     },
     "quote": {
         "id": 7,
         "name": "Quote",
-        "goal_mapping": ["testimonial", "social-proof"],
+        "goal_mapping": ["testimonial", "social-proof", "testimonials"],
         "placeholders": {
+            "quote_mark": {
+                "x": 1.0, "y": 1.5, "width": 1.5, "height": 1.5,
+                "font_size": 80, "font_weight": "bold", "alignment": "left",
+                "color_role": "accent", "font_role": "heading",
+            },
             "quote_text": {
-                "x": 1.5, "y": 2.0, "width": 10.333, "height": 2.5,
-                "font_size": 24, "font_weight": "normal", "alignment": "center",
+                "x": 1.5, "y": 2.3, "width": 10.333, "height": 2.5,
+                "font_size": 22, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
             },
             "quote_author": {
-                "x": 4.0, "y": 5.0, "width": 5.333, "height": 0.6,
-                "font_size": 16, "font_weight": "normal", "alignment": "center",
+                "x": 1.5, "y": 5.2, "width": 10.333, "height": 0.6,
+                "font_size": 14, "font_weight": "semibold", "alignment": "left",
                 "color_role": "muted-foreground", "font_role": "body",
             },
         },
@@ -193,40 +233,44 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "chart-focus": {
         "id": 8,
         "name": "Chart Focus",
-        "goal_mapping": ["data", "traction"],
+        "goal_mapping": ["data", "financial"],
         "placeholders": {
             "title": {
-                "x": 0.75, "y": 0.4, "width": 11.833, "height": 0.8,
+                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
+            "divider": {
+                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
+                "type": "decoration", "decoration_type": "title_underline",
+            },
             "chart": {
-                "x": 1.5, "y": 1.5, "width": 10.333, "height": 4.5,
+                "x": 1.2, "y": 1.6, "width": 7.5, "height": 5.0,
                 "type": "chart",
             },
             "insight": {
-                "x": 1.5, "y": 6.2, "width": 10.333, "height": 0.5,
-                "font_size": 14, "font_weight": "normal", "alignment": "center",
-                "color_role": "muted-foreground", "font_role": "body",
+                "x": 9.2, "y": 1.8, "width": 3.5, "height": 4.5,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
             },
         },
     },
     "image-plus-text": {
         "id": 9,
         "name": "Image + Text",
-        "goal_mapping": ["vision", "demo"],
+        "goal_mapping": ["vision", "demo", "product"],
         "placeholders": {
             "image": {
-                "x": 0, "y": 0, "width": 8.0, "height": 7.5,
+                "x": 0, "y": 0, "width": 7.5, "height": 7.5,
                 "type": "image",
             },
             "title": {
-                "x": 8.333, "y": 1.5, "width": 4.5, "height": 1.0,
+                "x": 8.0, "y": 1.5, "width": 4.8, "height": 1.0,
                 "font_size": 28, "font_weight": "bold", "alignment": "left",
                 "color_role": "foreground", "font_role": "heading",
             },
             "body": {
-                "x": 8.333, "y": 2.8, "width": 4.5, "height": 3.5,
+                "x": 8.0, "y": 2.8, "width": 4.8, "height": 3.5,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
                 "color_role": "foreground", "font_role": "body",
             },
@@ -235,20 +279,24 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "cta-closing": {
         "id": 10,
         "name": "CTA Closing",
-        "goal_mapping": ["cta"],
+        "goal_mapping": ["cta", "offer", "pricing"],
         "placeholders": {
+            "accent_bar": {
+                "x": 0, "y": 0, "width": 13.333, "height": 0.06,
+                "type": "decoration", "decoration_type": "accent_bar",
+            },
             "title": {
-                "x": 1.5, "y": 2.0, "width": 10.333, "height": 1.5,
-                "font_size": 44, "font_weight": "bold", "alignment": "center",
+                "x": 1.5, "y": 2.0, "width": 10.333, "height": 1.2,
+                "font_size": 40, "font_weight": "bold", "alignment": "center",
                 "color_role": "foreground", "font_role": "heading",
             },
             "subtitle": {
-                "x": 2.5, "y": 3.8, "width": 8.333, "height": 0.8,
-                "font_size": 20, "font_weight": "normal", "alignment": "center",
+                "x": 2.5, "y": 3.5, "width": 8.333, "height": 0.7,
+                "font_size": 18, "font_weight": "normal", "alignment": "center",
                 "color_role": "muted-foreground", "font_role": "body",
             },
             "cta_button": {
-                "x": 4.667, "y": 5.0, "width": 4.0, "height": 0.8,
+                "x": 4.667, "y": 4.8, "width": 4.0, "height": 0.8,
                 "font_size": 18, "font_weight": "bold", "alignment": "center",
                 "color_role": "on-primary", "font_role": "body",
                 "bg_color_role": "primary",
