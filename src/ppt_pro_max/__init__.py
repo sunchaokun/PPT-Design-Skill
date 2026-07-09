@@ -23,6 +23,8 @@ def generate_ppt(
     motion: int | None = None,
     density: int | None = None,
     fetch_images: bool = False,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
     persist: bool = False,
     dry_run: bool = False,
     output: str | None = None,
@@ -52,7 +54,11 @@ def generate_ppt(
             ],
         }
 
-    renderer = PPTRenderer()
+    effective_image_mode = image_mode
+    if fetch_images and image_mode == "placeholder":
+        effective_image_mode = "search"
+
+    renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
     result = renderer.render(
         page_designs, page_contents,
         output_path=output, fetch_images=fetch_images,

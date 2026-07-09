@@ -13,6 +13,7 @@ from ppt_pro_max.renderer.theme_mapper import ThemeMapper
 from ppt_pro_max.renderer.layout_registry import LayoutRegistry, SLIDE_WIDTH, SLIDE_HEIGHT
 from ppt_pro_max.renderer.chart_builder import ChartBuilder
 from ppt_pro_max.renderer.effects import Effects
+from ppt_pro_max.renderer.image_fetcher import ImageFetcher
 from ppt_pro_max.qa.qa_gates import QAGates
 
 try:
@@ -30,7 +31,7 @@ except ImportError:
 
 
 class PPTRenderer:
-    def __init__(self):
+    def __init__(self, image_mode: str = "placeholder", image_config: dict[str, Any] | None = None):
         if not _PPTX_AVAILABLE:
             raise RuntimeError("python-pptx is required. Install with: pip install python-pptx")
         self.theme_mapper = ThemeMapper()
@@ -38,6 +39,7 @@ class PPTRenderer:
         self.chart_builder = ChartBuilder()
         self.effects = Effects()
         self.qa = QAGates()
+        self.image_fetcher = ImageFetcher(mode=image_mode, **(image_config or {}))
 
     def render(
         self,
@@ -362,6 +364,21 @@ class PPTRenderer:
         width = Inches(ph_def["width"])
         height = Inches(ph_def["height"])
 
+        image_path = self.image_fetcher.fetch(
+            keywords=content.image_keywords or content.goal,
+            emotion=content.goal,
+            goal=content.goal,
+            width=int(ph_def["width"] * 96),
+            height=int(ph_def["height"] * 96),
+        )
+
+        if image_path and os.path.exists(image_path):
+            try:
+                slide.shapes.add_picture(image_path, left, top, width, height)
+                return
+            except Exception:
+                pass
+
         muted_color = theme.get("colors", {}).get("muted", "#F1F5F9")
         border_color = theme.get("colors", {}).get("border", "#E2E8F0")
         hint_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
@@ -377,7 +394,8 @@ class PPTRenderer:
         tf = shape.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
-        p.text = f"[\u56fe\u7247: {content.image_keywords}]" if content.image_keywords else "[\u5728\u6b64\u63d2\u5165\u56fe\u7247]"
+        hint = content.image_keywords if content.image_keywords else "\u5728\u6b64\u63d2\u5165\u56fe\u7247"
+        p.text = f"[\u56fe\u7247: {hint}]"
         p.font.size = Pt(12)
         p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
         p.alignment = PP_ALIGN.CENTER
