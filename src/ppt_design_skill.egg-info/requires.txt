@@ -1,9 +1,0 @@
-python-pptx>=1.0.2
-lxml>=4.9.0
-
-[dev]
-pytest>=7.0
-pytest-cov>=4.0
-
-[search]
-ui-ux-pro-max>=1.0.0
