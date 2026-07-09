@@ -1,2 +1,131 @@
 # PPT-Design-Skill
-PPT制作skill,适配opencode, claude code, codex等主流平台
+
+PPT制作skill，适配opencode, claude code, codex等主流AI编程平台。
+
+一句话生成专业级 .pptx 演示文稿 — 叙事驱动、设计智能、文本完全可编辑。
+
+## 特性
+
+- **叙事引擎** — 15种演示策略（YC Seed Deck / Product Demo / Sales Pitch...），自动规划页面结构和情绪弧线
+- **设计智能** — 复用 ui-ux-pro-max 的 5100+ 条设计知识库，上下文感知的布局/色彩/字体决策
+- **python-pptx 直出** — 356x 快于 HTML→截图方案，输出完全可编辑的 .pptx 文件
+- **12 母版布局** — 精确英寸坐标，覆盖 95% 演示场景
+- **文案公式** — 25种说服力公式（PAS / FAB / AIDA / Social Proof...）
+- **设计拨盘** — variance / motion / density 三维调控
+- **CJK 支持** — 东亚字体自动回退链
+
+## 快速开始
+
+### 安装
+
+```bash
+pip install -e .
+# 可选：安装 ui-ux-pro-max 搜索引擎支持
+pip install -e ".[search]"
+```
+
+### CLI 使用
+
+```bash
+# 一句话生成 PPT
+ppt-design "AI产品融资路演"
+
+# 指定策略和主题
+ppt-design "我的SaaS产品" --strategy "Product Demo" --theme "dark-tech"
+
+# 设计拨盘
+ppt-design "融资路演" --variance 8 --motion 6 --density 7
+
+# 从 JSON 文件读取内容
+ppt-design "融资路演" --content pitch-data.json
+
+# 仅输出设计决策（调试用）
+ppt-design "融资路演" --dry-run
+```
+
+### Python API
+
+```python
+from ppt_pro_max import generate_ppt
+
+result = generate_ppt(
+    query="AI产品融资路演",
+    strategy="YC Seed Deck",
+    theme="dark-tech",
+    variance=7,
+    motion=5,
+    density=6,
+)
+print(f"Generated: {result.output_path}")
+print(f"Pages: {result.page_count}")
+print(f"Strategy: {result.strategy_name}")
+```
+
+## 架构
+
+```
+用户输入 → Phase 1: 叙事规划 → Phase 2: 设计决策 → Phase 3: 内容生成 → Phase 4: PPT渲染 → .pptx
+                ↓                  ↓                  ↓                  ↓
+         story_planner      design_decider     content_generator     ppt_renderer
+         (策略+情绪弧线)    (布局+色彩+字体)    (文案公式+占位符)     (python-pptx直出)
+```
+
+四层架构：
+
+| 层 | 模块 | 职责 |
+|----|------|------|
+| 叙事层 | `planner/story_planner.py` | 策略选择 → 页面结构 → 情绪弧线 → 叙事节拍 |
+| 设计层 | `decider/design_decider.py` | 布局选择 → 色彩处理 → 排版规格 → 图表类型 |
+| 内容层 | `content/content_generator.py` | 文案公式 → 数据配置 → 图片占位符 |
+| 表达层 | `renderer/ppt_renderer.py` | 主题映射 → 母版布局 → 图表渲染 → 动画过渡 |
+
+## 与 ui-ux-pro-max 的关系
+
+本仓库是**独立仓库 + 依赖引用**模式：
+
+- **调用** ui-ux-pro-max 的搜索引擎和设计知识库（5100+ 条 CSV）
+- **不修改** ui-ux-pro-max 的任何代码
+- **新增** PPT 专属代码和数据
+- 通过**适配层**隔离上游 API 变更
+
+## 项目结构
+
+```
+PPT-Design-Skill/
+├── pyproject.toml
+├── SKILL.md                          # AI skill 定义
+├── src/ppt_pro_max/
+│   ├── __init__.py
+│   ├── cli.py                        # CLI 入口
+│   ├── adapters/                     # 适配层（隔离上游变更）
+│   │   ├── ui_ux_adapter.py
+│   │   └── slide_search_adapter.py
+│   ├── planner/                      # Phase 1: 叙事规划
+│   │   └── story_planner.py
+│   ├── decider/                      # Phase 2: 设计决策
+│   │   └── design_decider.py
+│   ├── content/                      # Phase 3: 内容生成
+│   │   └── content_generator.py
+│   ├── renderer/                     # Phase 4: PPT 渲染
+│   │   ├── ppt_renderer.py
+│   │   ├── theme_mapper.py
+│   │   ├── layout_registry.py
+│   │   ├── chart_builder.py
+│   │   └── effects.py
+│   └── qa/                           # 质量保障
+│       └── qa_gates.py
+├── data/ppt/                         # PPT 专属数据
+│   ├── ppt-master-layouts.csv
+│   ├── ppt-themes.csv
+│   ├── ppt-transitions.csv
+│   └── ppt-animations.csv
+├── templates/
+│   └── default-theme.json
+├── tests/
+├── examples/
+└── docs/
+```
+
+## License
+
+MIT
