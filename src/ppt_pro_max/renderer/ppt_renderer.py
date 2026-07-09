@@ -500,6 +500,17 @@ class PPTRenderer:
             except Exception:
                 pass
 
+        generated = self._generate_placeholder_image(
+            content.image_keywords or content.goal,
+            ph_def["width"], ph_def["height"], theme,
+        )
+        if generated:
+            try:
+                slide.shapes.add_picture(generated, left, top, width, height)
+                return
+            except Exception:
+                pass
+
         muted_color = theme.get("colors", {}).get("muted", "#F1F5F9")
         border_color = theme.get("colors", {}).get("border", "#E2E8F0")
         hint_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
@@ -521,6 +532,81 @@ class PPTRenderer:
         p.font.size = Pt(12)
         p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
         p.alignment = PP_ALIGN.CENTER
+
+    def _generate_placeholder_image(self, keywords: str, w_inches: float, h_inches: float, theme: dict) -> str | None:
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import tempfile, hashlib
+
+            primary = theme.get("colors", {}).get("primary", "#2563EB")
+            accent = theme.get("colors", {}).get("accent", "#F97316")
+            muted = theme.get("colors", {}).get("muted", "#F1F5F9")
+            foreground = theme.get("colors", {}).get("foreground", "#1E293B")
+
+            px_w = max(int(w_inches * 96), 200)
+            px_h = max(int(h_inches * 96), 150)
+
+            img = Image.new("RGB", (px_w, px_h))
+            draw = ImageDraw.Draw(img)
+
+            r1, g1, b1 = int(primary[1:3], 16), int(primary[3:5], 16), int(primary[5:7], 16)
+            r2, g2, b2 = int(accent[1:3], 16), int(accent[3:5], 16), int(accent[5:7], 16)
+
+            for y in range(px_h):
+                t = y / px_h
+                r = int(r1 + (r2 - r1) * t)
+                g = int(g1 + (g2 - g1) * t)
+                b = int(b1 + (b2 - b1) * t)
+                draw.line([(0, y), (px_w, y)], fill=(r, g, b))
+
+            margin = min(60, px_w // 8, px_h // 8)
+            inner_w = px_w - 2 * margin
+            inner_h = px_h - 2 * margin
+            if inner_w > 100 and inner_h > 80:
+                draw.rounded_rectangle(
+                    [margin, margin, px_w - margin, px_h - margin],
+                    radius=20,
+                    fill=(255, 255, 255, 180),
+                    outline=(255, 255, 255),
+                    width=2,
+                )
+
+            cx = px_w // 2
+            cy = px_h // 2 - 20
+
+            icon_size = min(60, px_w // 6, px_h // 6)
+            if icon_size > 20:
+                draw.ellipse(
+                    [cx - icon_size // 2, cy - icon_size // 2, cx + icon_size // 2, cy + icon_size // 2],
+                    fill=(255, 255, 255),
+                    outline=(200, 200, 200),
+                    width=2,
+                )
+                tri_size = icon_size // 4
+                draw.polygon(
+                    [
+                        (cx - tri_size // 2, cy - tri_size),
+                        (cx + tri_size, cy),
+                        (cx - tri_size // 2, cy + tri_size),
+                    ],
+                    fill=(r1, g1, b1),
+                )
+
+            label_y = cy + icon_size // 2 + 15
+            try:
+                font = ImageFont.truetype("arial.ttf", 18)
+            except Exception:
+                font = ImageFont.load_default()
+            draw.text((cx, label_y), keywords[:30], fill=(255, 255, 255), font=font, anchor="mt")
+
+            cache_key = hashlib.md5(f"gen:{keywords}:{px_w}x{px_h}".encode()).hexdigest()
+            cache_dir = os.path.join(tempfile.gettempdir(), "ppt-gen-images")
+            os.makedirs(cache_dir, exist_ok=True)
+            img_path = os.path.join(cache_dir, f"{cache_key}.png")
+            img.save(img_path, "PNG")
+            return img_path
+        except Exception:
+            return None
 
     def _get_placeholder_text(self, ph_name: str, content: PageContent) -> str | None:
         if ph_name == "title":
