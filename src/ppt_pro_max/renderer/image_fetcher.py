@@ -203,7 +203,7 @@ class ImageFetcher:
                 return None
 
             base_url = self.llm_base_url or "https://ark.cn-beijing.volces.com/api/v3"
-            model = self.llm_model or "doubao-seedream-5-0-lite-250415"
+            model = self.llm_model or "doubao-seedream-5-0-pro-260628"
 
             size_map = {
                 (True, True): "1K",
@@ -471,8 +471,8 @@ class ImageFetcher:
             "seedream": {
                 "name": "Doubao Seedream (ByteDance Volcengine)",
                 "env_key": "ARK_API_KEY",
-                "default_model": "doubao-seedream-5-0-lite-250415",
-                "models": "doubao-seedream-5-0-lite-250415, doubao-seedream-5-0-pro-260628",
+                "default_model": "doubao-seedream-5-0-pro-260628",
+                "models": "doubao-seedream-5-0-pro-260628, doubao-seedream-5-0-lite-250415",
                 "base_url": "https://ark.cn-beijing.volces.com/api/v3",
             },
             "gpt-image": {
