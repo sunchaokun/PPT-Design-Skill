@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -115,7 +116,36 @@ class ContentGenerator:
         for key, value in user_content.items():
             if isinstance(value, str):
                 template = template.replace(f"{{{key}}}", value)
+            elif isinstance(value, (int, float)):
+                template = template.replace(f"{{{key}}}", str(value))
+
+        import re
+        dot_pattern = re.compile(r"\{(\w+(?:\.\w+(?:\[\d+\])?)*)\}")
+        for match in dot_pattern.finditer(template):
+            path = match.group(1)
+            resolved = self._resolve_dot_path(path, user_content)
+            if resolved is not None:
+                template = template.replace(match.group(0), str(resolved), 1)
+
         return template
+
+    def _resolve_dot_path(self, path: str, data: dict[str, Any]) -> Any:
+        parts = re.split(r"\.|\[|\]", path)
+        parts = [p for p in parts if p]
+        current = data
+        for part in parts:
+            if isinstance(current, dict):
+                current = current.get(part)
+            elif isinstance(current, list):
+                try:
+                    current = current[int(part)]
+                except (ValueError, IndexError):
+                    return None
+            else:
+                return None
+            if current is None:
+                return None
+        return current
 
     def _generate_bullets(self, goal: str, user_content: dict[str, Any]) -> list[str]:
         if goal == "problem" and "pain_points" in user_content:
@@ -126,7 +156,7 @@ class ContentGenerator:
 
     def _generate_metrics(self, goal: str, user_content: dict[str, Any]) -> list[dict[str, str]] | None:
         if goal in ("traction", "metrics") and "metrics" in user_content:
-            return [{"label": k, "value": str(v)} for k, v in user_content["metrics"].items()[:4]]
+            return [{"label": k, "value": str(v)} for k, v in list(user_content["metrics"].items())[:4]]
         if goal in ("traction", "metrics"):
             return [
                 {"label": "用户数", "value": "[N]+"},

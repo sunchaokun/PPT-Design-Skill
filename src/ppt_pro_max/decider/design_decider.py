@@ -58,6 +58,9 @@ _GOAL_CHART: dict[str, str | None] = {
 
 
 class DesignDecider:
+    def __init__(self):
+        self._design_system: dict[str, Any] = {}
+
     def decide(
         self,
         story_plan: StoryPlan,
@@ -66,14 +69,18 @@ class DesignDecider:
         motion: int | None = None,
         density: int | None = None,
     ) -> list[PageDesign]:
-        design_system = get_design_system(story_plan.product_type or "general")
+        self._design_system = get_design_system(story_plan.product_type or "general")
 
         page_designs = []
         for page in story_plan.pages:
-            design = self._decide_page(page, story_plan.total_slides, design_system, motion)
+            design = self._decide_page(page, story_plan.total_slides, self._design_system, motion)
             page_designs.append(design)
 
         return page_designs
+
+    @property
+    def design_system(self) -> dict[str, Any]:
+        return self._design_system
 
     def _decide_page(self, page: PagePlan, total: int, design_system: dict, motion: int | None) -> PageDesign:
         layout = layout_for_goal(page.goal)

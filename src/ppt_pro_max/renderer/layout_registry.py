@@ -282,8 +282,8 @@ class LayoutRegistry:
         return list(self._layouts.keys())
 
     def _load_csv_overrides(self) -> None:
-        csv_path = Path(__file__).parent.parent.parent.parent / "data" / "ppt" / "ppt-master-layouts.csv"
-        if not csv_path.exists():
+        csv_path = self._find_data_file("ppt-master-layouts.csv")
+        if csv_path is None:
             return
 
         try:
@@ -316,3 +316,25 @@ class LayoutRegistry:
                     }
         except Exception:
             pass
+
+    @staticmethod
+    def _find_data_file(filename: str) -> Path | None:
+        pkg_dir = Path(__file__).parent
+        for candidate in [
+            pkg_dir.parent.parent.parent / "data" / "ppt" / filename,
+            pkg_dir.parent.parent / "data" / "ppt" / filename,
+            pkg_dir.parent / "data" / "ppt" / filename,
+        ]:
+            if candidate.exists():
+                return candidate
+
+        try:
+            import importlib.resources as pkg_resources
+            ref = pkg_resources.files("ppt_pro_max") / ".." / "data" / "ppt" / filename
+            with pkg_resources.as_file(ref) as path:
+                if path.exists():
+                    return Path(path)
+        except Exception:
+            pass
+
+        return None

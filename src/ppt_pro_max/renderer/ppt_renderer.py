@@ -46,12 +46,13 @@ class PPTRenderer:
         output_path: str | None = None,
         fetch_images: bool = False,
         theme_name: str | None = None,
+        design_system: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if not page_designs:
             raise ValueError("No page designs to render")
 
-        design_system = self._extract_design_system(page_designs[0])
-        ppt_theme = self.theme_mapper.map(design_system, theme_name=theme_name)
+        ds = design_system or self._default_design_system()
+        ppt_theme = self.theme_mapper.map(ds, theme_name=theme_name)
 
         prs = Presentation()
         prs.slide_width = Inches(SLIDE_WIDTH)
@@ -82,7 +83,7 @@ class PPTRenderer:
             "qa": qa_result,
         }
 
-    def _extract_design_system(self, design: PageDesign) -> dict[str, Any]:
+    def _default_design_system(self) -> dict[str, Any]:
         return {
             "colors": {
                 "primary": "#2563EB",
@@ -112,8 +113,14 @@ class PPTRenderer:
 
         self._apply_background(slide, design, theme)
 
+        if design.full_bleed:
+            self._apply_full_bleed_bg(slide, content, theme)
+
+        if design.break_pattern:
+            self._apply_pattern_break(slide, theme)
+
         for ph_name, ph_def in layout_def.get("placeholders", {}).items():
-            self._render_placeholder(slide, ph_name, ph_def, content, theme)
+            self._render_placeholder(slide, ph_name, ph_def, content, theme, design)
 
         self._apply_transition(slide, design.transition)
 
@@ -124,16 +131,61 @@ class PPTRenderer:
         fill.solid()
         fill.fore_color.rgb = RGBColor.from_string(bg_color.lstrip("#"))
 
-    def _render_placeholder(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
+    def _apply_full_bleed_bg(self, slide, content: PageContent, theme: dict) -> None:
+        accent = theme.get("colors", {}).get("accent", "#F97316")
+        muted = theme.get("colors", {}).get("muted", "#F1F5F9")
+        self.effects.add_gradient_background(slide, muted, accent)
+
+    def _apply_pattern_break(self, slide, theme: dict) -> None:
+        accent = theme.get("colors", {}).get("accent", "#F97316")
+        bar = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            Inches(0), Inches(0), Inches(SLIDE_WIDTH), Inches(0.08),
+        )
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = RGBColor.from_string(accent.lstrip("#"))
+        bar.line.fill.background()
+
+    def _render_placeholder(
+        self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict, design: PageDesign
+    ) -> None:
         ph_type = ph_def.get("type", "text")
+
         if ph_type == "image":
-            self._render_image_placeholder(slide, ph_def, content)
+            self._render_image_placeholder(slide, ph_def, content, theme)
+            return
+
+        if ph_type == "chart":
+            self._render_chart_placeholder(slide, ph_def, content, theme, design)
+            return
+
+        if ph_name == "cta_button":
+            self._render_cta_button(slide, ph_def, content, theme)
+            return
+
+        if ph_name.startswith("card"):
+            self._render_card(slide, ph_name, ph_def, content, theme)
+            return
+
+        if ph_name.startswith("metric"):
+            self._render_metric(slide, ph_name, ph_def, content, theme)
+            return
+
+        if ph_name == "big_number":
+            self._render_big_number(slide, ph_def, content, theme)
+            return
+
+        if ph_name == "label":
+            self._render_label(slide, ph_def, content, theme)
             return
 
         text = self._get_placeholder_text(ph_name, content)
         if text is None:
             return
 
+        self._add_textbox(slide, ph_def, text, theme)
+
+    def _add_textbox(self, slide, ph_def: dict, text: str, theme: dict, extra_style: dict | None = None) -> None:
         left = Inches(ph_def["x"])
         top = Inches(ph_def["y"])
         width = Inches(ph_def["width"])
@@ -162,13 +214,181 @@ class PPTRenderer:
         font_family = theme.get("typography", {}).get(font_name, "Inter")
         p.font.name = font_family
 
+        if extra_style and extra_style.get("vertical_center"):
+            tf.paragraphs[0].alignment = align_map.get(alignment, PP_ALIGN.LEFT)
+
+    def _render_card(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
+        card_index = int(ph_name.replace("card", "")) - 1
+        bullets = content.bullets
+        card_text = bullets[card_index] if bullets and card_index < len(bullets) else f"[卡片 {card_index + 1}]"
+
+        left = Inches(ph_def["x"])
+        top = Inches(ph_def["y"])
+        width = Inches(ph_def["width"])
+        height = Inches(ph_def["height"])
+
+        border_color = theme.get("colors", {}).get("border", "#E2E8F0")
+        bg_color = theme.get("colors", {}).get("muted", "#F1F5F9")
+        fg_color = theme.get("colors", {}).get("foreground", "#1E293B")
+
+        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+        card.fill.solid()
+        card.fill.fore_color.rgb = RGBColor.from_string(bg_color.lstrip("#"))
+        card.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
+        card.line.width = Pt(1)
+
+        tf = card.text_frame
+        tf.word_wrap = True
+        tf.margin_left = Inches(0.2)
+        tf.margin_right = Inches(0.2)
+        tf.margin_top = Inches(0.15)
+
+        p = tf.paragraphs[0]
+        p.text = card_text
+        p.font.size = Pt(ph_def.get("font_size", 16))
+        p.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
+        p.alignment = PP_ALIGN.CENTER
+
+    def _render_metric(self, slide, ph_name: str, ph_def: dict, content: PageContent, theme: dict) -> None:
+        metric_index = int(ph_name.replace("metric", "")) - 1
+        metrics = content.metrics or []
+
+        if metric_index < len(metrics):
+            value = metrics[metric_index].get("value", "—")
+            label = metrics[metric_index].get("label", "")
+        else:
+            value = "—"
+            label = f"[指标 {metric_index + 1}]"
+
+        left = Inches(ph_def["x"])
+        top = Inches(ph_def["y"])
+        width = Inches(ph_def["width"])
+        height = Inches(ph_def["height"])
+
+        accent_color = theme.get("colors", {}).get("accent", "#F97316")
+        fg_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
+
+        txBox = slide.shapes.add_textbox(left, top, width, height)
+        tf = txBox.text_frame
+        tf.word_wrap = True
+
+        p_value = tf.paragraphs[0]
+        p_value.text = value
+        p_value.font.size = Pt(ph_def.get("font_size", 36))
+        p_value.font.bold = True
+        p_value.font.color.rgb = RGBColor.from_string(accent_color.lstrip("#"))
+        p_value.alignment = PP_ALIGN.CENTER
+
+        p_label = tf.add_paragraph()
+        p_label.text = label
+        p_label.font.size = Pt(14)
+        p_label.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
+        p_label.alignment = PP_ALIGN.CENTER
+
+    def _render_big_number(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
+        big_text = content.title if content.title else "[大数字]"
+        self._add_textbox(slide, ph_def, big_text, theme)
+
+    def _render_label(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
+        label_text = content.subtitle if content.subtitle else ""
+        if not label_text and content.bullets:
+            label_text = content.bullets[0]
+        if not label_text:
+            label_text = "[标签]"
+        self._add_textbox(slide, ph_def, label_text, theme)
+
+    def _render_chart_placeholder(
+        self, slide, ph_def: dict, content: PageContent, theme: dict, design: PageDesign
+    ) -> None:
+        if content.chart_data is None:
+            left = Inches(ph_def["x"])
+            top = Inches(ph_def["y"])
+            width = Inches(ph_def["width"])
+            height = Inches(ph_def["height"])
+            placeholder = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+            placeholder.fill.solid()
+            placeholder.fill.fore_color.rgb = RGBColor(0xF1, 0xF5, 0xF9)
+            placeholder.line.color.rgb = RGBColor(0xE2, 0xE8, 0xF0)
+            tf = placeholder.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.text = f"[{design.chart_type or 'Chart'} 占位符]"
+            p.font.size = Pt(14)
+            p.font.color.rgb = RGBColor(0x94, 0xA3, 0xB8)
+            p.alignment = PP_ALIGN.CENTER
+            return
+
+        chart_type = content.chart_data.get("type", design.chart_type or "Line Chart")
+        data = content.chart_data.get("data", {})
+        position = {
+            "x": ph_def["x"],
+            "y": ph_def["y"],
+            "width": ph_def["width"],
+            "height": ph_def["height"],
+        }
+        style = {"colors": theme.get("colors", {})}
+        self.chart_builder.build(slide, chart_type, data, style, position)
+
+    def _render_cta_button(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
+        button_text = content.title if content.title else "[行动号召]"
+
+        left = Inches(ph_def["x"])
+        top = Inches(ph_def["y"])
+        width = Inches(ph_def["width"])
+        height = Inches(ph_def["height"])
+
+        bg_role = ph_def.get("bg_color_role", "primary")
+        bg_color = theme.get("colors", {}).get(bg_role, "#2563EB")
+
+        button = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+        button.fill.solid()
+        button.fill.fore_color.rgb = RGBColor.from_string(bg_color.lstrip("#"))
+        button.line.fill.background()
+
+        tf = button.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = button_text
+        p.font.size = Pt(ph_def.get("font_size", 18))
+        p.font.bold = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
+        p.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+        p.alignment = PP_ALIGN.CENTER
+
+        self.effects.add_shadow(button, blur_pt=6, offset_pt=3, color="#000000", alpha=25)
+
+    def _render_image_placeholder(self, slide, ph_def: dict, content: PageContent, theme: dict) -> None:
+        left = Inches(ph_def["x"])
+        top = Inches(ph_def["y"])
+        width = Inches(ph_def["width"])
+        height = Inches(ph_def["height"])
+
+        muted_color = theme.get("colors", {}).get("muted", "#F1F5F9")
+        border_color = theme.get("colors", {}).get("border", "#E2E8F0")
+        hint_color = theme.get("colors", {}).get("muted-foreground", "#94A3B8")
+
+        shape = slide.shapes.add_shape(
+            MSO_SHAPE.RECTANGLE,
+            left, top, width, height,
+        )
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = RGBColor.from_string(muted_color.lstrip("#"))
+        shape.line.color.rgb = RGBColor.from_string(border_color.lstrip("#"))
+
+        tf = shape.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = f"[\u56fe\u7247: {content.image_keywords}]" if content.image_keywords else "[\u5728\u6b64\u63d2\u5165\u56fe\u7247]"
+        p.font.size = Pt(12)
+        p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
+        p.alignment = PP_ALIGN.CENTER
+
     def _get_placeholder_text(self, ph_name: str, content: PageContent) -> str | None:
         if ph_name == "title":
             return content.title
         if ph_name in ("subtitle", "tagline"):
             return content.subtitle
         if ph_name == "body":
-            return "\n".join(f"• {b}" for b in content.bullets) if content.bullets else None
+            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else None
         if ph_name == "section_number":
             return str(content.position)
         if ph_name == "section_title":
@@ -177,29 +397,11 @@ class PPTRenderer:
             return content.quote.get("text", "") if content.quote else None
         if ph_name == "quote_author":
             return content.quote.get("author", "") if content.quote else None
+        if ph_name == "insight":
+            return "[\u6570\u636e\u6d1e\u5bdf]"
+        if ph_name in ("left_col", "right_col"):
+            return "\n".join(f"\u2022 {b}" for b in content.bullets) if content.bullets else f"[{ph_name} \u5185\u5bb9]"
         return None
-
-    def _render_image_placeholder(self, slide, ph_def: dict, content: PageContent) -> None:
-        left = Inches(ph_def["x"])
-        top = Inches(ph_def["y"])
-        width = Inches(ph_def["width"])
-        height = Inches(ph_def["height"])
-
-        shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE,
-            left, top, width, height,
-        )
-        shape.fill.solid()
-        shape.fill.fore_color.rgb = RGBColor(0xF1, 0xF5, 0xF9)
-        shape.line.color.rgb = RGBColor(0xE2, 0xE8, 0xF0)
-
-        tf = shape.text_frame
-        tf.word_wrap = True
-        p = tf.paragraphs[0]
-        p.text = "[在此插入图片]"
-        p.font.size = Pt(12)
-        p.font.color.rgb = RGBColor(0x94, 0xA3, 0xB8)
-        p.alignment = PP_ALIGN.CENTER
 
     def _apply_transition(self, slide, transition_name: str) -> None:
         if not _PPTX_AVAILABLE:
@@ -207,13 +409,20 @@ class PPTRenderer:
         try:
             transition_xml_map = {
                 "fade": "<p:fade/>",
+                "fade-slow": '<p:fade/>',
                 "push": '<p:push dir="l"/>',
+                "push-left": '<p:push dir="l"/>',
+                "push-right": '<p:push dir="r"/>',
                 "wipe": '<p:wipe dir="d"/>',
+                "wipe-down": '<p:wipe dir="d"/>',
                 "cut": "<p:cut/>",
             }
             child_xml = transition_xml_map.get(transition_name, "<p:fade/>")
             transition = etree.SubElement(slide._element, qn("p:transition"))
-            transition.set("spd", "med")
+            if transition_name == "fade-slow":
+                transition.set("spd", "slow")
+            else:
+                transition.set("spd", "med")
             child = etree.fromstring(child_xml)
             transition.append(child)
         except Exception:

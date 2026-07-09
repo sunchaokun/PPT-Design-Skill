@@ -1,5 +1,10 @@
 """PPT Design Skill — AI-powered PPT generation."""
 
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
 __version__ = "0.1.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
@@ -48,9 +53,46 @@ def generate_ppt(
         }
 
     renderer = PPTRenderer()
-    result = renderer.render(page_designs, page_contents, output_path=output, fetch_images=fetch_images, theme_name=theme)
+    result = renderer.render(
+        page_designs, page_contents,
+        output_path=output, fetch_images=fetch_images,
+        theme_name=theme, design_system=decider.design_system,
+    )
 
     if persist:
-        pass
+        _persist_design_system(decider.design_system, result.get("output_path", ""))
 
     return result
+
+
+def _persist_design_system(design_system: dict, pptx_path: str) -> None:
+    from ppt_pro_max.renderer.theme_mapper import ThemeMapper
+
+    mapper = ThemeMapper()
+    theme = mapper.map(design_system)
+    master_path = Path(pptx_path).parent / "design-system" / "MASTER.md"
+    master_path.parent.mkdir(parents=True, exist_ok=True)
+
+    colors = theme.get("colors", {})
+    typo = theme.get("typography", {})
+
+    lines = [
+        "# Design System — MASTER.md",
+        "",
+        "## Colors",
+        "",
+    ]
+    for role, hex_val in colors.items():
+        lines.append(f"- **{role}**: `{hex_val}`")
+    lines.extend([
+        "",
+        "## Typography",
+        "",
+        f"- **Heading**: {typo.get('heading', 'Inter')}",
+        f"- **Body**: {typo.get('body', 'Inter')}",
+        "",
+        f"## Dark Mode: {'Yes' if theme.get('dark_mode') else 'No'}",
+        "",
+    ])
+
+    master_path.write_text("\n".join(lines), encoding="utf-8")
