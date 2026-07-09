@@ -25,6 +25,10 @@ def generate_ppt(
     fetch_images: bool = False,
     image_mode: str = "placeholder",
     image_config: dict[str, Any] | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
     persist: bool = False,
     dry_run: bool = False,
     output: str | None = None,
@@ -56,7 +60,22 @@ def generate_ppt(
 
     effective_image_mode = image_mode
     if fetch_images and image_mode == "placeholder":
-        effective_image_mode = "search"
+        if llm_provider:
+            effective_image_mode = "generate"
+        else:
+            effective_image_mode = "auto"
+
+    if llm_provider or llm_api_key or llm_base_url or llm_model:
+        if image_config is None:
+            image_config = {}
+        if llm_provider:
+            image_config["llm_provider"] = llm_provider
+        if llm_api_key:
+            image_config["llm_api_key"] = llm_api_key
+        if llm_base_url:
+            image_config["llm_base_url"] = llm_base_url
+        if llm_model:
+            image_config["llm_model"] = llm_model
 
     renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
     result = renderer.render(

@@ -1,11 +1,13 @@
-"""Image Fetcher — three modes: placeholder / search download / LLM generate."""
+"""Image Fetcher — five modes: placeholder / search / generate / enhance / auto."""
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
 import tempfile
+import time
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -28,7 +30,7 @@ class ImageFetcher:
         self.mode = mode
         self.unsplash_access_key = unsplash_access_key or os.environ.get("UNSPLASH_ACCESS_KEY", "")
         self.pexels_api_key = pexels_api_key or os.environ.get("PEXELS_API_KEY", "")
-        self.llm_provider = llm_provider or os.environ.get("PPT_IMAGE_LLM_PROVIDER", "")
+        self.llm_provider = (llm_provider or os.environ.get("PPT_IMAGE_LLM_PROVIDER", "")).lower()
         self.llm_api_key = llm_api_key or os.environ.get("PPT_IMAGE_LLM_API_KEY", "")
         self.llm_base_url = llm_base_url or os.environ.get("PPT_IMAGE_LLM_BASE_URL", "")
         self.llm_model = llm_model or os.environ.get("PPT_IMAGE_LLM_MODEL", "")
@@ -52,7 +54,18 @@ class ImageFetcher:
         if self.mode == "enhance":
             return self._fetch_with_llm_enhance(keywords, emotion, goal, width, height)
 
+        if self.mode == "auto":
+            return self._fetch_auto(keywords, emotion, goal, width, height)
+
         return None
+
+    def _fetch_auto(self, keywords: str, emotion: str, goal: str, width: int, height: int) -> str | None:
+        if self.llm_provider:
+            result = self._fetch_from_llm_generate(keywords, emotion, goal, width, height)
+            if result:
+                return result
+        result = self._fetch_from_search(keywords, emotion, width, height)
+        return result
 
     def _fetch_from_search(self, keywords: str, emotion: str, width: int, height: int) -> str | None:
         cached = self._check_cache(f"search:{keywords}:{width}x{height}")
@@ -124,19 +137,25 @@ class ImageFetcher:
     def _fetch_from_llm_generate(self, keywords: str, emotion: str, goal: str, width: int, height: int) -> str | None:
         prompt = self._build_image_prompt(keywords, emotion, goal)
 
-        if self.llm_provider == "dalle" or self.llm_provider == "openai":
+        if self.llm_provider in ("seedream", "doubao", "volcengine"):
+            return self._generate_seedream(prompt, width, height)
+
+        if self.llm_provider in ("gpt-image", "gpt_image", "gptimage"):
+            return self._generate_gpt_image(prompt, width, height)
+
+        if self.llm_provider in ("dalle", "openai", "dall-e"):
             return self._generate_dalle(prompt, width, height)
 
-        if self.llm_provider == "wanx" or self.llm_provider == "tongyi" or self.llm_provider == "aliyun":
+        if self.llm_provider in ("wanx", "tongyi", "aliyun"):
             return self._generate_wanx(prompt, width, height)
 
-        if self.llm_provider == "kimi" or self.llm_provider == "moonshot":
+        if self.llm_provider in ("kimi", "moonshot"):
             enhanced_keywords = self._kimi_enhance_keywords(keywords, emotion, goal)
             if enhanced_keywords:
                 return self._fetch_from_search(enhanced_keywords, emotion, width, height)
             return self._fetch_from_search(keywords, emotion, width, height)
 
-        return self._generate_dalle(prompt, width, height)
+        return None
 
     def _fetch_with_llm_enhance(self, keywords: str, emotion: str, goal: str, width: int, height: int) -> str | None:
         enhanced = self._kimi_enhance_keywords(keywords, emotion, goal)
@@ -155,7 +174,127 @@ class ImageFetcher:
             "fear": "dramatic and intense",
         }
         style = emotion_style.get(emotion, "professional and clean")
-        return f"A {style} image representing {keywords}, suitable for a presentation slide about {goal}, high quality, no text overlay"
+
+        goal_context = {
+            "hook": "attention-grabbing hero image",
+            "problem": "visualizing pain and frustration",
+            "agitation": "conveying urgency and risk",
+            "solution": "showing hope and transformation",
+            "features": "clean product interface",
+            "traction": "upward growth and success",
+            "market": "global opportunity and scale",
+            "team": "collaboration and expertise",
+            "financial": "financial growth and charts",
+            "demo": "product in action",
+            "testimonials": "happy people and success",
+            "pricing": "value and choice",
+            "cta": "action and forward momentum",
+            "product": "product showcase",
+            "proof": "evidence and trust",
+            "offer": "excitement and opportunity",
+        }
+        context = goal_context.get(goal, "professional presentation slide")
+        return f"A {style} image representing {keywords}, suitable for a presentation slide about {context}, high quality, no text overlay, clean composition, suitable for corporate presentation"
+
+    def _generate_seedream(self, prompt: str, width: int, height: int) -> str | None:
+        try:
+            api_key = self.llm_api_key or os.environ.get("ARK_API_KEY", "")
+            if not api_key:
+                return None
+
+            base_url = self.llm_base_url or "https://ark.cn-beijing.volces.com/api/v3"
+            model = self.llm_model or "doubao-seedream-5-0-lite-250415"
+
+            size_map = {
+                (True, True): "1K",
+                (True, False): "1K",
+                (False, True): "1K",
+            }
+            if max(width, height) >= 2048:
+                img_size = "2K"
+            elif max(width, height) >= 1024:
+                img_size = "1K"
+            else:
+                img_size = "1K"
+
+            payload = json.dumps({
+                "model": model,
+                "prompt": prompt,
+                "size": img_size,
+                "output_format": "png",
+                "response_format": "url",
+                "watermark": False,
+            }).encode("utf-8")
+
+            url = f"{base_url}/images/generations"
+            req = urllib.request.Request(url, data=payload, headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            })
+
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            image_url = data.get("data", [{}])[0].get("url", "")
+            if not image_url:
+                return None
+            return self._download_and_cache(image_url, f"seedream:{model}:{prompt[:50]}:{img_size}")
+        except Exception:
+            return None
+
+    def _generate_gpt_image(self, prompt: str, width: int, height: int) -> str | None:
+        try:
+            api_key = self.llm_api_key or os.environ.get("OPENAI_API_KEY", "")
+            if not api_key:
+                return None
+
+            base_url = self.llm_base_url or "https://api.openai.com/v1"
+            model = self.llm_model or "gpt-image-1"
+
+            if width > height:
+                size = "1536x1024"
+            elif height > width:
+                size = "1024x1536"
+            else:
+                size = "1024x1024"
+
+            payload = json.dumps({
+                "model": model,
+                "prompt": prompt,
+                "n": 1,
+                "size": size,
+                "quality": "low",
+                "output_format": "png",
+            }).encode("utf-8")
+
+            url = f"{base_url}/images/generations"
+            req = urllib.request.Request(url, data=payload, headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            })
+
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            item = data.get("data", [{}])[0]
+
+            image_url = item.get("url", "")
+            b64 = item.get("b64_json", "")
+
+            if image_url:
+                return self._download_and_cache(image_url, f"gpt-image:{model}:{prompt[:50]}")
+
+            if b64:
+                cache_key = f"gpt-image:{model}:{prompt[:50]}"
+                cache_hash = hashlib.md5(cache_key.encode()).hexdigest()
+                cache_path = self._cache_dir / f"{cache_hash}.png"
+                if not (cache_path.exists() and cache_path.stat().st_size > 1000):
+                    cache_path.write_bytes(base64.b64decode(b64))
+                return str(cache_path)
+
+            return None
+        except Exception:
+            return None
 
     def _generate_dalle(self, prompt: str, width: int, height: int) -> str | None:
         try:
@@ -222,7 +361,6 @@ class ImageFetcher:
             if not task_id:
                 return None
 
-            import time
             for _ in range(30):
                 time.sleep(2)
                 status_url = f"{base_url}/tasks/{task_id}"
@@ -298,7 +436,7 @@ class ImageFetcher:
             req = urllib.request.Request(url, headers={
                 "User-Agent": "PPT-Design-Skill/0.1.0",
             })
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 image_data = resp.read()
 
             if len(image_data) < 1000:
@@ -320,8 +458,49 @@ class ImageFetcher:
     @staticmethod
     def available_modes() -> dict[str, str]:
         return {
-            "placeholder": "Gray box with hint text (default, no network)",
-            "search": "Download from Unsplash/Pexels by keywords (needs API key or uses source.unsplash.com)",
-            "generate": "Generate via DALL-E / Wanx API (needs API key)",
-            "enhance": "Use Kimi K2.6 to enhance search keywords, then download from Unsplash (needs Moonshot API key)",
+            "placeholder": "Gradient placeholder image (default, no API key needed)",
+            "search": "Download from Unsplash/Pexels by keywords (needs API key)",
+            "generate": "AI image generation: Seedream / GPT Image / DALL-E / Wanx (needs API key)",
+            "enhance": "Use Kimi K2.6 to enhance search keywords, then download (needs Moonshot API key)",
+            "auto": "Try AI generation first, fall back to search (recommended)",
+        }
+
+    @staticmethod
+    def available_providers() -> dict[str, dict[str, str]]:
+        return {
+            "seedream": {
+                "name": "Doubao Seedream (ByteDance Volcengine)",
+                "env_key": "ARK_API_KEY",
+                "default_model": "doubao-seedream-5-0-lite-250415",
+                "models": "doubao-seedream-5-0-lite-250415, doubao-seedream-5-0-pro-260628",
+                "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+            },
+            "gpt-image": {
+                "name": "GPT Image (OpenAI)",
+                "env_key": "OPENAI_API_KEY",
+                "default_model": "gpt-image-1",
+                "models": "gpt-image-2, gpt-image-1.5, gpt-image-1, dall-e-3",
+                "base_url": "https://api.openai.com/v1",
+            },
+            "dalle": {
+                "name": "DALL-E 3 (OpenAI)",
+                "env_key": "OPENAI_API_KEY",
+                "default_model": "dall-e-3",
+                "models": "dall-e-3",
+                "base_url": "https://api.openai.com/v1",
+            },
+            "wanx": {
+                "name": "Wanx (Alibaba DashScope)",
+                "env_key": "DASHSCOPE_API_KEY",
+                "default_model": "wanx-v1",
+                "models": "wanx-v1",
+                "base_url": "https://dashscope.aliyuncs.com/api/v1",
+            },
+            "kimi": {
+                "name": "Kimi K2.6 (Moonshot, enhance-only)",
+                "env_key": "MOONSHOT_API_KEY",
+                "default_model": "kimi-k2-0711-preview",
+                "models": "kimi-k2-0711-preview",
+                "base_url": "https://api.moonshot.cn/v1",
+            },
         }

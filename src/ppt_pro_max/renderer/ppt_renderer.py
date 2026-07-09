@@ -40,7 +40,6 @@ class PPTRenderer:
         self.effects = Effects()
         self.qa = QAGates()
         self.image_fetcher = ImageFetcher(mode=image_mode, **(image_config or {}))
-
     def render(
         self,
         page_designs: list[PageDesign],

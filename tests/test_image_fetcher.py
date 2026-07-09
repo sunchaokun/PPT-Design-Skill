@@ -16,6 +16,7 @@ def test_available_modes():
     assert "search" in modes
     assert "generate" in modes
     assert "enhance" in modes
+    assert "auto" in modes
 
 
 def test_search_mode_no_api_key():
@@ -56,3 +57,35 @@ def test_check_cache_miss():
 def test_kimi_provider_routes_to_enhance():
     fetcher = ImageFetcher(mode="generate", llm_provider="kimi", llm_api_key="fake")
     assert fetcher.llm_provider == "kimi"
+
+
+def test_seedream_provider_detected():
+    fetcher = ImageFetcher(mode="generate", llm_provider="seedream", llm_api_key="fake")
+    assert fetcher.llm_provider == "seedream"
+    assert fetcher.llm_model == ""
+
+
+def test_gpt_image_provider_detected():
+    fetcher = ImageFetcher(mode="generate", llm_provider="gpt-image", llm_api_key="fake")
+    assert fetcher.llm_provider == "gpt-image"
+
+
+def test_available_providers():
+    providers = ImageFetcher.available_providers()
+    assert "seedream" in providers
+    assert "gpt-image" in providers
+    assert "dalle" in providers
+    assert providers["seedream"]["default_model"] == "doubao-seedream-5-0-lite-250415"
+    assert "gpt-image-2" in providers["gpt-image"]["models"]
+
+
+def test_auto_mode_with_provider():
+    fetcher = ImageFetcher(mode="auto", llm_provider="seedream", llm_api_key="fake")
+    assert fetcher.mode == "auto"
+    assert fetcher.llm_provider == "seedream"
+
+
+def test_seedream_env_key():
+    os.environ.pop("ARK_API_KEY", None)
+    fetcher = ImageFetcher(mode="generate", llm_provider="seedream")
+    assert fetcher.llm_api_key == ""
