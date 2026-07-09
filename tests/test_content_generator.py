@@ -15,27 +15,31 @@ def _make_design(goal="hook", copy_formula="AIDA", chart_type=None, position=1) 
     )
 
 
-def test_generate_placeholder_content():
+def test_generate_hook_content():
     gen = ContentGenerator()
     designs = [_make_design(goal="hook", copy_formula="AIDA")]
     contents = gen.generate(designs)
     assert len(contents) == 1
-    assert "{Attention hook}" in contents[0].title
+    assert len(contents[0].title) > 10
+    assert contents[0].subtitle is not None
 
 
-def test_generate_pas_content():
+def test_generate_problem_content():
     gen = ContentGenerator()
     designs = [_make_design(goal="problem", copy_formula="PAS")]
     contents = gen.generate(designs)
-    assert "面临" in contents[0].title
+    assert len(contents[0].title) > 5
+    assert len(contents[0].bullets) >= 1
 
 
-def test_generate_bullets_fallback():
+def test_generate_solution_bullets():
     gen = ContentGenerator()
     designs = [_make_design(goal="solution", copy_formula="FAB")]
     contents = gen.generate(designs)
-    assert len(contents[0].bullets) == 3
-    assert contents[0].bullets[0].startswith("[solution")
+    assert len(contents[0].bullets) >= 1
+    for b in contents[0].bullets:
+        assert not b.startswith("[")
+        assert not b.startswith("{")
 
 
 def test_generate_metrics():
@@ -44,7 +48,11 @@ def test_generate_metrics():
     contents = gen.generate(designs)
     assert contents[0].metrics is not None
     assert len(contents[0].metrics) == 4
-    assert contents[0].metrics[0]["label"] == "用户数"
+    for m in contents[0].metrics:
+        assert "label" in m
+        assert "value" in m
+        assert len(m["label"]) > 0
+        assert len(m["value"]) > 0
 
 
 def test_generate_chart_data():
@@ -72,7 +80,7 @@ def test_user_content_from_file(tmp_path):
     gen = ContentGenerator()
     designs = [_make_design(goal="hook", copy_formula="AIDA")]
     contents = gen.generate(designs, content_file=str(content_file))
-    assert "TestCorp" not in contents[0].title or "{Attention hook}" in contents[0].title
+    assert "AI Tool" in contents[0].title or "Introducing" in contents[0].title
 
 
 def test_dot_notation_template():

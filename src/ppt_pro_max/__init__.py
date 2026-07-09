@@ -35,7 +35,7 @@ def generate_ppt(
     decider = DesignDecider()
     page_designs = decider.decide(story_plan, theme=theme, variance=variance, motion=motion, density=density)
 
-    generator = ContentGenerator()
+    generator = ContentGenerator(query=query)
     page_contents = generator.generate(page_designs, content_file=content_file)
 
     if dry_run:
