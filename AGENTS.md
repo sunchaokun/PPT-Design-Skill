@@ -31,7 +31,7 @@ python -m ruff check src/
 - `src/ppt_pro_max/content/content_generator.py` — Phase 3: content generation
 - `src/ppt_pro_max/renderer/ppt_renderer.py` — Phase 4: PPT rendering
 - `src/ppt_pro_max/renderer/theme_composer.py` — 40,000+ style combinations
-- `src/ppt_pro_max/renderer/image_fetcher.py` — 5 image engines (Seedream/GPT Image/DALL-E/Wanx/Kimi)
+- `src/ppt_pro_max/renderer/image_fetcher.py` — 4 image generation engines (Seedream/GPT Image/DALL-E/Wanx) + 1 enhancer (Kimi)
 
 ## Key Constraints
 
@@ -46,4 +46,4 @@ python -m ruff check src/
 - 25 color palettes × 20 font pairs × 10 decorations × 8 layout variants = 40,000 combos
 - Natural language: `--style "warm fintech"` auto-selects matching atoms
 - Exact control: `--palette wine-burgundy --fonts elegant-serif`
-- 5 presets backward compatible: professional, dark-tech, warm-elegant, vibrant-startup, nature-calm
+- Presets backward compatible: professional, dark-tech, warm-elegant, vibrant-startup, nature-calm

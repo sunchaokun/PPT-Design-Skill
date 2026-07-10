@@ -65,8 +65,7 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 | **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
 | **12 Master Layouts** | 13.333"×7.5" 16:9 precise coordinates, covering 95% of scenarios |
 | **9 Copy Formulas** | PAS / FAB / AIDA / Social Proof / Cost of Inaction / Proof Stack... |
-| **5 Preset Themes** | Professional / Dark Tech / Warm Elegant / Vibrant Startup / Nature Calm |
-| **AI Image Engines** | Seedream / GPT Image / DALL-E / Wanx / Kimi K2.6 — 5 engines |
+| **AI Image Engines** | Seedream / GPT Image / DALL-E / Wanx — 4 generation engines + Kimi K2.6 image enhancement |
 | **Design Dials** | variance / motion / density 3-axis control |
 | **CJK Fonts** | East Asian font fallback chain (Microsoft YaHei / STSong) |
 | **QA Gates** | 5 automated quality checks (pages / titles / fonts / consistency / placeholders) |
@@ -244,7 +243,7 @@ All AI generation engines include **cache-first** — same image never generated
 
 ## 🎨 Design Atoms — 40,000+ Style Combinations
 
-> 5 presets are just the tip of the iceberg. Compose 4 atom types for infinite styles:
+> Compose 4 atom types for infinite styles:
 
 | Atom | Count | Examples |
 |------|-------|----------|
@@ -272,7 +271,7 @@ ppt-design "pitch" --palette wine-burgundy --fonts elegant-serif --decoration go
 ppt-design "launch" --palette copper-industrial --fonts tech-contrast --decoration no-decoration --layout-variant full-width
 ```
 
-### 5 Preset Themes (backward compatible)
+### Preset Themes (backward compatible)
 
 | Theme | Palette | Fonts | Decoration | Layout |
 |-------|---------|-------|------------|--------|
@@ -320,7 +319,7 @@ PPT-Design-Skill/
 │   │   ├── theme_composer.py         # 40,000+ style combinations
 │   │   ├── layout_registry.py        # 12 master layouts
 │   │   ├── chart_builder.py          # Chart builder
-│   │   ├── image_fetcher.py          # Image fetching (5 engines)
+│   │   ├── image_fetcher.py          # Image fetching (4 generation + 1 enhancement)
 │   │   └── effects.py               # Shadow/glow/gradient
 │   └── qa/qa_gates.py               # 5 quality checks
 ├── data/ppt/                         # PPT-specific data

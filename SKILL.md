@@ -180,7 +180,7 @@ Style:
 
 Structure:
   --strategy NAME       Override strategy (YC Seed Deck, Product Demo, Sales Pitch)
-  --theme NAME          Theme preset (backward compatible with 5 presets)
+  --theme NAME          Theme preset (backward compatible)
   --slides N            Override slide count
   --content FILE        JSON file with real content
   --variance 1-10       Design variance (centered → bold)

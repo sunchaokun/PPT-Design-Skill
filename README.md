@@ -65,8 +65,7 @@
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
 | **12 母版布局** | 13.333"×7.5" 16:9 精确坐标，覆盖 95% 演示场景 |
 | **9 种文案公式** | PAS / FAB / AIDA / Social Proof / Cost of Inaction / Proof Stack... |
-| **5 套预置主题** | Professional / Dark Tech / Warm Elegant / Vibrant Startup / Nature Calm |
-| **AI 智能配图** | Seedream / GPT Image / DALL-E / Wanx / Kimi K2.6 — 5 种图片引擎 |
+| **AI 智能配图** | Seedream / GPT Image / DALL-E / Wanx — 4 种图片生成引擎 + Kimi K2.6 图片增强 |
 | **设计拨盘** | variance / motion / density 三维调控 |
 | **CJK 字体** | 东亚字体自动回退链（Microsoft YaHei / STSong） |
 | **QA 门禁** | 5 项自动质量检查（页数/标题/字号/一致性/占位符） |
@@ -244,7 +243,7 @@ result = generate_ppt(
 
 ## 🎨 设计原子 — 40,000+ 风格组合
 
-> 5 套预置主题只是冰山一角。通过组合 4 类设计原子，实现无限风格：
+> 通过组合 4 类设计原子，实现无限风格：
 
 | 设计原子 | 数量 | 示例 |
 |----------|------|------|
@@ -272,7 +271,7 @@ ppt-design "融资路演" --palette wine-burgundy --fonts elegant-serif --decora
 ppt-design "产品发布" --palette copper-industrial --fonts tech-contrast --decoration no-decoration --layout-variant full-width
 ```
 
-### 5 套预置主题（向后兼容）
+### 预置主题（向后兼容）
 
 | 主题 | 色彩 | 字体 | 装饰 | 布局 |
 |------|------|------|------|------|
@@ -319,7 +318,7 @@ PPT-Design-Skill/
 │   │   ├── theme_mapper.py           # 主题映射 + CJK 字体
 │   │   ├── layout_registry.py        # 12 母版布局
 │   │   ├── chart_builder.py          # 图表构建器
-│   │   ├── image_fetcher.py          # 图片获取（5种引擎）
+│   │   ├── image_fetcher.py          # 图片获取（4种生成+1种增强）
 │   │   └── effects.py               # 阴影/辉光/渐变
 │   └── qa/qa_gates.py               # 5项质量检查
 ├── data/ppt/                         # PPT 专属数据

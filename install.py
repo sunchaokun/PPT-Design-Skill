@@ -197,7 +197,7 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"  PPT Design Skill v{VERSION} — Installer")
-    print(f"  40,000+ style combinations · 5 image engines")
+    print(f"  40,000+ style combinations · 4 image engines + 1 enhancer")
     print(f"{'='*60}\n")
 
     # Detect platforms
