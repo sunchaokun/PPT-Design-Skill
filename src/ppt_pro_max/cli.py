@@ -20,7 +20,7 @@ def main():
         prog="ppt-design",
         description="AI-powered PPT generation — narrative-driven, design-intelligent, fully editable .pptx",
     )
-    parser.add_argument("query", help='Presentation topic, e.g. "AI产品融资路演"')
+    parser.add_argument("query", nargs="?", default=None, help='Presentation topic, e.g. "AI产品融资路演" (--history 模式下可省略)')
     parser.add_argument("--strategy", help="Override presentation strategy")
     parser.add_argument("--theme", help="Theme preset name (backward compatible)")
     parser.add_argument("--style", help='Natural language style, e.g. "warm fintech pitch" or "dark cyberpunk"')
@@ -55,7 +55,25 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Output design decisions only")
     parser.add_argument("-o", "--output", help="Output .pptx file path")
 
+    ent_group = parser.add_argument_group("enterprise options")
+    ent_group.add_argument("--project", help="Project directory (triggers Enterprise Pipeline)")
+    ent_group.add_argument("--business-mode", choices=["pitch", "education", "training", "report"], help="Business mode for Enterprise Pipeline")
+    ent_group.add_argument("--review", action="store_true", help="Enable review gate (show plan before generating)")
+    ent_group.add_argument("--review-file", help="Output review plan to JSON file (requires --review)")
+    version_group = ent_group.add_mutually_exclusive_group()
+    version_group.add_argument("--output-version", type=int, metavar="N", help="Specify output version number (overwrite existing)")
+    version_group.add_argument("--from-version", type=int, metavar="N", help="Revise based on specified version's meta.json context")
+    ent_group.add_argument("--pages", help="Page-level operations (e.g. 3,5 +6 -8 3>5 3<>7)")
+    ent_group.add_argument("--history", action="store_true", help="Show version history (query optional)")
+
     args = parser.parse_args()
+
+    if not args.history and args.query is None:
+        parser.error("query is required unless --history is specified")
+    if args.pages and not args.project and not args.history:
+        parser.error("--pages requires --project")
+    if args.review_file and not args.review:
+        parser.error("--review-file requires --review")
 
     image_config = {}
     if args.unsplash_key:
@@ -75,7 +93,7 @@ def main():
 
     try:
         result = generate_ppt(
-            query=args.query,
+            query=args.query or "",
             strategy=args.strategy,
             theme=args.theme,
             style=args.style,
@@ -96,6 +114,14 @@ def main():
             persist=args.persist,
             dry_run=args.dry_run,
             output=args.output,
+            project=args.project,
+            business_mode=args.business_mode,
+            review=args.review,
+            review_file=args.review_file,
+            output_version=args.output_version,
+            from_version=args.from_version,
+            pages=args.pages,
+            history=args.history,
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -103,14 +129,79 @@ def main():
 
     if result.get("dry_run"):
         print(json.dumps(result, indent=2, ensure_ascii=False))
+    elif result.get("history"):
+        for v in result.get("versions", []):
+            meta = v.get("meta") or {}
+            print(f"v{v['version']} | {meta.get('created_at', 'N/A')} | {meta.get('page_count', meta.get('num_slides', '?'))}页 | {meta.get('business_mode', '?')} | {meta.get('strategy', '?')}")
+    elif result.get("review"):
+        proposal = result.get("proposal", {})
+        from ppt_pro_max.enterprise.review_gate import ReviewGate
+        gate = ReviewGate()
+        display = gate.format_cli(proposal)
+        print(display)
+        try:
+            answer = input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            answer = "n"
+        if answer in ("y", "yes"):
+            print("Proceeding with generation...")
+            result = generate_ppt(
+                query=args.query or "",
+                strategy=args.strategy,
+                theme=args.theme,
+                style=args.style,
+                palette=args.palette,
+                fonts=args.fonts,
+                decoration=args.decoration,
+                layout_variant=args.layout_variant,
+                mood=args.mood,
+                style_seed=args.style_seed,
+                slides=args.slides,
+                content_file=args.content,
+                variance=args.variance,
+                motion=args.motion,
+                density=args.density,
+                fetch_images=args.fetch_images,
+                image_mode=image_mode,
+                image_config=image_config if image_config else None,
+                persist=args.persist,
+                dry_run=False,
+                output=args.output,
+                project=args.project,
+                business_mode=args.business_mode,
+                review=False,
+                output_version=args.output_version,
+                from_version=args.from_version,
+                pages=args.pages,
+                history=False,
+            )
+            if result.get("error"):
+                print(f"Error: {result['error']}", file=sys.stderr)
+                sys.exit(1)
+            print(f"Generated: {result['output_path']}")
+            print(f"Pages: {result.get('page_count', result.get('num_slides', '?'))}")
+            if result.get("version"):
+                print(f"Version: v{result['version']}")
+        else:
+            print(f"Review proposal saved: {result['proposal_path']}")
+            print("Cancelled. Edit proposal and re-run without --review to apply.")
+    elif result.get("error"):
+        print(f"Error: {result['error']}", file=sys.stderr)
+        sys.exit(1)
     else:
         print(f"Generated: {result['output_path']}")
-        print(f"Pages: {result['page_count']}")
-        print(f"Strategy: {result['strategy']}")
-        print(f"Theme: {result.get('theme', 'default')}")
+        print(f"Pages: {result.get('page_count', result.get('num_slides', '?'))}")
+        if "strategy" in result:
+            print(f"Strategy: {result['strategy']}")
+        if result.get("theme"):
+            print(f"Theme: {result['theme']}")
         if result.get("theme_atoms"):
             atoms = result["theme_atoms"]
             print(f"Style: palette={atoms.get('palette')}, fonts={atoms.get('fonts')}, decoration={atoms.get('decoration')}, layout={atoms.get('layout')}")
+        if result.get("mode"):
+            print(f"Mode: {result['mode']}")
+        if result.get("version"):
+            print(f"Version: v{result['version']}")
 
 
 if __name__ == "__main__":

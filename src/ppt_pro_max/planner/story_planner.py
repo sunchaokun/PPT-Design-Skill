@@ -44,6 +44,24 @@ _STRATEGY_STRUCTURES: dict[str, dict[str, Any]] = {
         "emotions": ["curiosity", "frustration", "fear", "hope", "trust", "confidence", "urgency"],
         "sparkline": ["hook", "what-is", "what-is", "what-could-be", "proof", "what-could-be", "action"],
     },
+    "Education Course": {
+        "total": 12,
+        "structure": ["hook", "overview", "concept", "example", "practice", "concept", "example", "practice", "review", "extension", "summary", "cta"],
+        "emotions": ["curiosity", "confidence", "understanding", "clarity", "engagement", "understanding", "clarity", "engagement", "confidence", "wonder", "satisfaction", "motivation"],
+        "sparkline": ["hook", "what-is", "what-could-be", "proof", "proof", "what-could-be", "proof", "proof", "proof", "what-could-be", "proof", "action"],
+    },
+    "Training Workshop": {
+        "total": 10,
+        "structure": ["hook", "objectives", "concept", "demo", "exercise", "concept", "demo", "exercise", "review", "summary"],
+        "emotions": ["curiosity", "confidence", "understanding", "trust", "engagement", "understanding", "trust", "engagement", "confidence", "satisfaction"],
+        "sparkline": ["hook", "what-is", "what-could-be", "proof", "proof", "what-could-be", "proof", "proof", "proof", "proof"],
+    },
+    "Business Report": {
+        "total": 8,
+        "structure": ["hook", "overview", "metrics", "analysis", "findings", "recommendations", "action_plan", "summary"],
+        "emotions": ["curiosity", "confidence", "trust", "understanding", "clarity", "confidence", "determination", "satisfaction"],
+        "sparkline": ["hook", "what-is", "proof", "what-could-be", "proof", "what-could-be", "action", "proof"],
+    },
 }
 
 
@@ -90,4 +108,10 @@ class StoryPlanner:
             return "Product Demo"
         if any(kw in q for kw in ["销售", "sales", "报价", "offer"]):
             return "Sales Pitch"
+        if any(kw in q for kw in ["教育", "课程", "education", "course", "lesson", "teaching"]):
+            return "Education Course"
+        if any(kw in q for kw in ["培训", "训练", "training", "workshop", "exercise"]):
+            return "Training Workshop"
+        if any(kw in q for kw in ["报告", "汇报", "report", "annual", "quarterly", "review"]):
+            return "Business Report"
         return "YC Seed Deck"

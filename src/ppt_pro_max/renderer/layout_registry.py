@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-import os
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +11,11 @@ SLIDE_HEIGHT = 7.5
 
 MARGIN = {"top": 0.6, "bottom": 0.6, "left": 0.9, "right": 0.9}
 CONTENT_WIDTH = SLIDE_WIDTH - MARGIN["left"] - MARGIN["right"]
+
+_TITLE_STD = {"x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7, "font_size": 28, "font_weight": "bold", "alignment": "left", "color_role": "foreground", "font_role": "heading"}
+_TITLE_COMPACT = {"x": 0.9, "y": 0.3, "width": 11.533, "height": 0.5, "font_size": 22, "font_weight": "bold", "alignment": "left", "color_role": "foreground", "font_role": "heading"}
+_DIVIDER_STD = {"x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04, "type": "decoration", "decoration_type": "title_underline"}
+_HALF_COL = CONTENT_WIDTH / 2 - 0.1
 
 MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
     "title-slide": {
@@ -66,15 +70,8 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
                 "x": 0, "y": 0, "width": 0.08, "height": 7.5,
                 "type": "decoration", "decoration_type": "left_accent",
             },
-            "title": {
-                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
-                "font_size": 28, "font_weight": "bold", "alignment": "left",
-                "color_role": "foreground", "font_role": "heading",
-            },
-            "divider": {
-                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
-                "type": "decoration", "decoration_type": "title_underline",
-            },
+            "title": dict(_TITLE_STD),
+            "divider": dict(_DIVIDER_STD),
             "body": {
                 "x": 0.9, "y": 1.6, "width": 7.0, "height": 5.0,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
@@ -91,15 +88,8 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Two Column",
         "goal_mapping": ["comparison", "before-after"],
         "placeholders": {
-            "title": {
-                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
-                "font_size": 28, "font_weight": "bold", "alignment": "left",
-                "color_role": "foreground", "font_role": "heading",
-            },
-            "divider": {
-                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
-                "type": "decoration", "decoration_type": "title_underline",
-            },
+            "title": dict(_TITLE_STD),
+            "divider": dict(_DIVIDER_STD),
             "left_col": {
                 "x": 0.9, "y": 1.6, "width": 5.5, "height": 5.0,
                 "font_size": 16, "font_weight": "normal", "alignment": "left",
@@ -117,15 +107,8 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Three Column Cards",
         "goal_mapping": ["features", "solution"],
         "placeholders": {
-            "title": {
-                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
-                "font_size": 28, "font_weight": "bold", "alignment": "left",
-                "color_role": "foreground", "font_role": "heading",
-            },
-            "divider": {
-                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
-                "type": "decoration", "decoration_type": "title_underline",
-            },
+            "title": dict(_TITLE_STD),
+            "divider": dict(_DIVIDER_STD),
             "card1": {
                 "x": 0.9, "y": 1.7, "width": 3.644, "height": 4.8,
                 "font_size": 14, "font_weight": "normal", "alignment": "left",
@@ -151,15 +134,8 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Four Metrics",
         "goal_mapping": ["traction", "metrics"],
         "placeholders": {
-            "title": {
-                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
-                "font_size": 28, "font_weight": "bold", "alignment": "left",
-                "color_role": "foreground", "font_role": "heading",
-            },
-            "divider": {
-                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
-                "type": "decoration", "decoration_type": "title_underline",
-            },
+            "title": dict(_TITLE_STD),
+            "divider": dict(_DIVIDER_STD),
             "metric1": {
                 "x": 0.9, "y": 1.8, "width": 2.708, "height": 3.2,
                 "font_size": 40, "font_weight": "bold", "alignment": "center",
@@ -231,15 +207,8 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Chart Focus",
         "goal_mapping": ["data", "financial"],
         "placeholders": {
-            "title": {
-                "x": 0.9, "y": 0.5, "width": 11.533, "height": 0.7,
-                "font_size": 28, "font_weight": "bold", "alignment": "left",
-                "color_role": "foreground", "font_role": "heading",
-            },
-            "divider": {
-                "x": 0.9, "y": 1.25, "width": 2.0, "height": 0.04,
-                "type": "decoration", "decoration_type": "title_underline",
-            },
+            "title": dict(_TITLE_STD),
+            "divider": dict(_DIVIDER_STD),
             "chart": {
                 "x": 1.2, "y": 1.6, "width": 7.5, "height": 5.0,
                 "type": "chart",
@@ -304,6 +273,215 @@ MASTER_LAYOUTS: dict[str, dict[str, Any]] = {
         "name": "Blank",
         "goal_mapping": ["custom"],
         "placeholders": {},
+    },
+    "grid-2x2-cards": {
+        "id": 12,
+        "name": "Grid 2x2 Cards",
+        "goal_mapping": ["features", "overview", "education"],
+        "placeholders": {
+            "title": {
+                "x": 0.9, "y": 0.3, "width": 11.533, "height": 0.6,
+                "font_size": 24, "font_weight": "bold", "alignment": "left",
+                "color_role": "foreground", "font_role": "heading",
+            },
+            "card1": {
+                "x": 0.9, "y": 1.2, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card2": {
+                "x": 6.933, "y": 1.2, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card3": {
+                "x": 0.9, "y": 4.3, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card4": {
+                "x": 6.933, "y": 4.3, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+        },
+    },
+    "dense-bullets": {
+        "id": 13,
+        "name": "Dense Bullets",
+        "goal_mapping": ["education", "training", "concept", "review"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "body": {
+                "x": 0.9, "y": 1.0, "width": 11.533, "height": 6.0,
+                "font_size": 11, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "two-column-dense": {
+        "id": 14,
+        "name": "Two Column Dense",
+        "goal_mapping": ["comparison", "education", "analysis"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "left_col": {
+                "x": 0.9, "y": 1.0, "width": 5.5, "height": 6.0,
+                "font_size": 11, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+            "right_col": {
+                "x": 6.933, "y": 1.0, "width": 5.5, "height": 6.0,
+                "font_size": 11, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "table-layout": {
+        "id": 15,
+        "name": "Table Layout",
+        "goal_mapping": ["report", "metrics", "analysis", "financial"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "body": {
+                "x": 0.9, "y": 1.0, "width": 11.533, "height": 6.0,
+                "font_size": 10, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "sidebar-left": {
+        "id": 16,
+        "name": "Sidebar Left",
+        "goal_mapping": ["navigation", "agenda", "overview"],
+        "placeholders": {
+            "sidebar": {
+                "x": 0, "y": 0, "width": 3.5, "height": 7.5,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
+                "color_role": "on-primary", "font_role": "body",
+            },
+            "title": {
+                "x": 4.0, "y": 0.5, "width": 8.433, "height": 0.7,
+                "font_size": 28, "font_weight": "bold", "alignment": "left",
+                "color_role": "foreground", "font_role": "heading",
+            },
+            "body": {
+                "x": 4.0, "y": 1.5, "width": 8.433, "height": 5.5,
+                "font_size": 14, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "exercise-layout": {
+        "id": 17,
+        "name": "Exercise Layout",
+        "goal_mapping": ["exercise", "practice", "training"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "instructions": {
+                "x": 0.9, "y": 1.0, "width": 11.533, "height": 1.5,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "muted-foreground", "font_role": "body",
+            },
+            "body": {
+                "x": 0.9, "y": 2.8, "width": 11.533, "height": 4.2,
+                "font_size": 11, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "code-block": {
+        "id": 18,
+        "name": "Code Block",
+        "goal_mapping": ["code", "technical", "demo"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "code": {
+                "x": 0.9, "y": 1.0, "width": 11.533, "height": 5.5,
+                "font_size": 10, "font_weight": "normal", "alignment": "left",
+                "color_role": "on-primary", "font_role": "body",
+            },
+            "note": {
+                "x": 0.9, "y": 6.7, "width": 11.533, "height": 0.5,
+                "font_size": 10, "font_weight": "normal", "alignment": "left",
+                "color_role": "muted-foreground", "font_role": "body",
+            },
+        },
+    },
+    "timeline-horizontal": {
+        "id": 19,
+        "name": "Timeline Horizontal",
+        "goal_mapping": ["timeline", "process", "roadmap"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "body": {
+                "x": 0.9, "y": 1.2, "width": 11.533, "height": 5.5,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "swot-matrix": {
+        "id": 20,
+        "name": "SWOT Matrix",
+        "goal_mapping": ["swot", "strategy", "analysis"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "card1": {
+                "x": 0.9, "y": 1.2, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card2": {
+                "x": 6.933, "y": 1.2, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card3": {
+                "x": 0.9, "y": 4.3, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+            "card4": {
+                "x": 6.933, "y": 4.3, "width": 5.5, "height": 2.8,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+                "type": "card",
+            },
+        },
+    },
+    "funnel": {
+        "id": 21,
+        "name": "Funnel",
+        "goal_mapping": ["funnel", "pipeline", "conversion"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "body": {
+                "x": 0.9, "y": 1.2, "width": 11.533, "height": 5.5,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
+    },
+    "cycle-diagram": {
+        "id": 22,
+        "name": "Cycle Diagram",
+        "goal_mapping": ["cycle", "loop", "iteration"],
+        "placeholders": {
+            "title": dict(_TITLE_COMPACT),
+            "body": {
+                "x": 0.9, "y": 1.2, "width": 11.533, "height": 5.5,
+                "font_size": 12, "font_weight": "normal", "alignment": "left",
+                "color_role": "foreground", "font_role": "body",
+            },
+        },
     },
 }
 

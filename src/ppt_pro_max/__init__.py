@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -15,6 +15,65 @@ from ppt_pro_max.renderer.theme_composer import ThemeComposer
 
 
 def generate_ppt(
+    query: str,
+    strategy: str | None = None,
+    theme: str | None = None,
+    style: str | None = None,
+    palette: str | None = None,
+    fonts: str | None = None,
+    decoration: str | None = None,
+    layout_variant: str | None = None,
+    mood: str | None = None,
+    style_seed: int | None = None,
+    slides: int | None = None,
+    content_file: str | None = None,
+    variance: int | None = None,
+    motion: int | None = None,
+    density: int | None = None,
+    fetch_images: bool = False,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    persist: bool = False,
+    dry_run: bool = False,
+    output: str | None = None,
+    project: str | None = None,
+    business_mode: str | None = None,
+    review: bool = False,
+    review_file: str | None = None,
+    output_version: int | None = None,
+    from_version: int | None = None,
+    pages: str | None = None,
+    history: bool = False,
+) -> dict:
+    if project:
+        return _generate_ppt_enterprise(
+            query=query, project=project, dry_run=dry_run,
+            business_mode=business_mode, density=density,
+            review=review, review_file=review_file,
+            output_version=output_version, from_version=from_version,
+            pages=pages, history=history, output=output,
+            llm_provider=llm_provider, llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url, llm_model=llm_model,
+            image_mode=image_mode, image_config=image_config,
+        )
+    return _generate_ppt_freestyle(
+        query=query, strategy=strategy, theme=theme, style=style,
+        palette=palette, fonts=fonts, decoration=decoration,
+        layout_variant=layout_variant, mood=mood, style_seed=style_seed,
+        slides=slides, content_file=content_file, variance=variance,
+        motion=motion, density=density, fetch_images=fetch_images,
+        image_mode=image_mode, image_config=image_config,
+        llm_provider=llm_provider, llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url, llm_model=llm_model,
+        persist=persist, dry_run=dry_run, output=output,
+    )
+
+
+def _generate_ppt_freestyle(
     query: str,
     strategy: str | None = None,
     theme: str | None = None,
@@ -113,6 +172,51 @@ def generate_ppt(
         _persist_design_system(decider.design_system, result.get("output_path", ""))
 
     return result
+
+
+def _generate_ppt_enterprise(
+    query: str,
+    project: str,
+    dry_run: bool = False,
+    business_mode: str | None = None,
+    density: int | None = None,
+    review: bool = False,
+    review_file: str | None = None,
+    output_version: int | None = None,
+    from_version: int | None = None,
+    pages: str | None = None,
+    history: bool = False,
+    output: str | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
+) -> dict:
+    from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+
+    pipeline = EnterprisePipeline()
+    return pipeline.run(
+        query=query,
+        project_dir=project,
+        dry_run=dry_run,
+        business_mode=business_mode,
+        density=density,
+        review=review,
+        review_file=review_file,
+        output_version=output_version,
+        from_version=from_version,
+        pages=pages,
+        history=history,
+        output=output,
+        llm_provider=llm_provider,
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
+        image_mode=image_mode,
+        image_config=image_config,
+    )
 
 
 def _persist_design_system(design_system: dict, pptx_path: str) -> None:
