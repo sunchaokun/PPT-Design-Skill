@@ -27,6 +27,7 @@ class EnterprisePipeline:
         dry_run: bool = False,
         business_mode: str | None = None,
         density: int | None = None,
+        motion: int | None = None,
         review: bool = False,
         review_file: str | None = None,
         output_version: int | None = None,
@@ -34,6 +35,7 @@ class EnterprisePipeline:
         pages: str | None = None,
         history: bool = False,
         output: str | None = None,
+        content_file: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         if history:
@@ -69,7 +71,7 @@ class EnterprisePipeline:
         )
         effective_density = density if density is not None else decider.suggest_density()
 
-        page_contents = self._load_content(asset, project_dir)
+        page_contents = self._load_content(asset, project_dir, content_file)
 
         story_plan = self._build_story_plan(query, page_contents, effective_density, business_mode)
 
@@ -118,13 +120,16 @@ class EnterprisePipeline:
         pptx_path = output or os.path.join(version_dir, "presentation.pptx")
 
         if pages:
-            if not asset.template_path:
+            source_pptx = self._find_latest_pptx(output_dir, vnum)
+            if not source_pptx:
+                source_pptx = asset.template_path
+            if not source_pptx:
                 return {
                     "pipeline": "enterprise",
-                    "error": "--pages requires a template.pptx in the project directory",
+                    "error": "--pages requires a template.pptx or existing version in the project directory",
                 }
             result = self._handle_page_revision(
-                asset.template_path, pages, pptx_path, vnum, version_dir
+                source_pptx, pages, pptx_path, vnum, version_dir
             )
             return result
 
@@ -149,7 +154,7 @@ class EnterprisePipeline:
 
             layout_name = design.get("template_layout_name")
             slide = renderer.add_slide(prs, layout_name=layout_name)
-            self._populate_slide(slide, design, prs, density_profile)
+            self._populate_slide(slide, design, prs, density_profile, brand_spec)
 
             if asset.logo_path:
                 logo_spec = brand_spec.logo or {"position": "top_right", "width_inches": 1.0}
@@ -158,9 +163,17 @@ class EnterprisePipeline:
                     current_goal=design.get("goal"), prs=prs,
                 )
 
-            motion = kwargs.get("motion")
-            if motion and isinstance(motion, int) and motion > 0:
-                self._apply_animations(slide, design, motion)
+            effective_motion = motion
+            if effective_motion is None:
+                effective_motion = kwargs.get("motion")
+            if effective_motion and isinstance(effective_motion, int) and effective_motion > 0:
+                self._apply_animations(slide, design, effective_motion)
+
+        if brand_spec.footer:
+            renderer.add_page_numbers(prs, brand_spec.footer, brand_spec=brand_spec)
+
+        if brand_spec.watermark:
+            renderer.add_watermark(prs, brand_spec.watermark, brand_spec=brand_spec)
 
         renderer.save(prs, pptx_path)
 
@@ -215,7 +228,15 @@ class EnterprisePipeline:
 
         return {"history": True, "project": project_dir, "versions": versions}
 
-    def _load_content(self, asset, project_dir: str) -> list[dict[str, Any]]:
+    def _load_content(self, asset, project_dir: str, content_file: str | None = None) -> list[dict[str, Any]]:
+        if content_file and os.path.isfile(content_file):
+            import json
+            try:
+                with open(content_file, encoding="utf-8") as f:
+                    content_raw = json.load(f)
+                return load_enterprise_content(content_raw, project_dir)
+            except (json.JSONDecodeError, OSError):
+                pass
         if asset.content_raw:
             return load_enterprise_content(asset.content_raw, project_dir)
         return []
@@ -247,7 +268,7 @@ class EnterprisePipeline:
         return {
             "strategy": plan.strategy,
             "pages": [
-                {"goal": p.goal, "title": p.goal.replace("_", " ").title()}
+                {"goal": p.goal, "title": p.goal.replace("_", " ").title(), "notes": f"本页目标: {p.goal}。请结合标题展开讲解。"}
                 for p in plan.pages
             ],
         }
@@ -295,6 +316,11 @@ class EnterprisePipeline:
                 "diagram_data": page.get("diagram_data"),
                 "code": page.get("code"),
                 "exercise": page.get("exercise"),
+                "notes": page.get("notes"),
+                "links": page.get("links"),
+                "chart": page.get("chart"),
+                "image_grid": page.get("image_grid"),
+                "icons": page.get("icons"),
                 "template_layout_index": layout_idx,
             }
             if layout_idx is not None and layout_idx in layout_names:
@@ -302,7 +328,7 @@ class EnterprisePipeline:
             designs.append(design)
         return designs
 
-    def _populate_slide(self, slide, design: dict[str, Any], prs, density_profile=None) -> None:
+    def _populate_slide(self, slide, design: dict[str, Any], prs, density_profile=None, brand_spec=None) -> None:
         from pptx.util import Pt
 
         if density_profile is None:
@@ -316,8 +342,10 @@ class EnterprisePipeline:
                     run.font.size = Pt(density_profile.title_size)
 
         if design.get("subtitle"):
+            from pptx.enum.shapes import PP_PLACEHOLDER
             for ph in slide.placeholders:
-                if ph.placeholder_format.idx == 2:
+                ph_type = ph.placeholder_format.type
+                if ph_type == PP_PLACEHOLDER.SUBTITLE or ph.placeholder_format.idx == 2:
                     ph.text = design["subtitle"]
                     for para in ph.text_frame.paragraphs:
                         for run in para.runs:
@@ -340,6 +368,9 @@ class EnterprisePipeline:
         if design.get("image") and os.path.isfile(design["image"]):
             self._insert_content_image(slide, design["image"], prs, density_profile)
 
+        if design.get("chart"):
+            self._render_chart(slide, design["chart"], prs, density_profile, brand_spec)
+
         if design.get("cards"):
             self._render_cards(slide, design["cards"], prs, density_profile)
 
@@ -351,6 +382,12 @@ class EnterprisePipeline:
 
         if design.get("exercise"):
             self._render_exercise(slide, design["exercise"], prs, density_profile)
+
+        if design.get("notes"):
+            self._render_notes(slide, design["notes"])
+
+        if design.get("links"):
+            self._render_links(slide, design["links"], design, prs=prs, brand_spec=brand_spec)
 
     _BASELINE_IMAGE_RATIO = 0.38
 
@@ -376,6 +413,31 @@ class EnterprisePipeline:
         top = Inches(1.5)
 
         slide.shapes.add_picture(image_path, left, top, width=target_width, height=target_height)
+
+    def _render_chart(self, slide, chart_config: dict[str, Any], prs, density_profile=None, brand_spec=None) -> None:
+        from ppt_pro_max.renderer.chart_builder import ChartBuilder
+
+        if density_profile is None:
+            from ppt_pro_max.enterprise.density_profile import get_density_profile
+            density_profile = get_density_profile(4)
+
+        chart_height = 4.5 * density_profile.image_width_ratio / self._BASELINE_IMAGE_RATIO
+        position = {
+            "x": 1.5,
+            "y": 1.5,
+            "width": 10.333,
+            "height": chart_height,
+        }
+
+        brand_colors = None
+        if brand_spec and brand_spec.colors:
+            brand_colors = brand_spec.colors
+
+        builder = ChartBuilder()
+        try:
+            builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
+        except Exception:
+            pass
 
     def _render_cards(self, slide, cards: list[dict[str, Any]], prs, density_profile=None) -> None:
         from pptx.util import Inches, Pt
@@ -441,6 +503,9 @@ class EnterprisePipeline:
 
         diagram_type = design["diagram_type"]
         diagram_data = design["diagram_data"]
+        if isinstance(diagram_data, dict) and "data" in diagram_data:
+            diagram_data = diagram_data["data"]
+        diagram_data = self._normalize_diagram_data(diagram_type, diagram_data)
 
         style = DiagramStyle()
         density_val = max(1, min(10, density_profile.title_size // 4))
@@ -456,8 +521,42 @@ class EnterprisePipeline:
         engine = DiagramEngine()
         try:
             engine.render(slide, diagram_type, diagram_data, style, region)
-        except Exception:
-            pass
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning("Diagram render failed for %s: %s", diagram_type, exc)
+
+    def _normalize_diagram_data(self, diagram_type: str, data: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(data, dict):
+            return data
+        if diagram_type == "funnel" and "items" in data and "stages" not in data:
+            data = dict(data, stages=[
+                {"label": item.get("text", ""), "fill_role": item.get("fill_role")}
+                for item in data["items"]
+            ])
+        elif diagram_type == "timeline" and "items" in data and "events" not in data:
+            data = dict(data, events=[
+                {"label": item.get("text", ""), "position": item.get("position", "middle")}
+                for item in data["items"]
+            ])
+        elif diagram_type == "swot" and "strengths" in data and "quadrants" not in data:
+            data = dict(data, quadrants=[
+                {"label": "Strengths", "items": data.get("strengths", [])},
+                {"label": "Weaknesses", "items": data.get("weaknesses", [])},
+                {"label": "Opportunities", "items": data.get("opportunities", [])},
+                {"label": "Threats", "items": data.get("threats", [])},
+            ])
+        elif diagram_type == "pyramid" and "items" in data and "levels" not in data and "stages" not in data:
+            data = dict(data, levels=[
+                {"label": item.get("text", "")} for item in data["items"]
+            ])
+        if "nodes" in data:
+            normalized_nodes = []
+            for node in data["nodes"]:
+                if "text" in node and "label" not in node:
+                    node = dict(node, label=node["text"])
+                normalized_nodes.append(node)
+            data = dict(data, nodes=normalized_nodes)
+        return data
 
     def _render_code_block(self, slide, code_data, prs, density_profile=None) -> None:
         from pptx.util import Inches, Pt
@@ -468,7 +567,7 @@ class EnterprisePipeline:
             from ppt_pro_max.enterprise.density_profile import get_density_profile
             density_profile = get_density_profile(4)
 
-        code_text = code_data if isinstance(code_data, str) else code_data.get("code", "")
+        code_text = code_data if isinstance(code_data, str) else code_data.get("source", code_data.get("code", ""))
         language = code_data.get("language", "") if isinstance(code_data, dict) else ""
 
         left = Inches(0.9)
@@ -517,6 +616,7 @@ class EnterprisePipeline:
 
         instructions = exercise_data.get("instructions", "") if isinstance(exercise_data, dict) else str(exercise_data)
         duration = exercise_data.get("duration", "") if isinstance(exercise_data, dict) else ""
+        steps = exercise_data.get("steps", []) if isinstance(exercise_data, dict) else []
 
         badge_left = Inches(0.9)
         badge_top = Inches(1.2)
@@ -550,6 +650,101 @@ class EnterprisePipeline:
             p.text = instructions
             p.font.size = Pt(density_profile.bullet_size)
             p.font.italic = True
+
+        if steps:
+            steps_left = Inches(0.9)
+            steps_top = Inches(3.2)
+            steps_w = Inches(11.533)
+            steps_h = Inches(3.5)
+
+            txBox = slide.shapes.add_textbox(steps_left, steps_top, steps_w, steps_h)
+            tf = txBox.text_frame
+            tf.word_wrap = True
+            for i, step in enumerate(steps):
+                if i == 0:
+                    p = tf.paragraphs[0]
+                else:
+                    p = tf.add_paragraph()
+                p.text = f"{i + 1}. {step}"
+                p.font.size = Pt(density_profile.bullet_size)
+                p.space_after = Pt(4)
+
+    def _render_notes(self, slide, notes_text: str) -> None:
+        notes_slide = slide.notes_slide
+        notes_slide.notes_text_frame.text = notes_text
+
+    def _render_links(self, slide, links: list[dict[str, Any]], design: dict[str, Any], prs=None, brand_spec=None) -> None:
+        from pptx.dml.color import RGBColor
+
+        accent_color = RGBColor(0x25, 0x63, 0xEB)
+        if brand_spec and brand_spec.colors:
+            accent_hex = brand_spec.colors.get("accent") or brand_spec.colors.get("primary")
+            if accent_hex:
+                accent_color = RGBColor.from_string(accent_hex.lstrip("#"))
+
+        for link in links:
+            bullet_index = link.get("bullet_index")
+            url = link.get("url", "")
+            text = link.get("text", "")
+
+            if bullet_index is not None:
+                self._attach_link_to_bullet(slide, bullet_index, url, accent_color, prs=prs)
+            elif text and url:
+                self._add_standalone_link(slide, link, accent_color, prs=prs)
+
+    def _attach_link_to_bullet(self, slide, bullet_index: int, url: str, accent_color, prs=None) -> None:
+        from pptx.enum.shapes import PP_PLACEHOLDER
+        for ph in slide.placeholders:
+            ph_type = ph.placeholder_format.type
+            if ph_type in (PP_PLACEHOLDER.BODY, PP_PLACEHOLDER.OBJECT) or ph.placeholder_format.idx == 1:
+                paras = list(ph.text_frame.paragraphs)
+                if bullet_index < len(paras):
+                    for run in paras[bullet_index].runs:
+                        if url.startswith("slide://"):
+                            slide_num = int(url.replace("slide://", ""))
+                            if prs is not None and 1 <= slide_num <= len(prs.slides):
+                                try:
+                                    run.hyperlink.target_slide = prs.slides[slide_num - 1]
+                                except Exception:
+                                    pass
+                        else:
+                            run.hyperlink.address = url
+                        run.font.color.rgb = accent_color
+                        run.font.underline = True
+                break
+
+    def _add_standalone_link(self, slide, link: dict[str, Any], accent_color, prs=None) -> None:
+        from pptx.util import Inches, Pt
+
+        text = link.get("text", "Link")
+        url = link.get("url", "")
+        position = link.get("position", "bottom_right")
+
+        position_map = {
+            "bottom_right": (Inches(11.433), Inches(6.8)),
+            "bottom_left": (Inches(0.9), Inches(6.8)),
+            "bottom_center": (Inches(5.5), Inches(6.8)),
+        }
+        left, top = position_map.get(position, (Inches(11.433), Inches(6.8)))
+
+        txBox = slide.shapes.add_textbox(left, top, Inches(2.0), Inches(0.3))
+        tf = txBox.text_frame
+        p = tf.paragraphs[0]
+        run = p.add_run()
+        run.text = text
+        run.font.size = Pt(10)
+        run.font.color.rgb = accent_color
+        run.font.underline = True
+
+        if url.startswith("slide://"):
+            slide_num = int(url.replace("slide://", ""))
+            if prs is not None and 1 <= slide_num <= len(prs.slides):
+                try:
+                    run.hyperlink.target_slide = prs.slides[slide_num - 1]
+                except Exception:
+                    pass
+        else:
+            run.hyperlink.address = url
 
     def _apply_animations(self, slide, design: dict[str, Any], motion: int) -> None:
         from ppt_pro_max.renderer.animation import (
@@ -629,3 +824,21 @@ class EnterprisePipeline:
             )
         except Exception:
             return None
+
+    def _find_latest_pptx(self, output_dir: str, current_vnum: int) -> str | None:
+        if not os.path.isdir(output_dir):
+            return None
+        for v in range(current_vnum - 1, 0, -1):
+            vdir = os.path.join(output_dir, f"v{v}")
+            if not os.path.isdir(vdir):
+                continue
+            for name in ("presentation.pptx", f"v{v}.pptx"):
+                candidate = os.path.join(vdir, name)
+                if os.path.isfile(candidate):
+                    return candidate
+        for name in sorted(os.listdir(output_dir)):
+            if name.endswith(".pptx") and not name.startswith("~"):
+                candidate = os.path.join(output_dir, name)
+                if os.path.isfile(candidate):
+                    return candidate
+        return None

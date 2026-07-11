@@ -105,3 +105,118 @@ class EnterpriseRenderer:
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
         prs.save(output_path)
+
+    def add_page_numbers(self, prs: Presentation, footer_config: dict[str, Any], brand_spec=None) -> None:
+        from pptx.util import Inches, Pt
+        from pptx.dml.color import RGBColor
+        from pptx.enum.text import PP_ALIGN
+
+        total = len(prs.slides)
+        show_page_number = footer_config.get("show_page_number", False)
+        page_number_format = footer_config.get("page_number_format", "{n}")
+        page_number_position = footer_config.get("page_number_position", "bottom_right")
+        show_footer_text = footer_config.get("show_footer_text", False)
+        footer_text = footer_config.get("footer_text", "")
+        footer_position = footer_config.get("footer_position", "bottom_center")
+        font_size_pt = footer_config.get("font_size_pt", 10)
+        skip_pages = footer_config.get("skip_pages", [])
+
+        if not show_page_number and not show_footer_text:
+            return
+
+        muted_color = RGBColor(0x99, 0x99, 0x99)
+        color_role = footer_config.get("color_role", "muted-foreground")
+        if brand_spec and brand_spec.colors:
+            role_color = brand_spec.colors.get(color_role) or brand_spec.colors.get("muted-foreground")
+            if role_color:
+                try:
+                    muted_color = RGBColor.from_string(role_color.lstrip("#"))
+                except Exception:
+                    pass
+
+        position_map = {
+            "bottom_left": Inches(0.9),
+            "bottom_center": Inches(5.833),
+            "bottom_right": Inches(11.433),
+        }
+
+        for idx, slide in enumerate(prs.slides):
+            slide_num = idx + 1
+            is_cover = idx == 0
+            should_skip = is_cover or slide_num in skip_pages
+
+            if show_page_number and not should_skip:
+                page_text = page_number_format.replace("{n}", str(slide_num)).replace("{total}", str(total))
+                left = position_map.get(page_number_position, Inches(11.433))
+                top = Inches(7.0)
+
+                txBox = slide.shapes.add_textbox(left, top, Inches(2.0), Inches(0.3))
+                tf = txBox.text_frame
+                p = tf.paragraphs[0]
+                p.text = page_text
+                p.font.size = Pt(font_size_pt)
+                p.font.color.rgb = muted_color
+                p.alignment = PP_ALIGN.RIGHT
+
+            if show_footer_text and footer_text and not should_skip:
+                left = position_map.get(footer_position, Inches(5.833))
+                top = Inches(7.0)
+
+                txBox = slide.shapes.add_textbox(left, top, Inches(4.0), Inches(0.3))
+                tf = txBox.text_frame
+                p = tf.paragraphs[0]
+                p.text = footer_text
+                p.font.size = Pt(font_size_pt)
+                p.font.color.rgb = muted_color
+                p.alignment = PP_ALIGN.CENTER
+
+    def add_watermark(self, prs: Presentation, watermark_config: dict[str, Any], brand_spec=None) -> None:
+        from pptx.util import Inches, Pt
+        from pptx.dml.color import RGBColor
+        from pptx.enum.text import PP_ALIGN
+        from lxml import etree
+
+        text = watermark_config.get("text", "CONFIDENTIAL")
+        opacity = watermark_config.get("opacity", 0.15)
+        rotation = watermark_config.get("rotation", -45)
+        font_size_pt = watermark_config.get("font_size_pt", 72)
+        skip_pages = watermark_config.get("skip_pages", [1])
+
+        muted_hex = "999999"
+        color_role = watermark_config.get("color_role", "muted-foreground")
+        if brand_spec and brand_spec.colors:
+            role_color = brand_spec.colors.get(color_role) or brand_spec.colors.get("muted-foreground")
+            if role_color:
+                muted_hex = role_color.lstrip("#")
+
+        for idx, slide in enumerate(prs.slides):
+            slide_num = idx + 1
+            if slide_num in skip_pages:
+                continue
+
+            txBox = slide.shapes.add_textbox(
+                Inches(1.5), Inches(1.0), Inches(10.333), Inches(5.5),
+            )
+            tf = txBox.text_frame
+            p = tf.paragraphs[0]
+            p.text = text
+            p.font.size = Pt(font_size_pt)
+            p.font.color.rgb = RGBColor.from_string(muted_hex)
+            p.font.bold = True
+            p.alignment = PP_ALIGN.CENTER
+
+            sp = txBox._element
+            ns = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+
+            solidFill_el = sp.find(".//" + ns + "solidFill")
+            if solidFill_el is not None:
+                srgbClr_el = solidFill_el.find(ns + "srgbClr")
+                if srgbClr_el is not None:
+                    alpha_val = str(int(opacity * 100000))
+                    alpha_elem = etree.SubElement(srgbClr_el, ns + "alpha")
+                    alpha_elem.set("val", alpha_val)
+
+            xfrm_el = sp.find(".//" + ns + "xfrm")
+            if xfrm_el is not None:
+                rot_val = str(int(rotation * 60000))
+                xfrm_el.set("rot", rot_val)

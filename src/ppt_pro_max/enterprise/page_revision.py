@@ -217,35 +217,48 @@ class PageRevisionEngine:
         return prs_new.slide_layouts[0]
 
     def _copy_content(self, src_slide, dst_slide) -> None:
-        copied_texts: list[str] = []
+        from lxml import etree
+        from pptx.oxml.ns import qn
 
-        for shape in src_slide.placeholders:
-            idx = shape.placeholder_format.idx
-            try:
-                dst_ph = dst_slide.placeholders[idx]
-                if shape.has_text_frame:
-                    for para_idx, para in enumerate(shape.text_frame.paragraphs):
-                        if para.text.strip():
-                            copied_texts.append(para.text.strip())
-                        if para_idx < len(dst_ph.text_frame.paragraphs):
-                            dst_para = dst_ph.text_frame.paragraphs[para_idx]
-                            dst_para.text = para.text
-                        else:
-                            dst_ph.text_frame.add_paragraph()
-                            dst_ph.text_frame.paragraphs[-1].text = para.text
-            except (KeyError, IndexError):
-                if shape.has_text_frame:
-                    for para in shape.text_frame.paragraphs:
-                        if para.text.strip():
-                            copied_texts.append(para.text.strip())
+        src_cSld = src_slide._element.find(qn("p:cSld"))
+        dst_cSld = dst_slide._element.find(qn("p:cSld"))
 
-        if src_slide.shapes.title and dst_slide.shapes.title:
-            dst_slide.shapes.title.text = src_slide.shapes.title.text
-            title_text = src_slide.shapes.title.text.strip()
-            if title_text:
-                copied_texts.insert(0, title_text)
+        if src_cSld is not None and dst_cSld is not None:
+            parent = dst_cSld.getparent()
+            parent.remove(dst_cSld)
+            new_cSld = etree.fromstring(etree.tostring(src_cSld))
+            parent.append(new_cSld)
 
-        self._recover_dropped_content(dst_slide, copied_texts)
+            dst_slide._element.remove(dst_slide._element.find(qn("p:cSld")))
+            insert_pos = 0
+            children = list(dst_slide._element)
+            for ci, child in enumerate(children):
+                if child.tag == qn("p:clrMapOvr") or child.tag == qn("p:transition"):
+                    insert_pos = ci
+                    break
+            dst_slide._element.insert(insert_pos, new_cSld)
+
+        src_timing = src_slide._element.find(qn("p:timing"))
+        if src_timing is not None:
+            dst_timing = dst_slide._element.find(qn("p:timing"))
+            if dst_timing is not None:
+                dst_slide._element.remove(dst_timing)
+            new_timing = etree.fromstring(etree.tostring(src_timing))
+            cSld_elem = dst_slide._element.find(qn("p:cSld"))
+            if cSld_elem is not None:
+                cSld_idx = list(dst_slide._element).index(cSld_elem)
+                dst_slide._element.insert(cSld_idx + 1, new_timing)
+
+        src_transition = src_slide._element.find(qn("p:transition"))
+        if src_transition is not None:
+            dst_transition = dst_slide._element.find(qn("p:transition"))
+            if dst_transition is not None:
+                dst_slide._element.remove(dst_transition)
+            new_transition = etree.fromstring(etree.tostring(src_transition))
+            cSld_elem = dst_slide._element.find(qn("p:cSld"))
+            if cSld_elem is not None:
+                cSld_idx = list(dst_slide._element).index(cSld_elem)
+                dst_slide._element.insert(cSld_idx + 1, new_transition)
 
     def _recover_dropped_content(self, dst_slide, copied_texts: list[str]) -> None:
         existing = set()

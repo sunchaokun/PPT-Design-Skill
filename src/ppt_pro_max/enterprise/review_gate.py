@@ -66,7 +66,10 @@ class ReviewGate:
             lines.append("")
             lines.append(f"页面规划 ({len(pages)}页)")
             for i, p in enumerate(pages, 1):
-                lines.append(f"  {i}. {p.get('goal', '?'):12s} → {p.get('title', '')}")
+                notes_preview = ""
+                if p.get("notes"):
+                    notes_preview = f" [{p['notes'][:30]}...]"
+                lines.append(f"  {i}. {p.get('goal', '?'):12s} → {p.get('title', '')}{notes_preview}")
 
         lines.append("")
         lines.append("请确认方案 (y/n/edit):")

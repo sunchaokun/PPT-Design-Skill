@@ -17,6 +17,8 @@ class BrandSpec:
     layout_mapping: Optional[dict[str, int]] = None
     template_layouts: Optional[list[dict[str, Any]]] = None
     dark_mode: bool = False
+    footer: Optional[dict[str, Any]] = None
+    watermark: Optional[dict[str, Any]] = None
 
     @classmethod
     def from_brand_json(cls, data: dict[str, Any]) -> BrandSpec:
@@ -28,6 +30,8 @@ class BrandSpec:
             logo=data.get("logo"),
             layout_mapping=data.get("layout_mapping"),
             dark_mode=bool(data.get("dark_mode", False)) or data.get("color_scheme") == "dark",
+            footer=data.get("footer"),
+            watermark=data.get("watermark"),
         )
 
     @classmethod
@@ -50,4 +54,6 @@ class BrandSpec:
             layout_mapping=brand_override.layout_mapping or template_spec.layout_mapping,
             template_layouts=template_spec.template_layouts,
             dark_mode=template_spec.dark_mode,
+            footer=brand_override.footer or template_spec.footer,
+            watermark=brand_override.watermark or template_spec.watermark,
         )

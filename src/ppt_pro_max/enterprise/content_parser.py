@@ -58,6 +58,11 @@ def load_enterprise_content(
             "diagram_data": diagram_data,
             "code": code,
             "exercise": exercise,
+            "notes": slide_data.get("notes"),
+            "links": slide_data.get("links"),
+            "chart": slide_data.get("chart"),
+            "image_grid": slide_data.get("image_grid"),
+            "icons": slide_data.get("icons"),
         })
 
     return result

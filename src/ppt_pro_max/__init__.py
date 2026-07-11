@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -56,6 +56,7 @@ def generate_ppt(
             review=review, review_file=review_file,
             output_version=output_version, from_version=from_version,
             pages=pages, history=history, output=output,
+            motion=motion, content_file=content_file,
             llm_provider=llm_provider, llm_api_key=llm_api_key,
             llm_base_url=llm_base_url, llm_model=llm_model,
             image_mode=image_mode, image_config=image_config,
@@ -180,6 +181,7 @@ def _generate_ppt_enterprise(
     dry_run: bool = False,
     business_mode: str | None = None,
     density: int | None = None,
+    motion: int | None = None,
     review: bool = False,
     review_file: str | None = None,
     output_version: int | None = None,
@@ -187,6 +189,7 @@ def _generate_ppt_enterprise(
     pages: str | None = None,
     history: bool = False,
     output: str | None = None,
+    content_file: str | None = None,
     llm_provider: str | None = None,
     llm_api_key: str | None = None,
     llm_base_url: str | None = None,
@@ -203,6 +206,7 @@ def _generate_ppt_enterprise(
         dry_run=dry_run,
         business_mode=business_mode,
         density=density,
+        motion=motion,
         review=review,
         review_file=review_file,
         output_version=output_version,
@@ -210,6 +214,7 @@ def _generate_ppt_enterprise(
         pages=pages,
         history=history,
         output=output,
+        content_file=content_file,
         llm_provider=llm_provider,
         llm_api_key=llm_api_key,
         llm_base_url=llm_base_url,
