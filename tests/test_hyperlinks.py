@@ -90,10 +90,15 @@ class TestHyperlinks:
         pipeline = EnterprisePipeline()
         prs = Presentation()
         slide = prs.slides.add_slide(prs.slide_layouts[0])
-        shape_count_before = len(list(slide.shapes))
         pipeline._populate_slide(slide, {"title": "No Links"}, prs)
-        shape_count_after = len(list(slide.shapes))
-        assert shape_count_after == shape_count_before
+        hyperlink_runs = []
+        for sh in slide.shapes:
+            if sh.has_text_frame:
+                for para in sh.text_frame.paragraphs:
+                    for run in para.runs:
+                        if run.hyperlink and run.hyperlink.address:
+                            hyperlink_runs.append(run)
+        assert len(hyperlink_runs) == 0
 
     def test_link_style_accent_color(self):
         from ppt_pro_max.enterprise.pipeline import EnterprisePipeline

@@ -7,3 +7,6 @@ build/
 *.egg
 .pytest_cache/
 .ruff_cache/
+.env
+e2e-test-project/
+nonexistent_dir/

@@ -4,7 +4,7 @@
 
 **一句话生成专业级 .pptx 演示文稿**
 
-叙事驱动 · 设计智能 · AI配图 · 完全可编辑 · **40,000+ 风格组合**
+双模式引擎 · 叙事驱动 · 品牌合规 · AI 配图 · **40,000+ 风格组合**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -12,7 +12,7 @@
 
 适配 OpenCode · Claude Code · Codex · Cursor
 
-[English](docs/README_EN.md) | 中文
+[English](docs/README_EN.md) | [使用手册](docs/usage-guide.md) | 中文
 
 </div>
 
@@ -20,7 +20,7 @@
 
 ## ✨ 案例展示
 
-> 5 种风格，5 种场景 — 每个案例包含封面 + 内容页，AI 配图由 Seedream Pro 生成
+> 5 种风格，5 种场景 — 每个案例包含封面 + 内容页，AI 配图由 Seedream 生成
 
 ### 🏢 Professional Modern — 企业融资路演
 
@@ -58,220 +58,234 @@
 
 | 特性 | 说明 |
 |------|------|
+| **双模式引擎** | FreeStyle 快速生成 + Enterprise 品牌合规 + 版本管理 + 页面修订 |
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
-| **设计智能** | 复用 ui-ux-pro-max 5100+ 条设计知识库，上下文感知布局/色彩/字体 |
-| **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 = 无限可能 |
+| **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 |
 | **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
+| **10 种图形引擎** | 流程图/漏斗/时间线/SWOT/矩阵/循环/表格/层级/金字塔/韦恩 |
+| **品牌视觉设计** | 品牌色自动映射：背景色、accent 竖条、品牌色标题/正文、LOGO 定位 |
+| **页面修订** | `--pages` 增删改查：删除/交换/移动/插入，内容完整保留 |
+| **版本管理** | v1 → v2 → v3 自动编号，meta.json 记录每页 goal/title |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
-| **12 母版布局** | 13.333"×7.5" 16:9 精确坐标，覆盖 95% 演示场景 |
-| **9 种文案公式** | PAS / FAB / AIDA / Social Proof / Cost of Inaction / Proof Stack... |
-| **AI 智能配图** | Seedream / GPT Image / DALL-E / Wanx — 4 种图片生成引擎 + Kimi K2.6 图片增强 |
-| **设计拨盘** | variance / motion / density 三维调控 |
+| **12 母版布局** | 13.333"×7.5" 16:9 精确坐标 |
+| **AI 智能配图** | Seedream / GPT Image / DALL-E / Wanx — 4 种生成引擎 + Kimi 增强 |
+| **动画系统** | 12 种切换 + 10 种入场动画，motion 1-10 智能映射 |
+| **代码块/练习** | 深色代码块 + 练习徽章 + 步骤列表 — 教育场景标配 |
 | **CJK 字体** | 东亚字体自动回退链（Microsoft YaHei / STSong） |
-| **QA 门禁** | 5 项自动质量检查（页数/标题/字号/一致性/占位符） |
+| **QA 门禁** | 5 项自动质量检查 + `--review` 方案确认 |
 
 ---
 
 ## 🚀 快速开始
 
-### 一键安装（推荐）
+### 安装
 
 ```bash
-# 克隆仓库
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 一键安装 — 自动检测AI平台 + 安装skill文件 + pip依赖
+# 一键安装 — 自动检测 AI 平台 + 安装 skill + pip 依赖
 python install.py
 
-# 指定平台
-python install.py --platform claude     # Claude Code only
-python install.py --platform opencode   # OpenCode only
-python install.py --platform all        # 所有平台
-
-# 检查安装状态
-python install.py --check
-
-# 全局安装（安装到 home 目录）
-python install.py --global
-```
-
-安装脚本会自动：
-1. **检测** 当前项目使用的AI编程平台（Claude Code / OpenCode / Codex / Cursor...）
-2. **复制** SKILL.md + scripts 到对应平台的 skills 目录
-3. **安装** Python 依赖（python-pptx, Pillow）
-4. **生成** AGENTS.md / CLAUDE.md 项目指令文件
-
-### 手动安装
-
-```bash
+# 手动安装
 pip install -e .
-# 可选：搜索引擎支持
-pip install -e ".[search]"
 ```
 
-### CLI
+### FreeStyle — 一句话生成
 
 ```bash
-# 一句话生成 PPT
+# 最简用法
 ppt-design "AI产品融资路演"
 
-# 自然语言风格 — 无限组合！
-ppt-design "AI产品融资路演" --style "warm fintech pitch"
-ppt-design "科技产品发布" --style "dark cyberpunk tech"
-ppt-design "品牌策略" --style "elegant luxury"
-ppt-design "可持续发展报告" --style "calm nature"
+# 自然语言风格 — 40,000+ 组合
+ppt-design "融资路演" --style "warm fintech"
+ppt-design "产品发布" --style "dark cyberpunk tech"
+ppt-design "ESG报告" --style "calm nature"
 
-# 精确控制设计原子
-ppt-design "融资路演" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
-
-# 指定策略和主题（向后兼容）
-ppt-design "SaaS产品展示" --strategy "Product Demo" --theme "dark-tech"
-
-# AI 生成配图（Seedream Pro）
-ppt-design "融资路演" --fetch-images --llm-provider seedream --llm-api-key YOUR_ARK_KEY
-
-# AI 生成配图（GPT Image）
-ppt-design "产品介绍" --fetch-images --llm-provider gpt-image --llm-api-key sk-xxx
-
-# Kimi K2.6 增强搜索关键词 → 自动下载高质量图片
-ppt-design "融资路演" --image-mode enhance --llm-provider kimi --llm-api-key sk-xxx
-
-# 从 JSON 文件读取真实内容
-ppt-design "融资路演" --content pitch-data.json
-
-# 设计拨盘
-ppt-design "融资路演" --variance 8 --motion 6 --density 7
-
-# 仅输出设计决策（调试）
-ppt-design "融资路演" --dry-run
+# AI 配图 + 风格 + 动画
+ppt-design "融资路演" --style "dark cyberpunk" \
+  --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY \
+  --motion 7 --density 6
 ```
 
-### Python API
+### Enterprise — 品牌合规 + 版本管理
 
-```python
-from ppt_pro_max import generate_ppt
+```bash
+# 1. 创建项目目录
+mkdir my-pitch && cd my-pitch
 
-# 最简用法
-result = generate_ppt("AI产品融资路演")
-print(f"生成: {result['output_path']}, {result['page_count']}页")
+# 2. 放入品牌资产（均可选）
+#    template.pptx / brand.json / content.json / logo.png / images/
 
-# 自然语言风格 — 无限组合
-result = generate_ppt("AI产品融资路演", style="warm fintech pitch")
-result = generate_ppt("科技产品发布", style="dark cyberpunk")
-result = generate_ppt("品牌策略", style="elegant luxury minimal")
+# 3. 生成
+ppt-design "AI Platform" --project . --density 6 --motion 5
 
-# 精确控制设计原子
-result = generate_ppt(
-    query="AI产品融资路演",
-    palette="wine-burgundy",
-    fonts="elegant-serif",
-    decoration="gold-trim",
-    layout_variant="centered",
-)
+# 4. 修订页面
+ppt-design "" --project . --pages "-3,2<>5"
 
-# 完整配置 — AI 配图 + 风格组合
-result = generate_ppt(
-    query="AI产品融资路演",
-    strategy="YC Seed Deck",
-    theme="dark-tech",
-    slides=12,
-    fetch_images=True,
-    llm_provider="seedream",
-    llm_api_key="ark-xxx",
-    llm_model="doubao-seedream-5-0-pro-260628",
-    variance=7,
-    motion=5,
-    density=6,
-    output="my-pitch.pptx",
-)
-```
-
-### 内容 JSON 格式
-
-```json
-{
-  "company": "Acme AI",
-  "product": "AI Marketing Platform",
-  "tagline": "Your AI marketing team. Always on.",
-  "metrics": {"users": "10K+", "retention": "95%", "growth": "3x", "arr": "$2M"},
-  "pain_points": [
-    {"title": "Content Overload", "desc": "Need 10x content with same headcount"},
-    {"title": "Tool Fatigue", "desc": "15+ tools that don't talk to each other"}
-  ],
-  "chart_data": {
-    "mrr": {"labels": ["Sep","Oct","Nov","Dec"], "values": [5,12,28,45]}
-  }
-}
+# 5. 查看历史
+ppt-design "" --project . --history
 ```
 
 ---
 
-## 🏗️ 四层架构
+## 🏗️ 双模式架构
+
+### FreeStyle Pipeline
 
 ```
-用户输入 → Phase 1: 叙事规划 → Phase 2: 设计决策 → Phase 3: 内容生成 → Phase 4: PPT渲染 → .pptx
-                  ↓                  ↓                  ↓                  ↓
-           story_planner      design_decider     content_generator     ppt_renderer
-           (策略+情绪弧线)    (布局+色彩+字体)    (文案公式+图片)       (python-pptx直出)
+用户输入 → 叙事规划 → 设计决策 → 内容生成 → PPT渲染 → .pptx
 ```
 
-| 层 | 模块 | 职责 |
-|----|------|------|
-| 叙事层 | `planner/story_planner.py` | 策略选择 → 页面结构 → 情绪弧线 → Duarte Sparkline |
-| 设计层 | `decider/design_decider.py` | 布局选择 → 色彩处理 → 排版规格 → 图表类型 → 过渡选择 |
-| 内容层 | `content/content_generator.py` | 文案公式 → 数据配置 → 图片关键词 → 模板变量填充 |
-| 表达层 | `renderer/ppt_renderer.py` | 主题映射 → 12母版布局 → 图表渲染 → 图片插入 → 动画过渡 → QA检查 |
+适用：快速探索、风格实验、个人演示
+
+### Enterprise Pipeline
+
+```
+项目目录 → 资产扫描 → 品牌合并 → 内容解析 → 视觉设计 → 渲染+动画 → 版本管理 → .pptx
+              ↓          ↓          ↓          ↓
+         template   brand.json  content.json  accent bar
+         logo.png   颜色/字体    diagram      品牌色覆盖
+         images/    LOGO定位     code/exercise  页脚/水印
+```
+
+适用：企业合规、团队协作、多版本迭代
+
+### 项目目录结构
+
+```
+my-project/
+├── template.pptx      # 可选：品牌模板
+├── brand.json         # 可选：品牌规范
+├── content.json       # 可选：真实内容
+├── logo.png           # 可选：公司 LOGO
+├── images/            # 可选：图片池
+└── output/            # 自动生成
+    ├── v1/presentation.pptx + meta.json
+    └── v2/presentation.pptx + meta.json
+```
+
+---
+
+## 📋 content.json — 精确控制内容
+
+```json
+{
+  "meta": {"title": "Acme Corp — Series B Pitch"},
+  "slides": [
+    {"goal": "hook", "title": "The Future of AI", "subtitle": "Acme Corp", "image": "images/hero.png"},
+    {"goal": "problem", "title": "The Problem", "bullets": ["75% fail", "Data silos"]},
+    {"goal": "solution", "title": "Our Solution", "bullets": ["Unified gateway"], "image": "images/product.png"},
+    {"goal": "features", "title": "Key Features", "cards": [
+      {"title": "Fast", "text": "Sub-100ms"},
+      {"title": "Secure", "text": "SOC2+HIPAA"}
+    ]},
+    {"goal": "market", "title": "Market", "diagram": {"type": "funnel", "data": {"items": [{"text": "TAM $120B"}, {"text": "SOM $8B"}]}}},
+    {"goal": "code_demo", "title": "Quick Start", "code": {"language": "python", "source": "from acme import AIPlatform\nplatform = AIPlatform(key='x')"}},
+    {"goal": "exercise", "title": "Try It", "exercise": {"instructions": "Deploy in 5 min", "duration": "5 min", "steps": ["Sign up", "Deploy"]}},
+    {"goal": "cta", "title": "Join Us", "subtitle": "contact@acme.ai"}
+  ]
+}
+```
+
+> 完整字段说明见 [使用手册](docs/usage-guide.md#5-contentjson-内容格式)
+
+---
+
+## 🎨 brand.json — 品牌视觉规范
+
+```json
+{
+  "colors": {
+    "primary": "#2563EB",
+    "accent": "#F97316",
+    "foreground": "#1A1A2E",
+    "muted-foreground": "#94A3B8",
+    "background": "#FFFFFF",
+    "muted": "#F1F5F9"
+  },
+  "fonts": {"heading": "Calibri", "body": "Calibri"},
+  "logo": {"position": "top_right", "width_inches": 1.2, "skip_slides": ["hook"]},
+  "footer": {
+    "show_page_number": true,
+    "page_number_format": "第 {n} 页 / 共 {total} 页"
+  }
+}
+```
+
+> 完整字段说明见 [使用手册](docs/usage-guide.md#6-brandjson-品牌格式)
+
+---
+
+## ✏️ 页面修订 — 增删改查
+
+```bash
+# 删除第 3 页
+ppt-design "" --project . --pages "-3"
+
+# 交换第 2 和第 5 页
+ppt-design "" --project . --pages "2<>5"
+
+# 将第 10 页移到第 3 页后
+ppt-design "" --project . --pages "10>3"
+
+# 在第 6 页后插入空白页
+ppt-design "" --project . --pages "+6"
+
+# 组合操作
+ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
+```
+
+> 完整语法见 [使用手册](docs/usage-guide.md#7-页面修订语法)
 
 ---
 
 ## 🖼️ 图片引擎
 
-| 引擎 | 类型 | CLI 参数 | 说明 |
-|------|------|----------|------|
-| `placeholder` | 占位符 | 默认 | 渐变占位图，无需 API |
-| `search` | 搜索下载 | `--image-mode search` | Unsplash / Pexels |
-| `seedream` | AI 生成 | `--llm-provider seedream` | 字节豆包 Seedream Pro（推荐） |
-| `gpt-image` | AI 生成 | `--llm-provider gpt-image` | OpenAI GPT Image |
-| `dalle` | AI 生成 | `--llm-provider dalle` | OpenAI DALL-E 3 |
-| `wanx` | AI 生成 | `--llm-provider wanx` | 阿里通义万相 |
-| `kimi` | 增强搜索 | `--llm-provider kimi` | Kimi K2.6 优化关键词 → 搜索下载 |
+| 引擎 | 类型 | CLI | 默认模型 |
+|------|------|-----|---------|
+| `placeholder` | 占位符 | 默认 | — |
+| `search` | 搜索下载 | `--image-mode search` | — |
+| `seedream` | AI 生成 | `--llm-provider seedream` | `doubao-seedream-5-0-260128` |
+| `gpt-image` | AI 生成 | `--llm-provider gpt-image` | `gpt-image-1` |
+| `dalle` | AI 生成 | `--llm-provider dalle` | `dall-e-3` |
+| `wanx` | AI 生成 | `--llm-provider wanx` | `wanx-v1` |
+| `kimi` | 增强搜索 | `--llm-provider kimi` | `kimi-k2-0711-preview` |
 
-所有 AI 生成引擎均内置 **缓存优先** 机制 — 相同图片绝不重复调用 API，节省成本。
+### Seedream 可用模型
+
+| 模型 | 说明 |
+|------|------|
+| `doubao-seedream-5-0-260128` | **默认**，Seedream 5.0 |
+| `doubao-seedream-5-0-pro-260628` | Seedream 5.0 Pro |
+| `doubao-seedream-4-5-251128` | Seedream 4.5 |
+
+所有 AI 引擎内置**缓存优先**，相同图片不重复调用 API。
 
 ---
 
-## 🎨 设计原子 — 40,000+ 风格组合
-
-> 通过组合 4 类设计原子，实现无限风格：
+## 🎨 设计系统 — 40,000+ 风格组合
 
 | 设计原子 | 数量 | 示例 |
 |----------|------|------|
-| 🎨 色彩方案 | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, terracotta, monochrome-dark... |
-| ✏️ 字体搭配 | 20 | modern-sans, serif-editorial, tech-mono, elegant-serif, bold-sans, contrast-mix... |
-| 🖌️ 装饰风格 | 10 | accent-bar, neon-lines, gold-trim, diamond-bullets, gradient-bar, circle-accent, sidebar-nav... |
-| 📐 布局变体 | 8 | standard, centered, sidebar-left, sidebar-right, grid-2x2, wide-cards, asymmetric, full-width |
+| 🎨 色彩方案 | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, monochrome-dark... |
+| ✏️ 字体搭配 | 20 | modern-sans, serif-editorial, tech-mono, elegant-serif, contrast-mix... |
+| 🖌️ 装饰风格 | 10 | accent-bar, neon-lines, gold-trim, gradient-bar, circle-accent, sidebar-nav... |
+| 📐 布局变体 | 8 | standard, centered, sidebar-left, grid-2x2, wide-cards, full-width... |
 
-**25 × 20 × 10 × 8 = 40,000 种组合** — 还不算自然语言风格的模糊匹配！
+**25 × 20 × 10 × 8 = 40,000 种组合**
 
 ### 自然语言风格
 
 ```bash
-ppt-design "融资路演" --style "warm fintech"        # 自动匹配: ocean-blue + clean-corporate + accent-bar + sidebar-left
-ppt-design "产品发布" --style "dark cyberpunk"       # 自动匹配: cyber-neon + tech-mono + neon-lines + wide-cards
-ppt-design "品牌策略" --style "elegant luxury"       # 自动匹配: golden-luxury + elegant-serif + gold-trim + centered
-ppt-design "ESG报告" --style "calm nature"           # 自动匹配: sage-calm + humanist-sans + circle-accent + standard
-ppt-design "创业路演" --style "bold startup vibrant"  # 自动匹配: royal-purple + bold-sans + gradient-bar + grid-2x2
+ppt-design "融资路演" --style "warm fintech"          # → ocean-blue + clean-corporate + accent-bar
+ppt-design "产品发布" --style "dark cyberpunk"         # → cyber-neon + tech-mono + neon-lines
+ppt-design "品牌策略" --style "elegant luxury"         # → golden-luxury + elegant-serif + gold-trim
+ppt-design "ESG报告" --style "calm nature"             # → sage-calm + humanist-sans + circle-accent
+ppt-design "创业路演" --style "bold startup vibrant"   # → royal-purple + bold-sans + gradient-bar
 ```
 
-### 精确原子控制
-
-```bash
-ppt-design "融资路演" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
-ppt-design "产品发布" --palette copper-industrial --fonts tech-contrast --decoration no-decoration --layout-variant full-width
-```
-
-### 预置主题（向后兼容）
+### 预置主题
 
 | 主题 | 色彩 | 字体 | 装饰 | 布局 |
 |------|------|------|------|------|
@@ -283,17 +297,6 @@ ppt-design "产品发布" --palette copper-industrial --fonts tech-contrast --de
 
 ---
 
-## 🔗 与 ui-ux-pro-max 的关系
-
-**独立仓库 + 依赖引用**模式：
-
-- **调用** ui-ux-pro-max 的搜索引擎和设计知识库（5100+ 条 CSV）
-- **不修改** ui-ux-pro-max 的任何代码
-- **新增** PPT 专属代码和数据
-- 通过**适配层**隔离上游 API 变更
-
----
-
 ## 📁 项目结构
 
 ```
@@ -302,28 +305,38 @@ PPT-Design-Skill/
 ├── install.py                        # 一键安装器
 ├── SKILL.md                          # AI skill 定义
 ├── AGENTS.md                         # 项目指令
-├── CLAUDE.md                         # Claude Code 快速参考
-├── docs/                             # 英文README + 案例截图
+├── docs/
+│   ├── README_EN.md                  # 英文 README
+│   ├── usage-guide.md                # 完整使用手册
+│   └── showcase/                     # 案例截图
 ├── src/ppt_pro_max/
 │   ├── __init__.py                   # generate_ppt() API
 │   ├── cli.py                        # ppt-design CLI
-│   ├── adapters/                     # 适配层
-│   │   ├── ui_ux_adapter.py          # ui-ux-pro-max 适配
-│   │   └── slide_search_adapter.py   # slide_search 适配
-│   ├── planner/story_planner.py      # Phase 1: 叙事规划
-│   ├── decider/design_decider.py     # Phase 2: 设计决策
-│   ├── content/content_generator.py  # Phase 3: 内容生成
+│   ├── enterprise/                   # Enterprise Pipeline
+│   │   ├── pipeline.py               # 主编排器
+│   │   ├── enterprise_renderer.py    # 企业渲染器
+│   │   ├── brand_spec.py             # 品牌规范
+│   │   ├── content_parser.py         # 内容解析
+│   │   ├── page_revision.py          # 页面修订引擎
+│   │   ├── density_profile.py        # 密度配置
+│   │   └── ...
 │   ├── renderer/
-│   │   ├── ppt_renderer.py           # Phase 4: PPT 渲染
-│   │   ├── theme_mapper.py           # 主题映射 + CJK 字体
-│   │   ├── layout_registry.py        # 12 母版布局
-│   │   ├── chart_builder.py          # 图表构建器
-│   │   ├── image_fetcher.py          # 图片获取（4种生成+1种增强）
-│   │   └── effects.py               # 阴影/辉光/渐变
-│   └── qa/qa_gates.py               # 5项质量检查
-├── data/ppt/                         # PPT 专属数据
-├── examples/                         # 案例 PPT
-└── tests/                            # 47 个测试
+│   │   ├── ppt_renderer.py           # FreeStyle 渲染器
+│   │   ├── diagram_engine.py         # 10 种图形引擎
+│   │   ├── diagram/                  # 图形实现
+│   │   │   ├── flowchart.py / funnel.py / timeline.py / swot.py
+│   │   │   ├── matrix.py / cycle.py / table.py
+│   │   │   ├── hierarchy.py / pyramid.py / venn.py
+│   │   │   └── connector_router.py / text_measurer.py / ...
+│   │   ├── animation.py              # 12 切换 + 10 入场
+│   │   ├── theme_composer.py         # 40,000+ 风格组合
+│   │   ├── image_fetcher.py          # 5 引擎 + 缓存
+│   │   └── ...
+│   ├── planner/story_planner.py      # 叙事规划
+│   ├── decider/design_decider.py     # 设计决策
+│   └── content/content_generator.py  # 内容生成
+├── tests/                            # 412 个测试
+└── e2e-test-project/                 # E2E 测试项目
 ```
 
 ## License

@@ -12,10 +12,35 @@ for _stream_name in ("stdout", "stderr"):
         except Exception:
             pass
 
-from ppt_pro_max import generate_ppt
+from ppt_pro_max import generate_ppt  # noqa: E402
+
+
+def _load_dotenv():
+    from pathlib import Path
+
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+
+    candidates = []
+    cwd = Path.cwd()
+    candidates.append(cwd / ".env")
+    pkg_dir = Path(__file__).resolve().parent
+    for p in (pkg_dir, pkg_dir.parent, pkg_dir.parent.parent):
+        candidates.append(p / ".env")
+    home = Path.home()
+    candidates.append(home / ".ppt-pro-max" / ".env")
+
+    for env_path in candidates:
+        if env_path.is_file():
+            load_dotenv(env_path, override=False)
+            return
 
 
 def main():
+    _load_dotenv()
+
     parser = argparse.ArgumentParser(
         prog="ppt-design",
         description="AI-powered PPT generation — narrative-driven, design-intelligent, fully editable .pptx",

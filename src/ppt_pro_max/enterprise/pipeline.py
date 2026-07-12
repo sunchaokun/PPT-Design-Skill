@@ -142,7 +142,11 @@ class EnterprisePipeline:
         image_fetcher = self._build_image_fetcher(kwargs)
 
         for design in page_designs:
-            if not design.get("image") and image_fetcher is not None:
+            image_val = design.get("image")
+            if image_val and not os.path.isfile(image_val):
+                image_val = None
+                design["image"] = None
+            if not image_val and image_fetcher is not None:
                 keywords = design.get("title", query)
                 goal = design.get("goal", "")
                 try:
@@ -335,11 +339,14 @@ class EnterprisePipeline:
             from ppt_pro_max.enterprise.density_profile import get_density_profile
             density_profile = get_density_profile(4)
 
+        self._apply_visual_design(slide, design, prs, brand_spec)
+
         if slide.shapes.title and design.get("title"):
             slide.shapes.title.text = design["title"]
             for para in slide.shapes.title.text_frame.paragraphs:
                 for run in para.runs:
                     run.font.size = Pt(density_profile.title_size)
+                    self._apply_brand_font_color(run, "foreground", brand_spec)
 
         if design.get("subtitle"):
             from pptx.enum.shapes import PP_PLACEHOLDER
@@ -350,6 +357,7 @@ class EnterprisePipeline:
                     for para in ph.text_frame.paragraphs:
                         for run in para.runs:
                             run.font.size = Pt(density_profile.subtitle_size)
+                            self._apply_brand_font_color(run, "muted-foreground", brand_spec)
                     break
 
         if design.get("bullets"):
@@ -363,6 +371,7 @@ class EnterprisePipeline:
                     for para in ph.text_frame.paragraphs:
                         for run in para.runs:
                             run.font.size = Pt(density_profile.bullet_size)
+                            self._apply_brand_font_color(run, "foreground", brand_spec)
                     break
 
         if design.get("image") and os.path.isfile(design["image"]):
@@ -390,6 +399,86 @@ class EnterprisePipeline:
             self._render_links(slide, design["links"], design, prs=prs, brand_spec=brand_spec)
 
     _BASELINE_IMAGE_RATIO = 0.38
+
+    def _apply_visual_design(self, slide, design: dict[str, Any], prs, brand_spec=None) -> None:
+        from pptx.util import Inches
+        from pptx.enum.shapes import MSO_SHAPE
+        from pptx.dml.color import RGBColor
+
+        colors = {}
+        if brand_spec and brand_spec.colors:
+            colors = brand_spec.colors
+
+        bg_color = colors.get("background", "#FFFFFF")
+        try:
+            background = slide.background
+            fill = background.fill
+            fill.solid()
+            fill.fore_color.rgb = RGBColor.from_string(bg_color.lstrip("#"))
+        except Exception:
+            pass
+
+        goal = design.get("goal", "content")
+        is_hero = goal in ("hook", "cta")
+
+        if is_hero:
+            primary_hex = colors.get("primary", "#2563EB")
+            try:
+                bg_rect = slide.shapes.add_shape(
+                    MSO_SHAPE.RECTANGLE,
+                    Inches(0), Inches(0), prs.slide_width, prs.slide_height,
+                )
+                bg_rect.fill.solid()
+                bg_rect.fill.fore_color.rgb = RGBColor.from_string(primary_hex.lstrip("#"))
+                bg_rect.line.fill.background()
+
+                from pptx.oxml.ns import qn
+                from lxml import etree
+                sp_pr = bg_rect._element.find(qn("p:spPr"))
+                solid_fill = sp_pr.find(qn("a:solidFill"))
+                if solid_fill is not None:
+                    srgb = solid_fill.find(qn("a:srgbClr"))
+                    if srgb is not None:
+                        alpha = etree.SubElement(srgb, qn("a:alpha"))
+                        alpha.set("val", "90000")
+            except Exception:
+                pass
+        else:
+            accent_hex = colors.get("accent", colors.get("primary", "#2563EB"))
+            try:
+                bar = slide.shapes.add_shape(
+                    MSO_SHAPE.RECTANGLE,
+                    Inches(0), Inches(0), Inches(0.08), prs.slide_height,
+                )
+                bar.fill.solid()
+                bar.fill.fore_color.rgb = RGBColor.from_string(accent_hex.lstrip("#"))
+                bar.line.fill.background()
+            except Exception:
+                pass
+
+            muted_hex = colors.get("muted", "#F1F5F9")
+            try:
+                bottom_bar = slide.shapes.add_shape(
+                    MSO_SHAPE.RECTANGLE,
+                    Inches(0), Inches(7.2), prs.slide_width, Inches(0.3),
+                )
+                bottom_bar.fill.solid()
+                bottom_bar.fill.fore_color.rgb = RGBColor.from_string(muted_hex.lstrip("#"))
+                bottom_bar.line.fill.background()
+            except Exception:
+                pass
+
+    def _apply_brand_font_color(self, run, color_role: str, brand_spec=None) -> None:
+        from pptx.dml.color import RGBColor
+
+        if brand_spec is None or not brand_spec.colors:
+            return
+        hex_color = brand_spec.colors.get(color_role)
+        if hex_color:
+            try:
+                run.font.color.rgb = RGBColor.from_string(hex_color.lstrip("#"))
+            except Exception:
+                pass
 
     def _insert_content_image(self, slide, image_path: str, prs, density_profile=None) -> None:
         from pptx.util import Inches

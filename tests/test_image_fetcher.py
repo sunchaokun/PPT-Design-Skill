@@ -75,7 +75,9 @@ def test_available_providers():
     assert "seedream" in providers
     assert "gpt-image" in providers
     assert "dalle" in providers
-    assert providers["seedream"]["default_model"] == "doubao-seedream-5-0-pro-260628"
+    assert providers["seedream"]["default_model"] == "doubao-seedream-5-0-260128"
+    assert "doubao-seedream-5-0-260128" in providers["seedream"]["models"]
+    assert "doubao-seedream-4-5-251128" in providers["seedream"]["models"]
     assert "gpt-image-2" in providers["gpt-image"]["models"]
 
 

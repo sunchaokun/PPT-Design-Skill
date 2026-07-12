@@ -290,10 +290,9 @@ class TestChartInPipeline:
         pipeline = EnterprisePipeline()
         prs = Presentation()
         slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        shape_count_before = len(list(slide.shapes))
         pipeline._populate_slide(slide, {"title": "No Chart"}, prs)
-        shape_count_after = len(list(slide.shapes))
-        assert shape_count_after == shape_count_before
+        chart_frames = [s for s in slide.shapes if hasattr(s, "chart")]
+        assert len(chart_frames) == 0
 
     def test_content_json_chart_passthrough(self, tmp_path):
         from ppt_pro_max.enterprise.content_parser import load_enterprise_content
