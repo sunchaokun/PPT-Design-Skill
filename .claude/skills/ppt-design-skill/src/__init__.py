@@ -1,0 +1,257 @@
+"""PPT Design Skill — AI-powered PPT generation."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+__version__ = "0.4.0"
+
+from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
+from ppt_pro_max.planner.story_planner import StoryPlanner
+from ppt_pro_max.decider.design_decider import DesignDecider
+from ppt_pro_max.content.content_generator import ContentGenerator
+from ppt_pro_max.renderer.theme_composer import ThemeComposer
+
+
+def generate_ppt(
+    query: str,
+    strategy: str | None = None,
+    theme: str | None = None,
+    style: str | None = None,
+    palette: str | None = None,
+    fonts: str | None = None,
+    decoration: str | None = None,
+    layout_variant: str | None = None,
+    mood: str | None = None,
+    style_seed: int | None = None,
+    slides: int | None = None,
+    content_file: str | None = None,
+    variance: int | None = None,
+    motion: int | None = None,
+    density: int | None = None,
+    fetch_images: bool = False,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    persist: bool = False,
+    dry_run: bool = False,
+    output: str | None = None,
+    project: str | None = None,
+    business_mode: str | None = None,
+    review: bool = False,
+    review_file: str | None = None,
+    output_version: int | None = None,
+    from_version: int | None = None,
+    pages: str | None = None,
+    history: bool = False,
+) -> dict:
+    if project:
+        return _generate_ppt_enterprise(
+            query=query, project=project, dry_run=dry_run,
+            business_mode=business_mode, density=density,
+            review=review, review_file=review_file,
+            output_version=output_version, from_version=from_version,
+            pages=pages, history=history, output=output,
+            motion=motion, content_file=content_file,
+            llm_provider=llm_provider, llm_api_key=llm_api_key,
+            llm_base_url=llm_base_url, llm_model=llm_model,
+            image_mode=image_mode, image_config=image_config,
+        )
+    return _generate_ppt_freestyle(
+        query=query, strategy=strategy, theme=theme, style=style,
+        palette=palette, fonts=fonts, decoration=decoration,
+        layout_variant=layout_variant, mood=mood, style_seed=style_seed,
+        slides=slides, content_file=content_file, variance=variance,
+        motion=motion, density=density, fetch_images=fetch_images,
+        image_mode=image_mode, image_config=image_config,
+        llm_provider=llm_provider, llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url, llm_model=llm_model,
+        persist=persist, dry_run=dry_run, output=output,
+    )
+
+
+def _generate_ppt_freestyle(
+    query: str,
+    strategy: str | None = None,
+    theme: str | None = None,
+    style: str | None = None,
+    palette: str | None = None,
+    fonts: str | None = None,
+    decoration: str | None = None,
+    layout_variant: str | None = None,
+    mood: str | None = None,
+    style_seed: int | None = None,
+    slides: int | None = None,
+    content_file: str | None = None,
+    variance: int | None = None,
+    motion: int | None = None,
+    density: int | None = None,
+    fetch_images: bool = False,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    persist: bool = False,
+    dry_run: bool = False,
+    output: str | None = None,
+) -> dict:
+    planner = StoryPlanner()
+    story_plan = planner.plan(query, strategy_override=strategy, slide_count_override=slides)
+
+    decider = DesignDecider()
+    page_designs = decider.decide(story_plan, theme=theme, variance=variance, motion=motion, density=density)
+
+    generator = ContentGenerator(query=query)
+    page_contents = generator.generate(page_designs, content_file=content_file)
+
+    if dry_run:
+        return {
+            "dry_run": True,
+            "strategy": story_plan.strategy,
+            "page_count": story_plan.total_slides,
+            "pages": [
+                {
+                    "position": d.position,
+                    "goal": d.goal,
+                    "emotion": d.emotion,
+                    "layout": d.layout,
+                }
+                for d in page_designs
+            ],
+        }
+
+    effective_image_mode = image_mode
+    if fetch_images and image_mode == "placeholder":
+        if llm_provider:
+            effective_image_mode = "generate"
+        else:
+            effective_image_mode = "auto"
+
+    if llm_provider or llm_api_key or llm_base_url or llm_model:
+        if image_config is None:
+            image_config = {}
+        if llm_provider:
+            image_config["llm_provider"] = llm_provider
+        if llm_api_key:
+            image_config["llm_api_key"] = llm_api_key
+        if llm_base_url:
+            image_config["llm_base_url"] = llm_base_url
+        if llm_model:
+            image_config["llm_model"] = llm_model
+
+    composed_theme = None
+    if style or palette or fonts or decoration or layout_variant or mood:
+        composer = ThemeComposer()
+        composed_theme = composer.compose(
+            style=style or theme,
+            palette=palette,
+            fonts=fonts,
+            decoration=decoration,
+            layout=layout_variant,
+            mood=mood,
+            seed=style_seed,
+        )
+
+    renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
+    result = renderer.render(
+        page_designs, page_contents,
+        output_path=output, fetch_images=fetch_images,
+        theme_name=theme, design_system=decider.design_system,
+        composed_theme=composed_theme,
+    )
+
+    if composed_theme:
+        result["theme_atoms"] = composed_theme.get("atoms", {})
+
+    if persist:
+        _persist_design_system(decider.design_system, result.get("output_path", ""))
+
+    return result
+
+
+def _generate_ppt_enterprise(
+    query: str,
+    project: str,
+    dry_run: bool = False,
+    business_mode: str | None = None,
+    density: int | None = None,
+    motion: int | None = None,
+    review: bool = False,
+    review_file: str | None = None,
+    output_version: int | None = None,
+    from_version: int | None = None,
+    pages: str | None = None,
+    history: bool = False,
+    output: str | None = None,
+    content_file: str | None = None,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    image_mode: str = "placeholder",
+    image_config: dict[str, Any] | None = None,
+) -> dict:
+    from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+
+    pipeline = EnterprisePipeline()
+    return pipeline.run(
+        query=query,
+        project_dir=project,
+        dry_run=dry_run,
+        business_mode=business_mode,
+        density=density,
+        motion=motion,
+        review=review,
+        review_file=review_file,
+        output_version=output_version,
+        from_version=from_version,
+        pages=pages,
+        history=history,
+        output=output,
+        content_file=content_file,
+        llm_provider=llm_provider,
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
+        image_mode=image_mode,
+        image_config=image_config,
+    )
+
+
+def _persist_design_system(design_system: dict, pptx_path: str) -> None:
+    from ppt_pro_max.renderer.theme_mapper import ThemeMapper
+
+    mapper = ThemeMapper()
+    theme = mapper.map(design_system)
+    master_path = Path(pptx_path).parent / "design-system" / "MASTER.md"
+    master_path.parent.mkdir(parents=True, exist_ok=True)
+
+    colors = theme.get("colors", {})
+    typo = theme.get("typography", {})
+
+    lines = [
+        "# Design System — MASTER.md",
+        "",
+        "## Colors",
+        "",
+    ]
+    for role, hex_val in colors.items():
+        lines.append(f"- **{role}**: `{hex_val}`")
+    lines.extend([
+        "",
+        "## Typography",
+        "",
+        f"- **Heading**: {typo.get('heading', 'Inter')}",
+        f"- **Body**: {typo.get('body', 'Inter')}",
+        "",
+        f"## Dark Mode: {'Yes' if theme.get('dark_mode') else 'No'}",
+        "",
+    ])
+
+    master_path.write_text("\n".join(lines), encoding="utf-8")

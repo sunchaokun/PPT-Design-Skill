@@ -1,53 +1,75 @@
 ---
 name: ppt-design-skill
-version: 0.2.0
-description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Actions: create, generate, design, build PPT/presentation/deck. Themes: professional, dark-tech, warm-elegant, vibrant-startup, nature-calm + infinite combos. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style-description] [--theme preset] [--fetch-images]"
+version: 0.3.0
+description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Dual-mode: FreeStyle + Enterprise. 10 diagram types, brand compliance, version control, page revision. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style-description] [--fetch-images] [--project DIR]"
 license: MIT
 metadata:
   author: sunchaokun
   category: design
-  tags: [ppt, presentation, deck, pitch, slides, python-pptx, design, narrative]
-  stacks: [python, pptx]
+  tags: [ppt, presentation, deck, pitch, slides, python-pptx, enterprise, brand, diagram]
 ---
 
 # PPT Design Skill
 
-Professional PPT generation skill for AI coding assistants. Generates complete, fully editable .pptx presentations from a single sentence — with 40,000+ style combinations, narrative-driven structure, and AI-powered image generation.
+AI-powered PPT generation — dual-mode engine, 40,000+ style combos, 10 diagram types, brand compliance, version control, fully editable .pptx.
 
 ## When to Activate
 
-Activate when the user asks to:
-- Create, generate, or design a **PPT/presentation/deck/slide deck**
-- Make a **pitch deck, product demo, sales presentation, or investor deck**
-- Convert **content/outline** into a PowerPoint file
-- Design **slides** for a meeting, conference, or workshop
-- Build a **fundraising deck, brand deck, or strategy presentation**
+- User asks to create/generate/design a **PPT/presentation/deck/slide deck**
+- User wants a **pitch deck, product demo, sales presentation, investor deck**
+- User wants to **convert content/outline into PowerPoint**
+- User wants **brand-compliant** presentations with template + version control
+- User wants **page-level CRUD** on existing PPT (add/delete/swap/move pages)
+- User wants **diagrams** in PPT (flowchart, funnel, timeline, SWOT, etc.)
 
-### Skip
+## Dual-Mode Architecture
 
-- Pure backend logic or API development
-- Database design or infrastructure work
-- Non-visual scripts or automation tasks
+### FreeStyle Mode (Quick Exploration)
 
-**Decision criteria**: If the user wants a **visual presentation file (.pptx)**, activate this skill.
-
-## Quick Start
+One command, AI generates everything — content, design, images.
 
 ```bash
-# One-liner PPT generation
 python -m ppt_pro_max "AI startup investor pitch"
 
-# With natural language style (40,000+ combinations)
+# Natural language style (40K+ combos)
 python -m ppt_pro_max "fintech pitch" --style "warm fintech"
 python -m ppt_pro_max "product launch" --style "dark cyberpunk"
-python -m ppt_pro_max "brand strategy" --style "elegant luxury minimal"
+python -m ppt_pro_max "brand strategy" --style "elegant luxury"
 
-# With AI-generated images
-python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream --llm-api-key YOUR_KEY
+# AI images (Seedream recommended)
+python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream
 
-# With exact design atoms
+# Exact atom control
 python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif --decoration gold-trim --layout-variant centered
+
+# Design dials
+python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
+```
+
+### Enterprise Mode (Brand Compliance)
+
+Project directory driven — template + brand + content + version control.
+
+```bash
+# Initialize project
+mkdir my-project && cd my-project
+# Place: template.pptx, brand.json, content.json, logo.png, images/
+
+# Generate with brand compliance
+python -m ppt_pro_max "路演" --project ./my-project --density 6
+
+# Review before generating
+python -m ppt_pro_max "路演" --project ./my-project --review
+
+# Page revision (delete, swap, move, insert)
+python -m ppt_pro_max "" --project ./my-project --pages "-3,2<>5,10>3,+6"
+
+# Version history
+python -m ppt_pro_max "" --project ./my-project --history
+
+# Business mode
+python -m ppt_pro_max "培训" --project ./my-project --business-mode education
 ```
 
 ## Python API
@@ -55,181 +77,216 @@ python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif --de
 ```python
 from ppt_pro_max import generate_ppt
 
-# Minimal
-result = generate_ppt("AI startup investor pitch")
+# FreeStyle
+result = generate_ppt("AI startup pitch", style="dark cyberpunk", fetch_images=True)
 
-# Natural language style
-result = generate_ppt("fintech pitch", style="warm fintech")
+# Enterprise
+result = generate_ppt("路演", project="./my-project", density=6)
 
-# Full control
-result = generate_ppt(
-    query="AI startup investor pitch",
-    style="dark cyberpunk tech",
-    strategy="YC Seed Deck",
-    slides=12,
-    fetch_images=True,
-    llm_provider="seedream",
-    llm_api_key="ark-xxx",
-    output="my-pitch.pptx",
-)
+# Page revision
+result = generate_ppt("", project=".", pages="-3,2<>5")
+
+# Version history
+result = generate_ppt("", project=".", history=True)
 
 print(f"Generated: {result['output_path']}, {result['page_count']} pages")
-print(f"Style atoms: {result.get('theme_atoms', {})}")
 ```
 
-## Workflow
+## 4-Phase Pipeline
 
-### Step 1: Parse Intent
+1. **Story Planning** → strategy + page structure + emotion arc
+2. **Design Decisions** → per-page layout/color/typography from 40K+ combos
+3. **Content Generation** → copy formulas (PAS/FAB/AIDA) + image keywords
+4. **PPT Rendering** → python-pptx direct, 12 master layouts, QA gates
 
-Extract from user query:
-- **Product type**: SaaS, AI, hardware, service, brand, sustainability...
-- **Audience**: Investors, customers, team, conference...
-- **Goal**: Invest, buy, understand, agree...
-- **Style**: Use `--style` for natural language or exact atoms
+## Design Atoms (40,000+ Combos)
 
-### Step 2: Narrative Planning (Phase 1)
+| Atom | Count | Examples |
+|------|-------|----------|
+| Color Palettes | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, midnight-navy, monochrome-dark... |
+| Font Pairs | 20 | modern-sans, elegant-serif, tech-mono, contrast-mix, sharp-modern... |
+| Decorations | 10 | accent-bar, neon-lines, gold-trim, diamond-bullets, gradient-bar, sidebar-nav... |
+| Layout Variants | 8 | standard, centered, sidebar-left, sidebar-right, grid-2x2, asymmetric... |
 
-`story_planner.py` → strategy + page structure + emotion arc:
-- **YC Seed Deck**: Hook → Problem → Solution → Traction → Market → Team → Financial → CTA
-- **Product Demo**: Hook → Vision → Problem → Demo → Features → Proof → CTA
-- **Sales Pitch**: Hook → Pain → Agitation → Solution → Proof → Offer → CTA
+Natural language: `--style "warm fintech"` auto-selects matching atoms.
 
-### Step 3: Design Decisions (Phase 2)
+## 10 Diagram Types
 
-`design_decider.py` → per-page layout/color/typography/chart/transition:
-- Layout: title-slide, content-with-title, three-column-cards, four-metrics, big-number, quote, chart-focus, image-plus-text, cta-closing...
-- Theme: 40,000+ combinations via composable design atoms
+| Type | Description | Data Format |
+|------|-------------|-------------|
+| Flowchart | Process flow, auto horizontal/vertical | nodes + connectors |
+| Funnel | Decreasing width stages | stages (items) |
+| Timeline | Alternating top/bottom labels | events (items) |
+| SWOT | 4-quadrant analysis | strengths/weaknesses/opportunities/threats |
+| Matrix | Comparison grid | rows + columns |
+| Cycle | Circular arrangement | stages (items) |
+| Table | Alternating row colors | headers + rows |
+| Hierarchy | Parent-child tree | nodes with parent |
+| Pyramid | Stacked levels | levels (items) |
+| Venn | 2-3 set intersection | sets with labels |
 
-### Step 4: Content Generation (Phase 3)
+## Image Engines
 
-`content_generator.py` → copy formulas + image keywords:
-- 9 copy formulas: PAS, FAB, AIDA, Social Proof, Cost of Inaction, Proof Stack...
-- 18 goal-specific generators with real persuasive content
-- Auto-detect context (deep tech, fintech, sustainability, sales, product...)
+| Engine | Provider | Env Key | Default Model |
+|--------|----------|---------|---------------|
+| Seedream | Volcengine | ARK_API_KEY | doubao-seedream-5-0-260128 |
+| GPT Image | OpenAI | OPENAI_API_KEY | gpt-image-1 |
+| DALL-E 3 | OpenAI | OPENAI_API_KEY | dall-e-3 |
+| Wanx | Alibaba | DASHSCOPE_API_KEY | wanx-v1 |
+| Kimi K2.6 | Moonshot | MOONSHOT_API_KEY | kimi-k2-0711-preview |
 
-### Step 5: PPT Rendering (Phase 4)
-
-`ppt_renderer.py` → python-pptx direct output:
-- 12 master layouts with precise inch coordinates (13.333" × 7.5" 16:9)
-- Cover-fit image insertion (Pillow pre-crop, no distortion)
-- Dark overlay for hero slides
-- CJK font fallback (Microsoft YaHei / STSong)
-- QA gates: 5 automated quality checks
-
-### Step 6: Output
-
-- Save .pptx file
-- Report: page count, strategy, theme, style atoms used
-- Remind user to review and customize content
-
-## Design Atoms — 40,000+ Combinations
-
-### Color Palettes (25)
-
-ocean-blue, midnight-navy, cyber-neon, neon-gradient, golden-luxury, rose-gold, forest-green, sage-calm, sunset-warm, terracotta, cherry-red, royal-purple, arctic-frost, slate-minimal, charcoal-bold, coral-energy, teal-fresh, indigo-deep, copper-industrial, monochrome, monochrome-dark, lavender-dream, mint-fresh, wine-burgundy, sky-bright
-
-### Font Pairs (20)
-
-modern-sans, geometric-sans, bold-sans, clean-corporate, serif-editorial, elegant-serif, literary-serif, tech-mono, mono-clean, swiss-style, humanist-sans, friendly-round, sharp-modern, classic-formal, contrast-mix, tech-contrast, warm-mix, startup-mix, minimal-mix, editorial-mix
-
-### Decoration Styles (10)
-
-accent-bar, neon-lines, gold-trim, minimal-dots, diamond-bullets, gradient-bar, circle-accent, sidebar-nav, no-decoration, full-bleed-overlay
-
-### Layout Variants (8)
-
-standard, centered, sidebar-left, sidebar-right, wide-cards, grid-2x2, asymmetric, full-width
-
-### Natural Language Style Matching
-
-| Style Description | Auto-Selected Atoms |
-|---|---|
-| warm fintech | ocean-blue + clean-corporate + accent-bar + sidebar-left |
-| dark cyberpunk | cyber-neon + tech-mono + neon-lines + wide-cards |
-| elegant luxury | golden-luxury + elegant-serif + gold-trim + centered |
-| calm nature | sage-calm + humanist-sans + circle-accent + standard |
-| bold startup | royal-purple + bold-sans + gradient-bar + grid-2x2 |
-| minimal corporate | slate-minimal + modern-sans + no-decoration + standard |
-| industrial tech | copper-industrial + tech-contrast + accent-bar + full-width |
-
-## Image Engines (5)
-
-| Engine | Provider | CLI Flag | Notes |
-|--------|----------|----------|-------|
-| Seedream Pro | ByteDance Volcengine | `--llm-provider seedream` | Recommended, high quality |
-| GPT Image | OpenAI | `--llm-provider gpt-image` | GPT Image 2/1.5/1 |
-| DALL-E 3 | OpenAI | `--llm-provider dalle` | Classic AI generation |
-| Wanx | Alibaba DashScope | `--llm-provider wanx` | Chinese market |
-| Kimi K2.6 | Moonshot | `--llm-provider kimi` | Keyword enhance + search |
+Image modes: `placeholder` (default), `search` (Unsplash/Pexels), `generate` (AI), `enhance` (Kimi keyword optimization + search).
 
 All engines use **cache-first** — same image never generated twice.
+
+## Animation System
+
+- **12 Transitions**: fade, push, wipe, split, cover, dissolve, wheel, wedge, blinds, checker, comb, random
+- **11 Entrances**: appear, fly_in, fade_in, zoom_in, float_up, bounce, etc.
+- **Motion mapping**: 1-2 = transitions only, 3-5 = fade_in entrance, 6-10 = fly_in entrance
+- Applied via XML injection (python-pptx 1.0.2 has no native transition API)
+
+## Enterprise Project Structure
+
+```
+my-project/
+├── template.pptx    # Brand template (optional)
+├── brand.json       # Brand spec (colors, fonts, logo, footer, watermark)
+├── content.json     # Page content (title, bullets, image, diagram, code, exercise)
+├── logo.png         # Company logo
+├── images/          # Local images
+└── output/
+    ├── v1/          # Version 1
+    │   ├── presentation.pptx
+    │   └── meta.json
+    └── v2/          # Version 2 (auto-incremented)
+```
+
+## content.json Format
+
+```json
+{
+  "meta": {"title": "...", "author": "..."},
+  "slides": [
+    {
+      "goal": "hook|problem|solution|features|cta|...",
+      "title": "Page Title",
+      "subtitle": "Optional subtitle",
+      "bullets": ["Point 1", "Point 2"],
+      "image": "images/photo.png",
+      "cards": [{"title": "...", "text": "..."}],
+      "diagram": {"type": "flowchart", "data": {...}},
+      "code": {"language": "python", "source": "..."},
+      "exercise": {"instructions": "...", "duration": "5 min", "steps": [...]}
+    }
+  ]
+}
+```
+
+## brand.json Format
+
+```json
+{
+  "colors": {
+    "primary": "#1E3A5F", "on-primary": "#FFFFFF",
+    "accent": "#E8A838", "background": "#0A1E3D",
+    "foreground": "#F0F4F8", "muted": "#1A2E4A",
+    "muted-foreground": "#8A9BB5"
+  },
+  "logo": {"position": "top_right", "width_inches": 1.0, "skip_cover": true},
+  "footer": {"text": "Company Name", "show_page_number": true},
+  "watermark": {"text": "CONFIDENTIAL", "opacity": 0.1}
+}
+```
+
+## Page Revision Syntax
+
+```
+--pages "3,5 +6 -8 3>5 3<>7"
+```
+
+| Syntax | Action | Example |
+|--------|--------|---------|
+| `N` | Keep page N | `3,5` keep pages 3 and 5 |
+| `+N` | Insert new page at N | `+6` insert at position 6 |
+| `-N` | Delete page N | `-3` delete page 3 |
+| `N>M` | Move page N to position M | `10>3` move 10 to 3 |
+| `N<>M` | Swap pages N and M | `2<>5` swap 2 and 5 |
+
+All page numbers are 1-based, refer to ORIGINAL document.
+
+## .env Configuration
+
+Copy `.env.example` to `.env` and fill in API keys:
+
+```env
+ARK_API_KEY=your-key-here
+OPENAI_API_KEY=sk-...
+DASHSCOPE_API_KEY=...
+MOONSHOT_API_KEY=...
+UNSPLASH_ACCESS_KEY=...
+PEXELS_API_KEY=...
+```
+
+Search order: CWD/.env → package root/.env → ~/.ppt-pro-max/.env
 
 ## CLI Reference
 
 ```
 ppt-design "query" [options]
 
-Style:
-  --style TEXT          Natural language style ("warm fintech", "dark cyberpunk")
+# Style
+  --style TEXT          Natural language style description
   --palette NAME        Color palette (25 options)
   --fonts NAME          Font pair (20 options)
   --decoration NAME     Decoration style (10 options)
   --layout-variant NAME Layout variant (8 options)
-  --mood TEXT           Mood hint (professional, tech, warm, elegant, vibrant, nature)
-  --style-seed INT      Reproducible random seed
+  --mood TEXT           Mood hint
+  --style-seed INT      Reproducible style seed
 
-Structure:
-  --strategy NAME       Override strategy (YC Seed Deck, Product Demo, Sales Pitch)
-  --theme NAME          Theme preset (backward compatible)
+# Content
   --slides N            Override slide count
-  --content FILE        JSON file with real content
-  --variance 1-10       Design variance (centered → bold)
-  --motion 1-10         Animation intensity (subtle → dramatic)
-  --density 1-10        Content density (spacious → dense)
+  --content FILE        JSON content file
+  --variance 1-10       Design variance
+  --motion 1-10         Animation intensity
+  --density 1-10        Content density
 
-Images:
-  --fetch-images        Auto-fetch images
-  --image-mode MODE     placeholder/search/generate/enhance/auto
-  --llm-provider PROV   Image engine (seedream/gpt-image/dalle/wanx/kimi)
-  --llm-api-key KEY     API key for image engine
+# Images
+  --image-mode MODE     placeholder|search|generate|enhance
+  --fetch-images        Shortcut for --image-mode search
+  --llm-provider PROV   seedream|gpt-image|dalle|wanx|kimi
+  --llm-api-key KEY     API key (or .env)
+  --llm-base-url URL    API base URL override
   --llm-model MODEL     Model name override
 
-Output:
-  --persist             Persist design system as MASTER.md
-  --dry-run             Design decisions only (no .pptx)
-  -o, --output PATH     Output file path
+# Enterprise
+  --project DIR         Project directory (Enterprise mode)
+  --business-mode MODE  pitch|education|training|report
+  --review              Preview plan before generating
+  --review-file FILE    Save review plan to JSON
+  --output-version N    Specify version number
+  --from-version N      Base on specified version
+  --pages OPS           Page operations (-3,2<>5,10>3,+6)
+  --history             Show version history
+
+# Output
+  --persist             Save design system as MASTER.md
+  --dry-run             Output design decisions only
+  -o, --output PATH     Output .pptx path
 ```
 
-## Content JSON Format
+## Key Constraints
 
-```json
-{
-  "company": "Acme AI",
-  "product": "AI Marketing Platform",
-  "tagline": "Your AI marketing team. Always on.",
-  "metrics": {"users": "10K+", "retention": "95%", "growth": "3x", "arr": "$2M"},
-  "pain_points": [
-    {"title": "Content Overload", "desc": "Need 10x content with same headcount"},
-    {"title": "Tool Fatigue", "desc": "15+ tools that don't talk to each other"}
-  ],
-  "chart_data": {
-    "mrr": {"labels": ["Sep","Oct","Nov","Dec"], "values": [5,12,28,45]}
-  }
-}
-```
-
-## Design Principles
-
-1. **Narrative first** — PPT is storytelling, not decoration
-2. **Infinite styles** — 40,000+ combinations via composable design atoms
-3. **Theme consistency** — All pages share one theme (colors + fonts + decoration)
-4. **Master layouts** — 12 predefined layouts with precise coordinates
-5. **Context-aware** — Layout/color/typography adapt to each page's goal and emotion
-6. **Fully editable** — Output is native .pptx, not screenshots
-7. **Cache-first images** — Same image never generated twice, saving API costs
+- **python-pptx 1.0.2**: No `PP_TRANSITION_TYPE`, must use XML for transitions/animations
+- **Cover-fit images**: Use `_add_picture_cover()` with Pillow pre-crop — never stretch
+- **Cache-first**: All image engines check cache before API call
+- **Two-pass rebuild**: Page revision uses rebuild (not in-place) to avoid ZIP corruption
+- **1-based pages**: All `--pages` numbers refer to original document
+- **Windows**: Use `python` not `python3`
 
 ## Dependencies
 
 - python-pptx >= 1.0.2 (required)
-- Pillow >= 10.0 (required, for cover-fit image cropping)
-- ui-ux-pro-max >= 1.0.0 (optional, for search + design knowledge)
+- Pillow >= 10.0 (required)
+- python-dotenv >= 1.0 (optional, for .env support)
+- ui-ux-pro-max >= 1.0.0 (optional)
