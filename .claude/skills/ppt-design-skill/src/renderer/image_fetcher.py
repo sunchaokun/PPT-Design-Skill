@@ -203,12 +203,14 @@ class ImageFetcher:
                 return None
 
             base_url = self.llm_base_url or "https://ark.cn-beijing.volces.com/api/v3"
-            model = self.llm_model or "doubao-seedream-5-0-260128"
+            model = self.llm_model or "doubao-seedream-4-5-251128"
 
-            if max(width, height) >= 2048:
-                img_size = "2K"
+            if max(width, height) >= 3000:
+                img_size = "4k"
+            elif max(width, height) >= 2048:
+                img_size = "2k"
             else:
-                img_size = "1K"
+                img_size = "2k"
 
             cache_key = f"seedream:{model}:{prompt[:80]}:{img_size}"
             cached = self._check_cache(cache_key)

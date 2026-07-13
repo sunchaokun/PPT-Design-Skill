@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -48,7 +49,16 @@ def generate_ppt(
     from_version: int | None = None,
     pages: str | None = None,
     history: bool = False,
+    proposal: bool = False,
+    confirmed_proposal: str | None = None,
+    materials_dir: str | None = None,
 ) -> dict:
+    if proposal:
+        return _generate_proposals(
+            query=query, style=style or theme, project=project,
+            output_dir=output, style_seed=style_seed,
+            materials_dir=materials_dir,
+        )
     if project:
         return _generate_ppt_enterprise(
             query=query, project=project, dry_run=dry_run,
@@ -57,9 +67,12 @@ def generate_ppt(
             output_version=output_version, from_version=from_version,
             pages=pages, history=history, output=output,
             motion=motion, content_file=content_file,
+            fetch_images=fetch_images,
             llm_provider=llm_provider, llm_api_key=llm_api_key,
             llm_base_url=llm_base_url, llm_model=llm_model,
             image_mode=image_mode, image_config=image_config,
+            materials_dir=materials_dir,
+            confirmed_proposal=confirmed_proposal,
         )
     return _generate_ppt_freestyle(
         query=query, strategy=strategy, theme=theme, style=style,
@@ -175,6 +188,33 @@ def _generate_ppt_freestyle(
     return result
 
 
+def _generate_proposals(
+    query: str,
+    style: str | None = None,
+    project: str | None = None,
+    output_dir: str | None = None,
+    style_seed: int | None = None,
+    materials_dir: str | None = None,
+) -> dict:
+    from ppt_pro_max.enterprise.proposal_generator import ProposalGenerator
+
+    if output_dir is None:
+        if project:
+            output_dir = os.path.join(project, "output")
+        else:
+            output_dir = "output"
+
+    gen = ProposalGenerator()
+    proposals = gen.generate(
+        query=query,
+        style=style,
+        output_dir=output_dir,
+        project_dir=project or materials_dir,
+        seed=style_seed,
+    )
+    return {"proposals": proposals}
+
+
 def _generate_ppt_enterprise(
     query: str,
     project: str,
@@ -190,14 +230,24 @@ def _generate_ppt_enterprise(
     history: bool = False,
     output: str | None = None,
     content_file: str | None = None,
+    fetch_images: bool = False,
     llm_provider: str | None = None,
     llm_api_key: str | None = None,
     llm_base_url: str | None = None,
     llm_model: str | None = None,
     image_mode: str = "placeholder",
     image_config: dict[str, Any] | None = None,
+    materials_dir: str | None = None,
+    confirmed_proposal: str | None = None,
 ) -> dict:
     from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+
+    effective_image_mode = image_mode
+    if fetch_images and effective_image_mode == "placeholder":
+        if llm_provider:
+            effective_image_mode = "generate"
+        else:
+            effective_image_mode = "auto"
 
     pipeline = EnterprisePipeline()
     return pipeline.run(
@@ -219,7 +269,7 @@ def _generate_ppt_enterprise(
         llm_api_key=llm_api_key,
         llm_base_url=llm_base_url,
         llm_model=llm_model,
-        image_mode=image_mode,
+        image_mode=effective_image_mode,
         image_config=image_config,
     )
 

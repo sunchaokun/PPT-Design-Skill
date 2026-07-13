@@ -21,6 +21,7 @@ class ProjectAsset:
     logo_path: Optional[str] = None
     brand_raw: Optional[dict[str, Any]] = None
     content_raw: Optional[dict[str, Any]] = None
+    readme_path: Optional[str] = None
     image_pool: list[str] = field(default_factory=list)
 
 
@@ -54,6 +55,8 @@ class ProjectScanner:
                 asset.brand_raw = self._load_json(entry)
             elif name == "content.json":
                 asset.content_raw = self._load_json(entry)
+            elif name.lower() in ("readme.md", "readme.markdown", "readme"):
+                asset.readme_path = str(entry)
             elif suffix in _IMAGE_EXTENSIONS:
                 asset.image_pool.append(str(entry))
 

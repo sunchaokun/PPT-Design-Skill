@@ -1,13 +1,13 @@
 ---
 name: ppt-design-skill
-version: 0.4.0
-description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Dual-mode: FreeStyle + Enterprise. 10 diagram types, brand compliance, version control, page revision. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style-description] [--fetch-images] [--project DIR]"
+version: 0.5.0
+description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Dual-mode: FreeStyle + Enterprise. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style-description] [--fetch-images] [--project DIR] [--proposal]"
 license: MIT
 metadata:
   author: sunchaokun
   category: design
-  tags: [ppt, presentation, deck, pitch, slides, python-pptx, enterprise, brand, diagram]
+  tags: [ppt, presentation, deck, pitch, slides, python-pptx, enterprise, brand, diagram, proposal]
 ---
 
 # PPT Design Skill

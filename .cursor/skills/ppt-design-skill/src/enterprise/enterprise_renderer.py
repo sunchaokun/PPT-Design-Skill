@@ -1,4 +1,11 @@
-"""EnterpriseRenderer — template-driven PPT rendering."""
+"""EnterpriseRenderer — template-driven or free-form PPT rendering.
+
+When a template.pptx is provided, strictly follow the template's layouts,
+dimensions, and styles — the user chose that template for a reason.
+
+When no template is provided, use LayoutRegistry's 12 master layouts on a
+13.333"×7.5" widescreen canvas for maximum creative freedom.
+"""
 
 from __future__ import annotations
 
@@ -10,15 +17,21 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from ppt_pro_max.enterprise.slide_utils import remove_slide
+from ppt_pro_max.renderer.layout_registry import SLIDE_WIDTH, SLIDE_HEIGHT
 
 
 class EnterpriseRenderer:
 
     def __init__(self, template_path: str | None = None):
         self._template_path = template_path
+        self._has_template = bool(template_path and os.path.exists(template_path))
+
+    @property
+    def has_template(self) -> bool:
+        return self._has_template
 
     def create_presentation(self, keep_slides: bool = False) -> Presentation:
-        if self._template_path and os.path.exists(self._template_path):
+        if self._has_template:
             try:
                 prs = Presentation(self._template_path)
                 if not keep_slides:
@@ -26,29 +39,40 @@ class EnterpriseRenderer:
                         remove_slide(prs, 0)
                 return prs
             except Exception:
-                return Presentation()
-        return Presentation()
+                pass
+        prs = Presentation()
+        prs.slide_width = Inches(SLIDE_WIDTH)
+        prs.slide_height = Inches(SLIDE_HEIGHT)
+        return prs
 
     def add_slide(
         self,
         prs: Presentation,
         layout_name: str | None = None,
     ):
-        if not prs.slide_layouts:
-            from pptx import Presentation as _Prs
-            prs = _Prs()
-        if layout_name:
+        if self._has_template:
+            if layout_name:
+                for layout in prs.slide_layouts:
+                    if layout.name == layout_name:
+                        return prs.slides.add_slide(layout)
             for layout in prs.slide_layouts:
-                if layout.name == layout_name:
+                if "blank" in layout.name.lower():
+                    continue
+                if layout_name is None and "title" in layout.name.lower():
                     return prs.slides.add_slide(layout)
+            for layout in prs.slide_layouts:
+                if "blank" not in layout.name.lower():
+                    return prs.slides.add_slide(layout)
+            return prs.slides.add_slide(prs.slide_layouts[0])
+        blank_layout = None
         for layout in prs.slide_layouts:
             if "blank" in layout.name.lower():
-                continue
-            if layout_name is None and "title" in layout.name.lower():
-                return prs.slides.add_slide(layout)
-        for layout in prs.slide_layouts:
-            if "blank" not in layout.name.lower():
-                return prs.slides.add_slide(layout)
+                blank_layout = layout
+                break
+        if blank_layout is None and prs.slide_layouts:
+            blank_layout = prs.slide_layouts[-1]
+        if blank_layout is not None:
+            return prs.slides.add_slide(blank_layout)
         return prs.slides.add_slide(prs.slide_layouts[0])
 
     def insert_logo(

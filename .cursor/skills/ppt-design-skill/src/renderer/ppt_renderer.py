@@ -293,20 +293,21 @@ class PPTRenderer:
                 p.level = 1
 
                 font_size = ph_def.get("font_size", 16)
-                p.font.size = Pt(font_size)
-                p.font.bold = False
-
                 alignment = ph_def.get("alignment", "left")
                 align_map = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
                 p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
 
                 color_role = ph_def.get("color_role", "foreground")
                 color_hex = theme.get("colors", {}).get(color_role, "#1E293B")
-                p.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
 
                 font_name = ph_def.get("font_role", "body")
                 font_family = theme.get("typography", {}).get(font_name, "Inter")
-                p.font.name = font_family
+
+                for run in p.runs:
+                    run.font.size = Pt(font_size)
+                    run.font.bold = False
+                    run.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
+                    run.font.name = font_family
 
                 p.space_after = Pt(8)
                 p.space_before = Pt(4)
@@ -315,20 +316,23 @@ class PPTRenderer:
             p.text = text
 
             font_size = ph_def.get("font_size", 16)
-            p.font.size = Pt(font_size)
-            p.font.bold = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
-
             alignment = ph_def.get("alignment", "left")
             align_map = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}
             p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
 
             color_role = ph_def.get("color_role", "foreground")
             color_hex = theme.get("colors", {}).get(color_role, "#1E293B")
-            p.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
 
             font_name = ph_def.get("font_role", "body")
             font_family = theme.get("typography", {}).get(font_name, "Inter")
-            p.font.name = font_family
+
+            font_weight = ph_def.get("font_weight") in ("bold", "semibold", "600", "700")
+
+            for run in p.runs:
+                run.font.size = Pt(font_size)
+                run.font.bold = font_weight
+                run.font.color.rgb = RGBColor.from_string(color_hex.lstrip("#"))
+                run.font.name = font_family
 
             if extra_style and extra_style.get("vertical_center"):
                 p.alignment = align_map.get(alignment, PP_ALIGN.LEFT)
@@ -530,6 +534,14 @@ class PPTRenderer:
         top = Inches(ph_def["y"])
         width = Inches(ph_def["width"])
         height = Inches(ph_def["height"])
+
+        local_image = getattr(content, '_image_path', None)
+        if local_image and os.path.isfile(local_image):
+            try:
+                self._add_picture_cover(slide, local_image, ph_def)
+                return
+            except Exception:
+                pass
 
         image_path = self.image_fetcher.fetch(
             keywords=content.image_keywords or content.goal,

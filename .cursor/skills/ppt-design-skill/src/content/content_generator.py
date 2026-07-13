@@ -228,15 +228,17 @@ def _generate_solution(goal: str, design: PageDesign, ctx: dict) -> dict:
 
 def _generate_product(goal: str, design: PageDesign, ctx: dict) -> dict:
     product = ctx.get("product", ctx.get("product_name", "Our Platform"))
-    return {
-        "title": f"How {product} works",
-        "subtitle": "Three steps to transform your workflow",
-        "bullets": [
+    title = ctx.get("product_title", f"How {product} works")
+    custom_bullets = ctx.get("product_bullets", "")
+    if custom_bullets:
+        bullets = custom_bullets.split("|") if "|" in custom_bullets else [custom_bullets]
+    else:
+        bullets = [
             "Connect: Integrate with your existing tools in minutes, not months",
             "Automate: Build intelligent workflows with our visual designer",
             "Optimize: AI continuously improves your processes",
-        ],
-    }
+        ]
+    return {"title": title, "bullets": bullets}
 
 
 def _generate_features(goal: str, design: PageDesign, ctx: dict) -> dict:
@@ -260,6 +262,7 @@ def _generate_features(goal: str, design: PageDesign, ctx: dict) -> dict:
 
 
 def _generate_traction(goal: str, design: PageDesign, ctx: dict) -> dict:
+    title = ctx.get("traction_title", "The numbers speak for themselves")
     metrics = []
     if "metrics" in ctx:
         for k, v in list(ctx["metrics"].items())[:4]:
@@ -273,56 +276,67 @@ def _generate_traction(goal: str, design: PageDesign, ctx: dict) -> dict:
     chart_data = None
     if design.chart_type:
         chart_data = _build_chart(ctx, design.chart_type)
-    return {"title": "The numbers speak for themselves", "metrics": metrics, "chart_data": chart_data}
+    return {"title": title, "metrics": metrics, "chart_data": chart_data}
 
 
 def _generate_market(goal: str, design: PageDesign, ctx: dict) -> dict:
     industry = ctx.get("industry", "technology")
-    return {
-        "title": f"A massive, underserved {industry} market",
-        "bullets": [
+    title = ctx.get("market_title", f"A massive, underserved {industry} market")
+    custom_bullets = ctx.get("market_bullets", "")
+    if custom_bullets:
+        bullets = custom_bullets.split("|") if "|" in custom_bullets else [custom_bullets]
+    else:
+        bullets = [
             "Total addressable market: $47B and growing at 23% CAGR",
             "Only 12% of enterprises have adopted modern solutions",
             "Regulatory tailwinds are accelerating adoption globally",
-        ],
-    }
+        ]
+    return {"title": title, "bullets": bullets}
 
 
 def _generate_business(goal: str, design: PageDesign, ctx: dict) -> dict:
-    return {
-        "title": "A business model built for scale",
-        "bullets": [
+    title = ctx.get("business_title", "A business model built for scale")
+    custom_bullets = ctx.get("business_bullets", "")
+    if custom_bullets:
+        bullets = custom_bullets.split("|") if "|" in custom_bullets else [custom_bullets]
+    else:
+        bullets = [
             "SaaS subscription with 85%+ gross margins",
             "Land-and-expand: free tier → team → enterprise",
             "Net revenue retention: 120%+ (expansion exceeds churn)",
-        ],
-    }
+        ]
+    return {"title": title, "bullets": bullets}
 
 
 def _generate_team(goal: str, design: PageDesign, ctx: dict) -> dict:
-    return {
-        "title": "Built by operators who've been in your shoes",
-        "bullets": [
+    title = ctx.get("team_title", "Built by operators who've been in your shoes")
+    custom_bullets = ctx.get("team_bullets", "")
+    if custom_bullets:
+        bullets = custom_bullets.split("|") if "|" in custom_bullets else [custom_bullets]
+    else:
+        bullets = [
             "CEO: 15yr industry experience, 2x founder (1 exit)",
             "CTO: Former principal engineer at top tech company",
             "VP Sales: Built $0→$50M ARR pipeline at previous startup",
-        ],
-    }
+        ]
+    return {"title": title, "bullets": bullets}
 
 
 def _generate_financial(goal: str, design: PageDesign, ctx: dict) -> dict:
-    chart_data = None
-    if design.chart_type:
-        chart_data = _build_chart(ctx, design.chart_type)
-    return {
-        "title": "Strong unit economics, clear path to profitability",
-        "bullets": [
+    title = ctx.get("financial_title", "Strong unit economics, clear path to profitability")
+    custom_bullets = ctx.get("financial_bullets", "")
+    if custom_bullets:
+        bullets = custom_bullets.split("|") if "|" in custom_bullets else [custom_bullets]
+    else:
+        bullets = [
             "Current ARR: $8M, targeting $20M by year-end",
             "CAC payback: 8 months (industry avg: 18 months)",
             "Rule of 40: ARR growth (60%) + FCF margin (-15%) = 45%",
-        ],
-        "chart_data": chart_data,
-    }
+        ]
+    chart_data = None
+    if design.chart_type:
+        chart_data = _build_chart(ctx, design.chart_type)
+    return {"title": title, "bullets": bullets, "chart_data": chart_data}
 
 
 def _generate_demo(goal: str, design: PageDesign, ctx: dict) -> dict:

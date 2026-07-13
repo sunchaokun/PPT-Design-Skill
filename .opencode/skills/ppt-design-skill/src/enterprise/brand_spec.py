@@ -53,7 +53,7 @@ class BrandSpec:
             logo=brand_override.logo or template_spec.logo,
             layout_mapping=brand_override.layout_mapping or template_spec.layout_mapping,
             template_layouts=template_spec.template_layouts,
-            dark_mode=template_spec.dark_mode,
+            dark_mode=brand_override.dark_mode or template_spec.dark_mode,
             footer=brand_override.footer or template_spec.footer,
             watermark=brand_override.watermark or template_spec.watermark,
         )

@@ -10,10 +10,9 @@ from ppt_pro_max.enterprise.template_analyzer import TemplateAnalyzer
 from ppt_pro_max.enterprise.brand_spec import BrandSpec
 from ppt_pro_max.enterprise.version_manager import next_version, read_meta, write_meta
 from ppt_pro_max.enterprise.enterprise_decider import EnterpriseDesignDecider
-from ppt_pro_max.enterprise.enterprise_renderer import EnterpriseRenderer
 from ppt_pro_max.enterprise.review_gate import ReviewGate
 from ppt_pro_max.enterprise.content_parser import load_enterprise_content
-from ppt_pro_max.enterprise.image_matcher import match_images
+from ppt_pro_max.enterprise.image_matcher import match_images, assign_images_by_size, auto_generate_image_prompts
 from ppt_pro_max.enterprise.page_revision import PageRevisionEngine
 from ppt_pro_max.enterprise.density_profile import get_density_profile, apply_density_to_bullets
 
@@ -133,11 +132,18 @@ class EnterprisePipeline:
             )
             return result
 
-        renderer = EnterpriseRenderer(template_path=asset.template_path)
-        prs = renderer.create_presentation()
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        precision = PrecisionRenderer(brand_spec=brand_spec, template_path=asset.template_path)
+        prs = precision.create_presentation()
 
         page_designs = match_images(asset.image_pool, page_designs)
+        page_designs = assign_images_by_size(asset.image_pool, page_designs)
+        page_designs = auto_generate_image_prompts(page_designs)
         density_profile = get_density_profile(effective_density)
+        for design in page_designs:
+            bullets = design.get("bullets")
+            if bullets:
+                design["bullets"] = apply_density_to_bullets(bullets, density_profile)
 
         image_fetcher = self._build_image_fetcher(kwargs)
 
@@ -147,7 +153,8 @@ class EnterprisePipeline:
                 image_val = None
                 design["image"] = None
             if not image_val and image_fetcher is not None:
-                keywords = design.get("title", query)
+                prompt = design.get("image_prompt")
+                keywords = prompt or design.get("title", query)
                 goal = design.get("goal", "")
                 try:
                     fetched = image_fetcher.fetch(keywords, goal=goal)
@@ -156,30 +163,25 @@ class EnterprisePipeline:
                 except Exception:
                     pass
 
-            layout_name = design.get("template_layout_name")
-            slide = renderer.add_slide(prs, layout_name=layout_name)
-            self._populate_slide(slide, design, prs, density_profile, brand_spec)
+        for design in page_designs:
+            precision.render_slide(prs, design)
 
-            if asset.logo_path:
-                logo_spec = brand_spec.logo or {"position": "top_right", "width_inches": 1.0}
-                renderer.insert_logo(
-                    slide, asset.logo_path, logo_spec,
-                    current_goal=design.get("goal"), prs=prs,
-                )
+        if asset.logo_path:
+            for idx, slide in enumerate(prs.slides):
+                design_goal = page_designs[idx].get("goal") if idx < len(page_designs) else None
+                precision.apply_logo(slide, asset.logo_path, prs, current_goal=design_goal)
 
-            effective_motion = motion
-            if effective_motion is None:
-                effective_motion = kwargs.get("motion")
-            if effective_motion and isinstance(effective_motion, int) and effective_motion > 0:
-                self._apply_animations(slide, design, effective_motion)
+        precision.apply_footer(prs)
+        precision.apply_watermark(prs)
 
-        if brand_spec.footer:
-            renderer.add_page_numbers(prs, brand_spec.footer, brand_spec=brand_spec)
+        effective_motion = motion
+        if effective_motion is None:
+            effective_motion = kwargs.get("motion")
+        if effective_motion and isinstance(effective_motion, int) and effective_motion > 0:
+            for slide in prs.slides:
+                self._apply_animations(slide, {"goal": "content"}, effective_motion)
 
-        if brand_spec.watermark:
-            renderer.add_watermark(prs, brand_spec.watermark, brand_spec=brand_spec)
-
-        renderer.save(prs, pptx_path)
+        precision.save(prs, pptx_path)
 
         meta = {
             "version": vnum,
@@ -188,6 +190,7 @@ class EnterprisePipeline:
             "density": effective_density,
             "num_slides": len(page_designs),
             "brand_source": brand_spec.source,
+            "render_mode": "precision",
             "slides": [
                 {"goal": d.get("goal"), "title": d.get("title", "")}
                 for d in page_designs
@@ -201,6 +204,7 @@ class EnterprisePipeline:
             "output_path": pptx_path,
             "version": vnum,
             "num_slides": len(page_designs),
+            "render_mode": "precision",
         }
 
     def _build_brand_spec(self, asset) -> BrandSpec:
@@ -243,6 +247,10 @@ class EnterprisePipeline:
                 pass
         if asset.content_raw:
             return load_enterprise_content(asset.content_raw, project_dir)
+        readme_path = getattr(asset, "readme_path", None)
+        if readme_path:
+            from ppt_pro_max.enterprise.content_parser import parse_readme
+            return parse_readme(readme_path, project_dir)
         return []
 
     def _load_content_from_meta(self, meta: dict[str, Any]) -> list[dict[str, Any]]:
@@ -331,509 +339,6 @@ class EnterprisePipeline:
                 design["template_layout_name"] = layout_names[layout_idx]
             designs.append(design)
         return designs
-
-    def _populate_slide(self, slide, design: dict[str, Any], prs, density_profile=None, brand_spec=None) -> None:
-        from pptx.util import Pt
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        self._apply_visual_design(slide, design, prs, brand_spec)
-
-        if slide.shapes.title and design.get("title"):
-            slide.shapes.title.text = design["title"]
-            for para in slide.shapes.title.text_frame.paragraphs:
-                for run in para.runs:
-                    run.font.size = Pt(density_profile.title_size)
-                    self._apply_brand_font_color(run, "foreground", brand_spec)
-
-        if design.get("subtitle"):
-            from pptx.enum.shapes import PP_PLACEHOLDER
-            for ph in slide.placeholders:
-                ph_type = ph.placeholder_format.type
-                if ph_type == PP_PLACEHOLDER.SUBTITLE or ph.placeholder_format.idx == 2:
-                    ph.text = design["subtitle"]
-                    for para in ph.text_frame.paragraphs:
-                        for run in para.runs:
-                            run.font.size = Pt(density_profile.subtitle_size)
-                            self._apply_brand_font_color(run, "muted-foreground", brand_spec)
-                    break
-
-        if design.get("bullets"):
-            bullets = apply_density_to_bullets(design["bullets"], density_profile)
-            body_text = "\n".join(f"• {b}" if not b.startswith(("• ", "- ", "— ")) else b for b in bullets)
-            from pptx.enum.shapes import PP_PLACEHOLDER
-            for ph in slide.placeholders:
-                ph_type = ph.placeholder_format.type
-                if ph_type in (PP_PLACEHOLDER.BODY, PP_PLACEHOLDER.OBJECT) or ph.placeholder_format.idx == 1:
-                    ph.text = body_text
-                    for para in ph.text_frame.paragraphs:
-                        for run in para.runs:
-                            run.font.size = Pt(density_profile.bullet_size)
-                            self._apply_brand_font_color(run, "foreground", brand_spec)
-                    break
-
-        if design.get("image") and os.path.isfile(design["image"]):
-            self._insert_content_image(slide, design["image"], prs, density_profile)
-
-        if design.get("chart"):
-            self._render_chart(slide, design["chart"], prs, density_profile, brand_spec)
-
-        if design.get("cards"):
-            self._render_cards(slide, design["cards"], prs, density_profile)
-
-        if design.get("diagram_type") and design.get("diagram_data"):
-            self._render_diagram(slide, design, prs, density_profile)
-
-        if design.get("code"):
-            self._render_code_block(slide, design["code"], prs, density_profile)
-
-        if design.get("exercise"):
-            self._render_exercise(slide, design["exercise"], prs, density_profile)
-
-        if design.get("notes"):
-            self._render_notes(slide, design["notes"])
-
-        if design.get("links"):
-            self._render_links(slide, design["links"], design, prs=prs, brand_spec=brand_spec)
-
-    _BASELINE_IMAGE_RATIO = 0.38
-
-    def _apply_visual_design(self, slide, design: dict[str, Any], prs, brand_spec=None) -> None:
-        from pptx.util import Inches
-        from pptx.enum.shapes import MSO_SHAPE
-        from pptx.dml.color import RGBColor
-
-        colors = {}
-        if brand_spec and brand_spec.colors:
-            colors = brand_spec.colors
-
-        bg_color = colors.get("background", "#FFFFFF")
-        try:
-            background = slide.background
-            fill = background.fill
-            fill.solid()
-            fill.fore_color.rgb = RGBColor.from_string(bg_color.lstrip("#"))
-        except Exception:
-            pass
-
-        goal = design.get("goal", "content")
-        is_hero = goal in ("hook", "cta")
-
-        if is_hero:
-            primary_hex = colors.get("primary", "#2563EB")
-            try:
-                bg_rect = slide.shapes.add_shape(
-                    MSO_SHAPE.RECTANGLE,
-                    Inches(0), Inches(0), prs.slide_width, prs.slide_height,
-                )
-                bg_rect.fill.solid()
-                bg_rect.fill.fore_color.rgb = RGBColor.from_string(primary_hex.lstrip("#"))
-                bg_rect.line.fill.background()
-
-                from pptx.oxml.ns import qn
-                from lxml import etree
-                sp_pr = bg_rect._element.find(qn("p:spPr"))
-                solid_fill = sp_pr.find(qn("a:solidFill"))
-                if solid_fill is not None:
-                    srgb = solid_fill.find(qn("a:srgbClr"))
-                    if srgb is not None:
-                        alpha = etree.SubElement(srgb, qn("a:alpha"))
-                        alpha.set("val", "90000")
-            except Exception:
-                pass
-        else:
-            accent_hex = colors.get("accent", colors.get("primary", "#2563EB"))
-            try:
-                bar = slide.shapes.add_shape(
-                    MSO_SHAPE.RECTANGLE,
-                    Inches(0), Inches(0), Inches(0.08), prs.slide_height,
-                )
-                bar.fill.solid()
-                bar.fill.fore_color.rgb = RGBColor.from_string(accent_hex.lstrip("#"))
-                bar.line.fill.background()
-            except Exception:
-                pass
-
-            muted_hex = colors.get("muted", "#F1F5F9")
-            try:
-                bottom_bar = slide.shapes.add_shape(
-                    MSO_SHAPE.RECTANGLE,
-                    Inches(0), Inches(7.2), prs.slide_width, Inches(0.3),
-                )
-                bottom_bar.fill.solid()
-                bottom_bar.fill.fore_color.rgb = RGBColor.from_string(muted_hex.lstrip("#"))
-                bottom_bar.line.fill.background()
-            except Exception:
-                pass
-
-    def _apply_brand_font_color(self, run, color_role: str, brand_spec=None) -> None:
-        from pptx.dml.color import RGBColor
-
-        if brand_spec is None or not brand_spec.colors:
-            return
-        hex_color = brand_spec.colors.get(color_role)
-        if hex_color:
-            try:
-                run.font.color.rgb = RGBColor.from_string(hex_color.lstrip("#"))
-            except Exception:
-                pass
-
-    def _insert_content_image(self, slide, image_path: str, prs, density_profile=None) -> None:
-        from pptx.util import Inches
-        from PIL import Image as PILImage
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        slide_width = prs.slide_width
-        target_width = Inches(4.0 * density_profile.image_width_ratio / self._BASELINE_IMAGE_RATIO)
-        try:
-            with PILImage.open(image_path) as img:
-                img_w, img_h = img.size
-                aspect = img_h / img_w if img_w > 0 else 0.75
-        except Exception:
-            aspect = 0.75
-        target_height = int(target_width * aspect)
-
-        left = slide_width - target_width - Inches(0.5)
-        top = Inches(1.5)
-
-        slide.shapes.add_picture(image_path, left, top, width=target_width, height=target_height)
-
-    def _render_chart(self, slide, chart_config: dict[str, Any], prs, density_profile=None, brand_spec=None) -> None:
-        from ppt_pro_max.renderer.chart_builder import ChartBuilder
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        chart_height = 4.5 * density_profile.image_width_ratio / self._BASELINE_IMAGE_RATIO
-        position = {
-            "x": 1.5,
-            "y": 1.5,
-            "width": 10.333,
-            "height": chart_height,
-        }
-
-        brand_colors = None
-        if brand_spec and brand_spec.colors:
-            brand_colors = brand_spec.colors
-
-        builder = ChartBuilder()
-        try:
-            builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
-        except Exception:
-            pass
-
-    def _render_cards(self, slide, cards: list[dict[str, Any]], prs, density_profile=None) -> None:
-        from pptx.util import Inches, Pt
-        from pptx.enum.shapes import MSO_SHAPE
-        from pptx.dml.color import RGBColor
-
-        if not cards:
-            return
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        slide_width = prs.slide_width
-        n = len(cards)
-
-        card_width = min(Inches(3.5), (slide_width - Inches(0.9 * 2 + 0.4 * (n - 1))) // n)
-        card_height = Inches(3.0)
-        gap = Inches(0.4)
-        total_width = card_width * n + gap * (n - 1)
-        start_left = (slide_width - total_width) // 2
-        top = Inches(2.0)
-
-        for i, card in enumerate(cards):
-            left = start_left + i * (card_width + gap)
-            shape = slide.shapes.add_shape(
-                MSO_SHAPE.ROUNDED_RECTANGLE,
-                left, top, card_width, card_height,
-            )
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = RGBColor(0xF8, 0xFA, 0xFC)
-            shape.line.color.rgb = RGBColor(0xE2, 0xE8, 0xF0)
-            shape.line.width = Pt(1)
-
-            tf = shape.text_frame
-            tf.word_wrap = True
-
-            title = card.get("title", "")
-            body = card.get("body", "")
-            text = f"{title}\n{body}" if body else title
-
-            p = tf.paragraphs[0]
-            p.text = text
-            p.font.size = Pt(density_profile.bullet_size)
-
-            if card.get("image") and os.path.isfile(card["image"]):
-                img_left = left + Inches(0.2)
-                img_top = top + card_height - Inches(0.8)
-                img_width = Inches(0.6)
-                try:
-                    slide.shapes.add_picture(card["image"], img_left, img_top, width=img_width)
-                except Exception:
-                    pass
-
-    def _render_diagram(self, slide, design: dict[str, Any], prs, density_profile=None) -> None:
-        from ppt_pro_max.renderer.diagram_engine import DiagramEngine
-        from ppt_pro_max.renderer.diagram.diagram_style import DiagramStyle
-        from ppt_pro_max.renderer.diagram.layout_engine import Region
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        diagram_type = design["diagram_type"]
-        diagram_data = design["diagram_data"]
-        if isinstance(diagram_data, dict) and "data" in diagram_data:
-            diagram_data = diagram_data["data"]
-        diagram_data = self._normalize_diagram_data(diagram_type, diagram_data)
-
-        style = DiagramStyle()
-        density_val = max(1, min(10, density_profile.title_size // 4))
-        style = style.apply_density(density_val)
-
-        region = Region(
-            left=0.9,
-            top=1.5,
-            width=11.533,
-            height=5.5,
-        )
-
-        engine = DiagramEngine()
-        try:
-            engine.render(slide, diagram_type, diagram_data, style, region)
-        except Exception as exc:
-            import logging
-            logging.getLogger(__name__).warning("Diagram render failed for %s: %s", diagram_type, exc)
-
-    def _normalize_diagram_data(self, diagram_type: str, data: dict[str, Any]) -> dict[str, Any]:
-        if not isinstance(data, dict):
-            return data
-        if diagram_type == "funnel" and "items" in data and "stages" not in data:
-            data = dict(data, stages=[
-                {"label": item.get("text", ""), "fill_role": item.get("fill_role")}
-                for item in data["items"]
-            ])
-        elif diagram_type == "timeline" and "items" in data and "events" not in data:
-            data = dict(data, events=[
-                {"label": item.get("text", ""), "position": item.get("position", "middle")}
-                for item in data["items"]
-            ])
-        elif diagram_type == "swot" and "strengths" in data and "quadrants" not in data:
-            data = dict(data, quadrants=[
-                {"label": "Strengths", "items": data.get("strengths", [])},
-                {"label": "Weaknesses", "items": data.get("weaknesses", [])},
-                {"label": "Opportunities", "items": data.get("opportunities", [])},
-                {"label": "Threats", "items": data.get("threats", [])},
-            ])
-        elif diagram_type == "pyramid" and "items" in data and "levels" not in data and "stages" not in data:
-            data = dict(data, levels=[
-                {"label": item.get("text", "")} for item in data["items"]
-            ])
-        if "nodes" in data:
-            normalized_nodes = []
-            for node in data["nodes"]:
-                if "text" in node and "label" not in node:
-                    node = dict(node, label=node["text"])
-                normalized_nodes.append(node)
-            data = dict(data, nodes=normalized_nodes)
-        return data
-
-    def _render_code_block(self, slide, code_data, prs, density_profile=None) -> None:
-        from pptx.util import Inches, Pt
-        from pptx.dml.color import RGBColor
-        from pptx.enum.shapes import MSO_SHAPE
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        code_text = code_data if isinstance(code_data, str) else code_data.get("source", code_data.get("code", ""))
-        language = code_data.get("language", "") if isinstance(code_data, dict) else ""
-
-        left = Inches(0.9)
-        top = Inches(1.5)
-        width = Inches(11.533)
-        height = Inches(5.0)
-
-        bg_shape = slide.shapes.add_shape(
-            MSO_SHAPE.RECTANGLE, left, top, width, height,
-        )
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = RGBColor(0x1E, 0x1E, 0x2E)
-        bg_shape.line.fill.background()
-
-        tf = bg_shape.text_frame
-        tf.word_wrap = True
-
-        header = f"  {language}" if language else ""
-        if header:
-            p = tf.paragraphs[0]
-            p.text = header
-            p.font.size = Pt(9)
-            p.font.color.rgb = RGBColor(0x64, 0x74, 0x8B)
-            p.font.bold = True
-
-        lines = code_text.split("\n")
-        for i, line in enumerate(lines[:30]):
-            if i == 0 and not header:
-                p = tf.paragraphs[0]
-            else:
-                p = tf.add_paragraph()
-            p.text = f"  {line}"
-            p.font.size = Pt(density_profile.bullet_size - 2)
-            p.font.color.rgb = RGBColor(0xCD, 0xD6, 0xF4)
-            p.font.name = "Consolas"
-
-    def _render_exercise(self, slide, exercise_data, prs, density_profile=None) -> None:
-        from pptx.util import Inches, Pt
-        from pptx.dml.color import RGBColor
-        from pptx.enum.shapes import MSO_SHAPE
-        from pptx.enum.text import PP_ALIGN
-
-        if density_profile is None:
-            from ppt_pro_max.enterprise.density_profile import get_density_profile
-            density_profile = get_density_profile(4)
-
-        instructions = exercise_data.get("instructions", "") if isinstance(exercise_data, dict) else str(exercise_data)
-        duration = exercise_data.get("duration", "") if isinstance(exercise_data, dict) else ""
-        steps = exercise_data.get("steps", []) if isinstance(exercise_data, dict) else []
-
-        badge_left = Inches(0.9)
-        badge_top = Inches(1.2)
-        badge_w = Inches(1.8) if duration else Inches(1.2)
-        badge_h = Inches(0.4)
-
-        badge = slide.shapes.add_shape(
-            MSO_SHAPE.ROUNDED_RECTANGLE, badge_left, badge_top, badge_w, badge_h,
-        )
-        badge.fill.solid()
-        badge.fill.fore_color.rgb = RGBColor(0x25, 0x63, 0xEB)
-        badge.line.fill.background()
-        tf = badge.text_frame
-        p = tf.paragraphs[0]
-        p.text = f"Exercise {duration}" if duration else "Exercise"
-        p.font.size = Pt(11)
-        p.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-        p.font.bold = True
-        p.alignment = PP_ALIGN.CENTER
-
-        if instructions:
-            inst_left = Inches(0.9)
-            inst_top = Inches(1.8)
-            inst_w = Inches(11.533)
-            inst_h = Inches(1.2)
-
-            txBox = slide.shapes.add_textbox(inst_left, inst_top, inst_w, inst_h)
-            tf = txBox.text_frame
-            tf.word_wrap = True
-            p = tf.paragraphs[0]
-            p.text = instructions
-            p.font.size = Pt(density_profile.bullet_size)
-            p.font.italic = True
-
-        if steps:
-            steps_left = Inches(0.9)
-            steps_top = Inches(3.2)
-            steps_w = Inches(11.533)
-            steps_h = Inches(3.5)
-
-            txBox = slide.shapes.add_textbox(steps_left, steps_top, steps_w, steps_h)
-            tf = txBox.text_frame
-            tf.word_wrap = True
-            for i, step in enumerate(steps):
-                if i == 0:
-                    p = tf.paragraphs[0]
-                else:
-                    p = tf.add_paragraph()
-                p.text = f"{i + 1}. {step}"
-                p.font.size = Pt(density_profile.bullet_size)
-                p.space_after = Pt(4)
-
-    def _render_notes(self, slide, notes_text: str) -> None:
-        notes_slide = slide.notes_slide
-        notes_slide.notes_text_frame.text = notes_text
-
-    def _render_links(self, slide, links: list[dict[str, Any]], design: dict[str, Any], prs=None, brand_spec=None) -> None:
-        from pptx.dml.color import RGBColor
-
-        accent_color = RGBColor(0x25, 0x63, 0xEB)
-        if brand_spec and brand_spec.colors:
-            accent_hex = brand_spec.colors.get("accent") or brand_spec.colors.get("primary")
-            if accent_hex:
-                accent_color = RGBColor.from_string(accent_hex.lstrip("#"))
-
-        for link in links:
-            bullet_index = link.get("bullet_index")
-            url = link.get("url", "")
-            text = link.get("text", "")
-
-            if bullet_index is not None:
-                self._attach_link_to_bullet(slide, bullet_index, url, accent_color, prs=prs)
-            elif text and url:
-                self._add_standalone_link(slide, link, accent_color, prs=prs)
-
-    def _attach_link_to_bullet(self, slide, bullet_index: int, url: str, accent_color, prs=None) -> None:
-        from pptx.enum.shapes import PP_PLACEHOLDER
-        for ph in slide.placeholders:
-            ph_type = ph.placeholder_format.type
-            if ph_type in (PP_PLACEHOLDER.BODY, PP_PLACEHOLDER.OBJECT) or ph.placeholder_format.idx == 1:
-                paras = list(ph.text_frame.paragraphs)
-                if bullet_index < len(paras):
-                    for run in paras[bullet_index].runs:
-                        if url.startswith("slide://"):
-                            slide_num = int(url.replace("slide://", ""))
-                            if prs is not None and 1 <= slide_num <= len(prs.slides):
-                                try:
-                                    run.hyperlink.target_slide = prs.slides[slide_num - 1]
-                                except Exception:
-                                    pass
-                        else:
-                            run.hyperlink.address = url
-                        run.font.color.rgb = accent_color
-                        run.font.underline = True
-                break
-
-    def _add_standalone_link(self, slide, link: dict[str, Any], accent_color, prs=None) -> None:
-        from pptx.util import Inches, Pt
-
-        text = link.get("text", "Link")
-        url = link.get("url", "")
-        position = link.get("position", "bottom_right")
-
-        position_map = {
-            "bottom_right": (Inches(11.433), Inches(6.8)),
-            "bottom_left": (Inches(0.9), Inches(6.8)),
-            "bottom_center": (Inches(5.5), Inches(6.8)),
-        }
-        left, top = position_map.get(position, (Inches(11.433), Inches(6.8)))
-
-        txBox = slide.shapes.add_textbox(left, top, Inches(2.0), Inches(0.3))
-        tf = txBox.text_frame
-        p = tf.paragraphs[0]
-        run = p.add_run()
-        run.text = text
-        run.font.size = Pt(10)
-        run.font.color.rgb = accent_color
-        run.font.underline = True
-
-        if url.startswith("slide://"):
-            slide_num = int(url.replace("slide://", ""))
-            if prs is not None and 1 <= slide_num <= len(prs.slides):
-                try:
-                    run.hyperlink.target_slide = prs.slides[slide_num - 1]
-                except Exception:
-                    pass
-        else:
-            run.hyperlink.address = url
 
     def _apply_animations(self, slide, design: dict[str, Any], motion: int) -> None:
         from ppt_pro_max.renderer.animation import (
