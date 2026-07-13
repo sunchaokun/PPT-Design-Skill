@@ -150,11 +150,15 @@ class TestPipelineAnimations:
 
     def test_motion_adds_transition(self):
         from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+
         pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         design = {"title": "Test", "bullets": ["a", "b"]}
-        pipeline._populate_slide(slide, design, prs)
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         pipeline._apply_animations(slide, design, motion=5)
         sld = slide._element
         trans = sld.find(qn("p:transition"))
@@ -162,11 +166,15 @@ class TestPipelineAnimations:
 
     def test_motion_adds_entrance_animation(self):
         from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+
         pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         design = {"title": "Test", "bullets": ["a", "b"]}
-        pipeline._populate_slide(slide, design, prs)
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         pipeline._apply_animations(slide, design, motion=5)
         sld = slide._element
         timing = sld.find(qn("p:timing"))
@@ -174,11 +182,15 @@ class TestPipelineAnimations:
 
     def test_low_motion_no_entrance(self):
         from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+
         pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         design = {"title": "Test"}
-        pipeline._populate_slide(slide, design, prs)
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         pipeline._apply_animations(slide, design, motion=1)
         sld = slide._element
         trans = sld.find(qn("p:transition"))

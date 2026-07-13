@@ -57,16 +57,23 @@ class TestDensityProfile:
         assert p.bullet_size == 12
         assert p.line_spacing == 1.15
 
-    def test_density_affects_rendered_font(self, tmp_path):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        from ppt_pro_max.enterprise.density_profile import get_density_profile
-        from pptx import Presentation
+    def test_density_applied_to_design_bullets_then_rendered(self, tmp_path):
+        from ppt_pro_max.enterprise.density_profile import get_density_profile, apply_density_to_bullets
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
         from pptx.util import Pt
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        profile = get_density_profile(10)
-        pipeline._populate_slide(slide, {"title": "Small Title"}, prs, profile)
-        for para in slide.shapes.title.text_frame.paragraphs:
-            for run in para.runs:
-                assert run.font.size == Pt(18)
+        profile = get_density_profile(1)
+        long_bullets = [f"bullet {i} with lots of text" for i in range(10)]
+        truncated = apply_density_to_bullets(long_bullets, profile)
+        assert len(truncated) == 3
+        design = {"goal": "content", "title": "Test", "bullets": truncated}
+        renderer = PrecisionRenderer()
+        prs = renderer.create_presentation()
+        slide = renderer.render_slide(prs, design)
+        found = False
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                for para in shape.text_frame.paragraphs:
+                    text = para.text
+                    if "bullet 0" in text:
+                        found = True
+        assert found, "Truncated bullet text should appear in rendered slide"

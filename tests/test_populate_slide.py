@@ -1,4 +1,4 @@
-"""Tests for _populate_slide content rendering."""
+"""Tests for PrecisionRenderer.render_slide content rendering."""
 
 from __future__ import annotations
 
@@ -17,80 +17,87 @@ def _make_png(path: Path, w: int = 200, h: int = 150) -> Path:
     return path
 
 
+def _has_text_in_slide(slide, expected: str) -> bool:
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for para in shape.text_frame.paragraphs:
+                if expected in para.text:
+                    return True
+    return False
+
+
+def _count_pictures(slide) -> int:
+    return sum(1 for s in slide.shapes if s.shape_type == 13)
+
+
 class TestPopulateSlide:
 
     def test_title_populated(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        pipeline._populate_slide(slide, {"title": "Hello World"}, prs)
-        assert slide.shapes.title.text == "Hello World"
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "Hello World"})
+        slide = prs.slides[-1]
+        assert _has_text_in_slide(slide, "Hello World")
 
     def test_subtitle_populated(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        pipeline._populate_slide(slide, {"title": "Hi", "subtitle": "Sub text"}, prs)
-        assert slide.shapes.title.text == "Hi"
-        for ph in slide.placeholders:
-            if ph.placeholder_format.idx == 2:
-                assert ph.text == "Sub text"
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "Hi", "subtitle": "Sub text"})
+        slide = prs.slides[-1]
+        assert _has_text_in_slide(slide, "Hi")
+        assert _has_text_in_slide(slide, "Sub text")
 
     def test_bullets_populated(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        pipeline._populate_slide(slide, {"title": "Points", "bullets": ["First", "Second", "Third"]}, prs)
-        assert slide.shapes.title.text == "Points"
-        body_found = False
-        for ph in slide.placeholders:
-            ph_type = str(ph.placeholder_format.type)
-            if "BODY" in ph_type or ph.placeholder_format.idx == 1:
-                assert "First" in ph.text
-                assert "Second" in ph.text
-                body_found = True
-                break
-        assert body_found
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "Points", "bullets": ["First", "Second", "Third"]})
+        slide = prs.slides[-1]
+        assert _has_text_in_slide(slide, "Points")
+        assert _has_text_in_slide(slide, "First")
+        assert _has_text_in_slide(slide, "Second")
+        assert _has_text_in_slide(slide, "Third")
 
     def test_bullets_with_existing_markers(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        pipeline._populate_slide(slide, {"title": "T", "bullets": ["• Already marked", "— Dash marked"]}, prs)
-        for ph in slide.placeholders:
-            if "BODY" in str(ph.placeholder_format.type) or ph.placeholder_format.idx == 1:
-                assert "• Already marked" in ph.text
-                assert "— Dash marked" in ph.text
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "T", "bullets": ["• Already marked", "— Dash marked"]})
+        slide = prs.slides[-1]
+        assert _has_text_in_slide(slide, "• Already marked")
+        assert _has_text_in_slide(slide, "— Dash marked")
 
     def test_image_inserted(self, tmp_path):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
         img_path = _make_png(tmp_path / "content.png")
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._populate_slide(slide, {"title": "With Image", "image": str(img_path)}, prs)
-        pics = [s for s in slide.shapes if s.shape_type == 13]
-        assert len(pics) == 1
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "With Image", "image": str(img_path)})
+        slide = prs.slides[-1]
+        assert _count_pictures(slide) == 1
 
     def test_image_nonexistent_no_crash(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._populate_slide(slide, {"title": "No Image", "image": "/nonexistent/img.png"}, prs)
-        pics = [s for s in slide.shapes if s.shape_type == 13]
-        assert len(pics) == 0
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {"title": "No Image", "image": "/nonexistent/img.png"})
+        slide = prs.slides[-1]
+        assert _count_pictures(slide) == 0
 
     def test_empty_design_no_crash(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._populate_slide(slide, {}, prs)
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        precision.render_slide(prs, {})
 
     def test_full_pipeline_with_bullets_and_image(self, tmp_path):
         from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
@@ -116,5 +123,5 @@ class TestPopulateSlide:
         result = pipeline.run(query="Full Test", project_dir=str(project))
         assert result["num_slides"] == 2
         prs_out = Presentation(result["output_path"])
-        assert prs_out.slides[0].shapes.title.text == "Welcome"
-        assert prs_out.slides[1].shapes.title.text == "Pain Points"
+        assert _has_text_in_slide(prs_out.slides[0], "Welcome")
+        assert _has_text_in_slide(prs_out.slides[1], "Pain Points")

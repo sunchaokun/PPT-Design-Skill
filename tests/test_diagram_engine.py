@@ -637,43 +637,51 @@ class TestDiagramEngineRegistry:
 class TestCodeBlockRendering:
 
     def test_code_string_renders(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        design = {"title": "Demo", "code": "print('hello')"}
-        pipeline._populate_slide(slide, design, prs)
-        assert len(slide.shapes) > 1
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "code", "title": "Demo", "code": "print('hello')"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
+        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        assert any("print('hello')" in t for t in texts)
 
     def test_code_dict_renders(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        design = {"title": "Demo", "code": {"code": "x = 1", "language": "python"}}
-        pipeline._populate_slide(slide, design, prs)
-        assert len(slide.shapes) > 1
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "code", "title": "Demo", "code": {"code": "x = 1", "language": "python"}}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
+        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        assert any("x = 1" in t for t in texts)
 
 
 class TestExerciseRendering:
 
     def test_exercise_dict_renders(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        design = {"title": "Practice", "exercise": {"instructions": "Write a function", "duration": "10 min"}}
-        pipeline._populate_slide(slide, design, prs)
-        assert len(slide.shapes) > 1
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "exercise", "title": "Practice", "exercise": {"instructions": "Write a function", "duration": "10 min"}}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
+        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        assert any("Exercise" in t for t in texts)
 
     def test_exercise_string_renders(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        design = {"title": "Practice", "exercise": "Do the task"}
-        pipeline._populate_slide(slide, design, prs)
-        assert len(slide.shapes) > 1
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "exercise", "title": "Practice", "exercise": "Do the task"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
+        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        assert any("Do the task" in t for t in texts)
 
 
 class TestHierarchyDiagram:

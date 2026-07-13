@@ -17,6 +17,15 @@ def _make_png(path: Path, w: int = 200, h: int = 150, color: str = "blue") -> Pa
     return path
 
 
+def _find_text_in_slide(slide, expected):
+    for shape in slide.shapes:
+        if shape.has_text_frame:
+            for para in shape.text_frame.paragraphs:
+                if expected in para.text:
+                    return True
+    return False
+
+
 def _setup_full_project(tmp_path: Path) -> Path:
     project = tmp_path / "acme_pitch"
     project.mkdir()
@@ -104,9 +113,9 @@ class TestE2EFullPipeline:
         prs = Presentation(result["output_path"])
         assert len(prs.slides) == 5
 
-        assert prs.slides[0].shapes.title.text == "ACME Corp"
-        assert prs.slides[1].shapes.title.text == "The Problem"
-        assert prs.slides[3].shapes.title.text == "Product Demo"
+        assert _find_text_in_slide(prs.slides[0], "ACME Corp")
+        assert _find_text_in_slide(prs.slides[1], "The Problem")
+        assert _find_text_in_slide(prs.slides[3], "Product Demo")
 
         logo_count = sum(
             1 for slide in prs.slides

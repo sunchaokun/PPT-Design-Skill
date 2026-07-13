@@ -2,47 +2,40 @@
 
 from __future__ import annotations
 
-import json
-import os
-from pathlib import Path
-
 import pytest
-from pptx import Presentation
 
 
 class TestSpeakerNotes:
 
     def test_notes_written_to_slide(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        pipeline._populate_slide(
-            slide,
-            {"title": "Test", "notes": "This is a speaker note"},
-            prs,
-        )
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "content", "title": "Test", "notes": "This is a speaker note"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         assert slide.has_notes_slide
         assert slide.notes_slide.notes_text_frame.text == "This is a speaker note"
 
     def test_no_notes_no_notes_slide(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        pipeline._populate_slide(slide, {"title": "No Notes"}, prs)
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "content", "title": "No Notes"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         assert not slide.has_notes_slide
 
     def test_multi_paragraph_notes(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[0])
-        pipeline._populate_slide(
-            slide,
-            {"title": "Multi", "notes": "Line 1\nLine 2\nLine 3"},
-            prs,
-        )
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "content", "title": "Multi", "notes": "Line 1\nLine 2\nLine 3"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         assert slide.has_notes_slide
         tf = slide.notes_slide.notes_text_frame
         assert len(tf.paragraphs) == 3

@@ -16,9 +16,7 @@ Usage:
 
 from __future__ import annotations
 
-import re
 import random
-from dataclasses import dataclass, field
 from typing import Any
 
 
@@ -355,6 +353,22 @@ _MOOD_PALETTE_MAP: dict[str, list[str]] = {
     "education": ["ocean-blue", "indigo-deep", "teal-fresh", "slate-minimal"],
     "creative": ["neon-gradient", "royal-purple", "lavender-dream", "coral-energy"],
     "sustainability": ["forest-green", "sage-calm", "mint-fresh", "teal-fresh"],
+    "international": ["ocean-blue", "midnight-navy", "slate-minimal", "indigo-deep"],
+    "cream": ["golden-luxury", "sunset-warm", "terracotta", "rose-gold"],
+    "frosted": ["arctic-frost", "sky-bright", "lavender-dream", "slate-minimal"],
+    "mckinsey": ["ocean-blue", "midnight-navy", "slate-minimal", "indigo-deep"],
+    "consulting": ["ocean-blue", "midnight-navy", "slate-minimal", "indigo-deep"],
+    "pastel": ["lavender-dream", "mint-fresh", "sky-bright", "rose-gold"],
+    "retro": ["terracotta", "sunset-warm", "golden-luxury", "copper-industrial"],
+    "government": ["ocean-blue", "midnight-navy", "slate-minimal", "charcoal-bold"],
+    "legal": ["ocean-blue", "midnight-navy", "charcoal-bold", "slate-minimal"],
+    "pharma": ["mint-fresh", "teal-fresh", "sky-bright", "arctic-frost"],
+    "realestate": ["golden-luxury", "terracotta", "sunset-warm", "copper-industrial"],
+    "automotive": ["charcoal-bold", "monochrome-dark", "copper-industrial", "midnight-navy"],
+    "aviation": ["sky-bright", "ocean-blue", "arctic-frost", "midnight-navy"],
+    "energy": ["forest-green", "copper-industrial", "charcoal-bold", "sunset-warm"],
+    "telecom": ["cyber-neon", "ocean-blue", "midnight-navy", "neon-gradient"],
+    "logistics": ["copper-industrial", "charcoal-bold", "slate-minimal", "monochrome"],
 }
 
 _MOOD_FONT_MAP: dict[str, list[str]] = {
@@ -378,6 +392,22 @@ _MOOD_FONT_MAP: dict[str, list[str]] = {
     "education": ["clean-corporate", "editorial-mix", "modern-sans"],
     "creative": ["contrast-mix", "sharp-modern", "friendly-round"],
     "sustainability": ["humanist-sans", "warm-mix", "literary-serif"],
+    "international": ["clean-corporate", "modern-sans", "swiss-style"],
+    "cream": ["serif-editorial", "warm-mix", "elegant-serif"],
+    "frosted": ["modern-sans", "minimal-mix", "humanist-sans"],
+    "mckinsey": ["clean-corporate", "swiss-style", "modern-sans"],
+    "consulting": ["clean-corporate", "swiss-style", "modern-sans"],
+    "pastel": ["humanist-sans", "friendly-round", "warm-mix"],
+    "retro": ["serif-editorial", "literary-serif", "warm-mix"],
+    "government": ["clean-corporate", "swiss-style", "modern-sans"],
+    "legal": ["serif-editorial", "clean-corporate", "elegant-serif"],
+    "pharma": ["clean-corporate", "humanist-sans", "modern-sans"],
+    "realestate": ["serif-editorial", "elegant-serif", "clean-corporate"],
+    "automotive": ["tech-contrast", "geometric-sans", "bold-sans"],
+    "aviation": ["modern-sans", "clean-corporate", "swiss-style"],
+    "energy": ["clean-corporate", "modern-sans", "tech-contrast"],
+    "telecom": ["tech-mono", "modern-sans", "geometric-sans"],
+    "logistics": ["modern-sans", "clean-corporate", "mono-clean"],
 }
 
 _MOOD_DECORATION_MAP: dict[str, list[str]] = {
@@ -401,6 +431,22 @@ _MOOD_DECORATION_MAP: dict[str, list[str]] = {
     "education": ["accent-bar", "minimal-dots"],
     "creative": ["gradient-bar", "circle-accent"],
     "sustainability": ["circle-accent", "minimal-dots"],
+    "international": ["accent-bar", "sidebar-nav", "gradient-bar"],
+    "cream": ["gold-trim", "diamond-bullets", "circle-accent"],
+    "frosted": ["no-decoration", "minimal-dots", "circle-accent"],
+    "mckinsey": ["accent-bar", "sidebar-nav"],
+    "consulting": ["accent-bar", "sidebar-nav", "gradient-bar"],
+    "pastel": ["circle-accent", "minimal-dots", "no-decoration"],
+    "retro": ["diamond-bullets", "gold-trim", "accent-bar"],
+    "government": ["accent-bar", "sidebar-nav", "no-decoration"],
+    "legal": ["accent-bar", "sidebar-nav", "no-decoration"],
+    "pharma": ["accent-bar", "circle-accent", "minimal-dots"],
+    "realestate": ["gold-trim", "accent-bar", "circle-accent"],
+    "automotive": ["accent-bar", "gradient-bar", "no-decoration"],
+    "aviation": ["accent-bar", "minimal-dots", "no-decoration"],
+    "energy": ["accent-bar", "sidebar-nav", "gradient-bar"],
+    "telecom": ["neon-lines", "gradient-bar", "accent-bar"],
+    "logistics": ["accent-bar", "sidebar-nav", "no-decoration"],
 }
 
 _MOOD_LAYOUT_MAP: dict[str, list[str]] = {
@@ -424,6 +470,22 @@ _MOOD_LAYOUT_MAP: dict[str, list[str]] = {
     "education": ["standard", "sidebar-left", "grid-2x2"],
     "creative": ["asymmetric", "wide-cards", "centered"],
     "sustainability": ["grid-2x2", "sidebar-left", "standard"],
+    "international": ["sidebar-left", "standard", "grid-2x2"],
+    "cream": ["centered", "standard", "sidebar-right"],
+    "frosted": ["standard", "centered", "full-width"],
+    "mckinsey": ["sidebar-left", "standard", "grid-2x2"],
+    "consulting": ["sidebar-left", "standard", "grid-2x2"],
+    "pastel": ["centered", "standard", "grid-2x2"],
+    "retro": ["centered", "standard", "sidebar-right"],
+    "government": ["sidebar-left", "standard", "grid-2x2"],
+    "legal": ["sidebar-left", "standard", "grid-2x2"],
+    "pharma": ["grid-2x2", "standard", "sidebar-left"],
+    "realestate": ["grid-2x2", "standard", "sidebar-left"],
+    "automotive": ["full-width", "standard", "wide-cards"],
+    "aviation": ["standard", "sidebar-left", "grid-2x2"],
+    "energy": ["sidebar-left", "grid-2x2", "standard"],
+    "telecom": ["wide-cards", "standard", "grid-2x2"],
+    "logistics": ["sidebar-left", "standard", "grid-2x2"],
 }
 
 # Preset theme → atom mapping (backward compatible)
@@ -467,23 +529,23 @@ class ThemeComposer:
         p = palette or self._pick_from_mood(detected_moods, _MOOD_PALETTE_MAP, rng)
         f = fonts or self._pick_from_mood(detected_moods, _MOOD_FONT_MAP, rng)
         d = decoration or self._pick_from_mood(detected_moods, _MOOD_DECORATION_MAP, rng)
-        l = layout or self._pick_from_mood(detected_moods, _MOOD_LAYOUT_MAP, rng)
+        lay_atom = layout or self._pick_from_mood(detected_moods, _MOOD_LAYOUT_MAP, rng)
 
         colors = dict(COLOR_PALETTES.get(p, COLOR_PALETTES["ocean-blue"]))
         typo = dict(FONT_PAIRS.get(f, FONT_PAIRS["modern-sans"]))
         deco = dict(DECORATION_STYLES.get(d, DECORATION_STYLES["accent-bar"]))
-        lay = dict(LAYOUT_VARIANTS.get(l, LAYOUT_VARIANTS["standard"]))
+        lay = dict(LAYOUT_VARIANTS.get(lay_atom, LAYOUT_VARIANTS["standard"]))
 
         dark_mode = self._is_dark(colors)
 
         return {
-            "name": f"{p}+{f}+{d}+{l}",
+            "name": f"{p}+{f}+{d}+{lay_atom}",
             "colors": colors,
             "typography": typo,
             "dark_mode": dark_mode,
             "decoration": deco,
             "layout_variant": lay,
-            "atoms": {"palette": p, "fonts": f, "decoration": d, "layout": l, "moods": detected_moods},
+            "atoms": {"palette": p, "fonts": f, "decoration": d, "layout": lay_atom, "moods": detected_moods},
         }
 
     def _detect_moods(self, text: str) -> list[str]:
@@ -509,6 +571,22 @@ class ThemeComposer:
             "education": ["education", "learning", "academic", "university"],
             "sustainability": ["sustainability", "sustainable", "esg"],
             "creative": ["creative", "design", "artistic"],
+            "international": ["international", "global", "multinational", "cross-border"],
+            "cream": ["cream", "ivory", "beige", "off-white"],
+            "frosted": ["frosted", "frost", "glassmorphism", "glassmorphic", "translucent"],
+            "mckinsey": ["mckinsey"],
+            "consulting": ["consulting", "consultant", "bcg", "bain", "deloitte", "accenture", "pwc", "kpmg", "strategy&"],
+            "pastel": ["pastel", "soft-toned", "light-toned", "candy-colored"],
+            "retro": ["retro", "vintage", "nostalgic", "throwback", "mid-century"],
+            "government": ["government", "gov", "public-sector", "civic", "municipal", "federal"],
+            "legal": ["legal", "law", "lawfirm", "attorney", "compliance", "regulatory"],
+            "pharma": ["pharma", "pharmaceutical", "biotech", "biopharma", "clinical", "drug"],
+            "realestate": ["real estate", "realestate", "property", "housing", "mortgage", "reit"],
+            "automotive": ["automotive", "auto", "car", "vehicle", "motor"],
+            "aviation": ["aviation", "aerospace", "airline", "aircraft", "flight"],
+            "energy": ["energy", "oil", "gas", "petroleum", "renewable", "solar", "wind", "power-generation"],
+            "telecom": ["telecom", "telecommunication", "5g", "broadband", "wireless", "carrier"],
+            "logistics": ["logistics", "supply-chain", "shipping", "freight", "warehouse", "fulfillment"],
         }
         for mood, words in mood_words.items():
             if any(f" {w} " in text_lower for w in words):
@@ -519,6 +597,10 @@ class ThemeComposer:
             "investor": "fintech", "pitch": "startup", "fundrais": "startup",
             "saas": "tech", "ai ": "tech", " ml ": "tech", "cloud": "tech",
             "luxury": "luxury", "brand": "elegant",
+            "consult": "consulting", "mckinsey": "mckinsey",
+            "pharma": "pharma", "biotech": "pharma",
+            "regul": "legal", "compliance": "legal",
+            "supply chain": "logistics", "shipping": "logistics",
         }
         for hint, mood in industry_hints.items():
             if hint in text_lower and mood not in moods:

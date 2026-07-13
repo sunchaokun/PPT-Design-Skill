@@ -20,46 +20,54 @@ def _make_png(path: Path) -> Path:
 class TestCardsRendering:
 
     def test_cards_rendered(self, tmp_path):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         cards = [
             {"title": "Card 1", "body": "Body 1"},
             {"title": "Card 2", "body": "Body 2"},
             {"title": "Card 3", "body": "Body 3"},
         ]
-        pipeline._render_cards(slide, cards, prs)
-        shapes = list(slide.shapes)
-        assert len(shapes) >= 3
+        design = {"goal": "features", "title": "Cards Test", "cards": cards}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
+        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        assert any("Card 1" in t for t in texts)
+        assert any("Card 2" in t for t in texts)
+        assert any("Card 3" in t for t in texts)
 
     def test_cards_with_images(self, tmp_path):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         img = _make_png(tmp_path / "card_img.png")
         cards = [
             {"title": "Card 1", "body": "Body", "image": str(img)},
         ]
-        pipeline._render_cards(slide, cards, prs)
+        design = {"goal": "features", "title": "Cards With Image", "cards": cards, "image": str(img)}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         pics = [s for s in slide.shapes if s.shape_type == 13]
         assert len(pics) >= 1
 
     def test_empty_cards_no_crash(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._render_cards(slide, [], prs)
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "features", "title": "Empty Cards", "cards": []}
+        precision.render_slide(prs, design)
 
     def test_card_with_nonexistent_image_no_crash(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
         cards = [{"title": "Card", "image": "/nonexistent.png"}]
-        pipeline._render_cards(slide, cards, prs)
+        design = {"goal": "features", "title": "Bad Image", "cards": cards, "image": "/nonexistent.png"}
+        precision.render_slide(prs, design)
 
 
 class TestNewLayouts:

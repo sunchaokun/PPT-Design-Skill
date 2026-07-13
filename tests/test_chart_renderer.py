@@ -266,31 +266,32 @@ class TestChartLegacyCompat:
 class TestChartInPipeline:
 
     def test_chart_in_populate_slide(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._populate_slide(
-            slide,
-            {
-                "title": "Revenue",
-                "chart": {
-                    "type": "bar",
-                    "categories": ["Q1", "Q2"],
-                    "series": [{"name": "2025", "values": [100, 200]}],
-                },
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {
+            "goal": "data",
+            "title": "Revenue",
+            "chart": {
+                "type": "bar",
+                "categories": ["Q1", "Q2"],
+                "series": [{"name": "2025", "values": [100, 200]}],
             },
-            prs,
-        )
+        }
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         chart_frames = [s for s in slide.shapes if hasattr(s, "chart")]
         assert len(chart_frames) == 1
 
     def test_no_chart_no_side_effects(self):
-        from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
-        pipeline = EnterprisePipeline()
-        prs = Presentation()
-        slide = prs.slides.add_slide(prs.slide_layouts[-1])
-        pipeline._populate_slide(slide, {"title": "No Chart"}, prs)
+        from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+        from ppt_pro_max.enterprise.brand_spec import BrandSpec
+        precision = PrecisionRenderer(brand_spec=BrandSpec())
+        prs = precision.create_presentation()
+        design = {"goal": "content", "title": "No Chart"}
+        precision.render_slide(prs, design)
+        slide = prs.slides[-1]
         chart_frames = [s for s in slide.shapes if hasattr(s, "chart")]
         assert len(chart_frames) == 0
 
