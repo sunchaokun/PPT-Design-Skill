@@ -250,14 +250,53 @@ def install_python_package(source_dir: Path) -> bool:
         return False
 
 
-def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
+def install_ui_ux_pro_max(skill_dirs: list[Path], target_dir: Path, force: bool = False) -> bool:
     print("\n  Checking ui-ux-pro-max skill (required dependency)...")
-    from ppt_pro_max.adapters.ui_ux_adapter import is_available, found_path, _UX_FOUND_PATH
+
+    from ppt_pro_max.adapters.ui_ux_adapter import is_available, found_path
 
     if is_available():
         print(f"  [OK] ui-ux-pro-max found at: {found_path()}")
+        existing = Path(found_path())
+        for sd in skill_dirs:
+            sibling = sd.parent / "ui-ux-pro-max"
+            if not (sibling / "scripts" / "core.py").exists():
+                _install_ui_ux_to_dir(existing, sibling)
         return True
 
+    installed = _install_ui_ux_via_npx(target_dir)
+
+    if installed:
+        npx_dir = target_dir / ".opencode" / "skills" / "ui-ux-pro-max"
+        if not npx_dir.exists():
+            npx_dir = target_dir / ".claude" / "skills" / "ui-ux-pro-max"
+        if npx_dir.exists():
+            for sd in skill_dirs:
+                sibling = sd.parent / "ui-ux-pro-max"
+                if not (sibling / "scripts" / "core.py").exists():
+                    _install_ui_ux_to_dir(npx_dir, sibling)
+        return True
+
+    print()
+    print("  *** ui-ux-pro-max is REQUIRED. Install it manually: ***")
+    print("  npx ui-ux-pro-max-cli init --ai opencode")
+    print("  Or set UX_PRO_MAX_DIR environment variable to its location.")
+    return False
+
+
+def _install_ui_ux_to_dir(source: Path, dest: Path) -> bool:
+    if dest.exists() and (dest / "scripts" / "core.py").exists():
+        return False
+    try:
+        shutil.copytree(source, dest, ignore=_ignore_patterns)
+        print(f"  [OK] ui-ux-pro-max -> {dest}")
+        return True
+    except Exception as e:
+        print(f"  [WARN] Failed to copy ui-ux-pro-max to {dest}: {e}")
+        return False
+
+
+def _install_ui_ux_via_npx(target_dir: Path) -> bool:
     print("  ui-ux-pro-max NOT found. Installing via npx...")
     try:
         result = subprocess.run(
@@ -276,11 +315,6 @@ def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
         print("  [WARN] npx not found. Install Node.js first: https://nodejs.org/")
     except Exception as e:
         print(f"  [WARN] npx install failed: {e}")
-
-    print()
-    print("  *** ui-ux-pro-max is REQUIRED. Install it manually: ***")
-    print("  npx ui-ux-pro-max-cli init --ai opencode")
-    print("  Or set UX_PRO_MAX_DIR environment variable to its location.")
     return False
 
 
@@ -402,7 +436,13 @@ def main():
         install_python_package(source_skill_dir)
 
     # --- ui-ux-pro-max skill (required) ---
-    install_ui_ux_pro_max(target_dir, force=args.force)
+    all_skill_dirs = [Path(p) for p in all_installed]
+    if args.global_install:
+        for platform, info in PLATFORMS.items():
+            gdir = Path.home() / info["global_path"] / SKILL_NAME
+            if gdir.exists() and gdir not in all_skill_dirs:
+                all_skill_dirs.append(gdir)
+    install_ui_ux_pro_max(all_skill_dirs, target_dir, force=args.force)
 
     # --- Summary ---
     print(f"\n{'='*60}")

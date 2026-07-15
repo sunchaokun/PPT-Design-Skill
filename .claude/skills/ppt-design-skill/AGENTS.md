@@ -2,7 +2,7 @@
 
 ## Project: PPT Design Skill
 
-AI-powered PPT generation — 40,000+ style combinations, narrative-driven, fully editable .pptx.
+AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand compliance), Build (pixel-perfect). 40,000+ style combos, fully editable .pptx.
 
 ## Commands
 
@@ -142,3 +142,13 @@ python -m ruff check src/
 - Images correctly placed: hero→hook, product→features
 - README.md correctly parsed into 6 pages with goal inference
 - Proposals differentiated: A=indigo-deep, B=slate-minimal, C=lavender-dream
+
+### Build Mode Evaluation (v0.8.0)
+
+| ID | Scenario | Slides | Shapes | Colors | Fonts | File Size |
+|----|----------|--------|--------|--------|-------|-----------|
+| BA | McKinsey (sidebar+table+numbered cards) | 8 | 206 | 8 | Georgia+Calibri+Consolas | 40.9 KB |
+| BB | Cyberpunk (grid+terminal+dashboard) | 8 | 272 | 7 | Orbitron+JetBrains Mono | 42.7 KB |
+| BC | Creative (circles+emoji+before-after) | 8 | 190 | 9 | Fredoka+Nunito | 41.2 KB |
+
+**Key difference from FreeStyle**: Each Build proposal has completely different page structure, layout strategy, and visual language — not just palette/font swap.

@@ -2,13 +2,16 @@
 
 # PPT Design Skill
 
-**一句话生成专业级 .pptx 演示文稿**
-
-三模式引擎 · 叙事驱动 · 品牌合规 · AI 配图 · **40,000+ 风格组合** · **ui-ux-pro-max 设计智能** · **5,560+ 图表组件库**
+**三种模式 · 叙事驱动 · 品牌合规 · AI 配图 · **40,000+ 风格组合** · **ui-ux-pro-max 设计智能** · **5,560+ 图表组件库**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
+
+| FreeStyle 傻瓜模式 | Enterprise 企业模式 | Build 设计师模式 |
+|:---:|:---:|:---:|
+| 一句话出PPT | VI合规 + 版本管理 | 像素级控制 + 方案对比 |
+| 30秒快速生成 | brand.json 锁死风格 | python-pptx 精确构建 |
 
 适配 OpenCode · Claude Code · Codex · Cursor
 
@@ -344,7 +347,7 @@ professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm,
 
 ## 🏆 设计质量升级 — 28 项专业级提升
 
-v0.7.0 引入 28 项设计质量升级，分三个层级全面提升 PPT 视觉品质：
+v0.8.0 引入 Build 设计师模式 + 28 项设计质量升级：
 
 ### Tier 1 — 基础视觉（10 项）
 
@@ -450,6 +453,7 @@ PPT-Design-Skill/
 │   ├── decider/design_decider.py     # 设计决策
 │   └── content/content_generator.py  # 内容生成
 ├── tests/                            # 865 个测试
+│   └── conftest.py                    # 测试环境 UX_PRO_MAX_DIR 自动检测
 └── e2e-test-project/                 # E2E 测试项目
 ```
 
