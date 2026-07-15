@@ -36,3 +36,16 @@ sync_skills.py
 PREMIUM_UPGRADE_PLAN.md
 
 .opencode/skills/ui-ux-pro-max/
+
+# Internal design docs — only keep README_EN.md, usage-guide.md, showcase/
+docs/*-design*.md
+docs/*-plan*.md
+docs/*-review*.md
+docs/*-requirements*.md
+docs/revision-plan.md
+
+# Skill dirs should not duplicate docs/ or src/ from root
+.opencode/skills/ppt-design-skill/docs/
+.claude/skills/ppt-design-skill/docs/
+.cursor/skills/ppt-design-skill/docs/
+.codex/skills/ppt-design-skill/docs/
