@@ -1,4 +1,4 @@
-"""PPT Design Skill â€?AI-powered PPT generation."""
+"""PPT Design Skill â€” AI-powered PPT generation."""
 
 from __future__ import annotations
 
@@ -363,7 +363,7 @@ def _persist_design_system(design_system: dict, pptx_path: str) -> None:
     typo = theme.get("typography", {})
 
     lines = [
-        "# Design System â€?MASTER.md",
+        "# Design System â€” MASTER.md",
         "",
         "## Colors",
         "",

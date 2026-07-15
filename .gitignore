@@ -16,7 +16,7 @@ ppt-project/
 research_ppt_design/
 component_library/
 .cache/
-scripts/
+/scripts/
 
 tmp_*.txt
 tests/tmp_*

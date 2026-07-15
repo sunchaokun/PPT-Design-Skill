@@ -40,7 +40,10 @@ SKILL_FILES = [
 SKILL_DIRS = [
     "src",
     "docs",
-    "scripts",
+]
+
+SKILL_SCRIPTS = [
+    "generate_ppt.py",
 ]
 
 # Each platform: project-level dir, global skill path (relative to HOME), description
@@ -158,6 +161,16 @@ def _copy_skill_files(dest_dir: Path, source_dir: Path) -> None:
             if dst_d.exists():
                 shutil.rmtree(dst_d)
             shutil.copytree(src_d, dst_d)
+
+    scripts_dir = dest_dir / "scripts"
+    scripts_dir.mkdir(parents=True, exist_ok=True)
+    scripts_source = source_dir / ".opencode" / "skills" / SKILL_NAME / "scripts"
+    if not scripts_source.exists():
+        scripts_source = source_dir / "scripts"
+    for sname in SKILL_SCRIPTS:
+        src = scripts_source / sname
+        if src.exists():
+            shutil.copy2(src, scripts_dir / sname)
 
 
 def _read_skill_version(skill_dir: Path) -> str:
