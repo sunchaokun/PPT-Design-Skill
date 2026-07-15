@@ -35,12 +35,18 @@ python -m ruff check src/
 
 ### Enterprise Pipeline (P1-P8 unified)
 
-- `src/ppt_pro_max/enterprise/pipeline.py` — Orchestration: always uses PrecisionRenderer (no dual-path)
+- `src/ppt_pro_max/enterprise/pipeline.py` — Orchestration: always uses PrecisionRenderer (no dual-path); `run_beautify()` for beautify mode
 - `src/ppt_pro_max/enterprise/precision_renderer.py` — Unified renderer: `render_slide()` dispatches by goal (hook→hero, content→bullets, features→cards, data→chart, code→code-block, exercise→exercise, overview→sidebar)
 - `src/ppt_pro_max/enterprise/scanner.py` — Scans project dir for template.pptx, brand.json, content.json, README.md, images
 - `src/ppt_pro_max/enterprise/content_parser.py` — Parses content.json AND README.md (P4: H1→pages, H2→bullets, code blocks, tables, images, goal inference with English+Chinese keywords)
 - `src/ppt_pro_max/enterprise/image_matcher.py` — Image assignment: keyword-based `match_images()` + size-aware `assign_images_by_size()` (P5: >1500px→background, 800-1500→scene, <800→icon) + `auto_generate_image_prompts()` for AI image fetcher
 - `src/ppt_pro_max/enterprise/proposal_generator.py` — P6: Generate 2-3 style preview PPTs (4 slides each: hook/problem/features/cta) with differentiated palettes/moods
+- `src/ppt_pro_max/enterprise/slide_extractor.py` — P9: Extract content + layout from existing PPT (for beautify mode)
+- `src/ppt_pro_max/enterprise/smartart_extractor.py` — P12: SmartArt XML parsing (data/layout/colors/quickStyle, no drawing needed)
+- `src/ppt_pro_max/enterprise/group_extractor.py` — P12: GroupShape recursive extraction (texts/images/structure)
+- `src/ppt_pro_max/enterprise/ole_extractor.py` — P12: OLE/embedded object metadata extraction
+- `src/ppt_pro_max/enterprise/component_library.py` — P13: SQLite-indexed component library (search/match/add/bulk_import/checksum dedup)
+- `src/ppt_pro_max/enterprise/component_renderer.py` — P14: Component rendering bridge (match→fill data→apply brand colors→inject to slide)
 - `src/ppt_pro_max/renderer/theme_composer.py` — 35 moods (P3: added international/cream/frosted/mckinsey/consulting/pastel/retro/government/legal/pharma/realestate/automotive/aviation/energy/telecom/logistics)
 
 ## Key Constraints
@@ -54,6 +60,9 @@ python -m ruff check src/
 - **Content priority**: content.json > README.md > StoryPlanner (P4 integration)
 - **Image assignment flow**: match_images() → assign_images_by_size() → auto_generate_image_prompts() → ImageFetcher (P5 integration)
 - **Proposal flow**: `generate_ppt(proposal=True)` → 3 preview PPTs → user picks → `generate_ppt(confirmed_proposal="B")` (P6-P7)
+- **Beautify flow**: `generate_ppt(beautify="client.pptx", style="professional")` → SlideExtractor → PrecisionRenderer (P9-P10)
+- **SmartArt storage**: 4 XML parts only (data/layout/colors/quickStyle), no drawing (PowerPoint auto-rebuilds), colors.xml must store original (P12)
+- **Component library**: SQLite index + filesystem storage, checksum dedup, match engine (P13)
 
 ## Style System
 
@@ -63,7 +72,7 @@ python -m ruff check src/
 - Presets backward compatible: professional, dark-tech, warm-elegant, vibrant-startup, nature-calm
 - 35 mood categories (P3): professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, international, cream, frosted, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics
 
-## P1-P8 Implementation Status
+## P1-P14 Implementation Status
 
 | Phase | Feature | Status | Tests |
 |-------|---------|--------|-------|
@@ -75,10 +84,18 @@ python -m ruff check src/
 | P6 | ProposalGenerator (2-3 style previews) | Done | 12 in test_proposal_generator.py |
 | P7 | generate_ppt() API (proposal/confirmed_proposal/materials_dir) | Done | 10 in test_generate_ppt_api.py |
 | P8 | End-to-end tests (P1-P7) | Done | 17 in test_e2e_p1_p7.py |
+| P9 | SlideExtractor + beautify rendering | Done | 17 in test_slide_extractor.py |
+| P10 | beautify API + CLI integration | Done | 5 in test_beautify_e2e.py (API tests) |
+| P11 | Beautify mode end-to-end tests | Done | 6 in test_beautify_e2e.py (E2E tests) |
+| P12 | SmartArt/GroupShape/OLE XML extractors | Done | 8 in test_p9_p14.py |
+| P13 | ComponentLibrary (Schema + Index + CRUD + match) | Done | 10 in test_p9_p14.py |
+| P14 | ComponentRenderer (match→fill→brand→inject) | Done | 3 in test_p9_p14.py |
+| P15 | Component Library Integration (catalog+API+content fields+renderer+beautify) | Done | 38 in test_component_integration.py |
+| DQ | Design Quality Upgrades (Tier 1+2+3, 28 upgrades) | Done | 95 in test_design_quality.py + 25 in test_design_integration.py |
 
 ## End-to-End Evaluation
 
-**545 tests passed, 5 skipped, 0 failures. Lint clean on all modified files.**
+**824 tests passed, 5 skipped, 0 failures. Lint clean on all modified files.**
 
 ### Test Scenarios & Results
 

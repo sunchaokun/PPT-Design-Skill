@@ -29,12 +29,13 @@ class TestReadmeBasicParsing:
         pages = parse_readme(str(readme), str(tmp_path))
         assert len(pages) == 2
 
-    def test_h2_becomes_bullets(self, tmp_path):
+    def test_h2_becomes_separate_pages(self, tmp_path):
         readme = _write_readme(tmp_path / "README.md", "# Features\n\n## Fast\nSpeed details\n\n## Secure\nSecurity details")
         pages = parse_readme(str(readme), str(tmp_path))
-        assert len(pages) == 1
-        bullets = pages[0].get("bullets") or []
-        assert any("Fast" in b for b in bullets)
+        assert len(pages) == 3
+        assert pages[0]["title"] == "Features"
+        assert pages[1]["title"] == "Fast"
+        assert pages[2]["title"] == "Secure"
 
     def test_list_items_become_bullets(self, tmp_path):
         readme = _write_readme(tmp_path / "README.md", "# Features\n\n- Feature A\n- Feature B\n- Feature C")

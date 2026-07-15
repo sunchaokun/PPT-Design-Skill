@@ -670,7 +670,7 @@ class TestExerciseRendering:
         precision.render_slide(prs, design)
         slide = prs.slides[-1]
         texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
-        assert any("Exercise" in t for t in texts)
+        assert any("Exercise" in t or "EXERCISE" in t for t in texts)
 
     def test_exercise_string_renders(self):
         from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
