@@ -8,9 +8,11 @@ Search order for locating the skill:
   1. Environment variable UX_PRO_MAX_DIR (explicit override)
   2. Project-local .opencode/skills/ui-ux-pro-max/
   3. Project-local .claude/skills/ui-ux-pro-max/
-  4. User-global ~/.opencode/skills/ui-ux-pro-max/
-  5. User-global ~/.claude/skills/ui-ux-pro-max/
-  6. sys.path / pip / conda
+  4. Skill-sibling: <ppt-design-skill's parent>/ui-ux-pro-max/
+  5. User-global ~/.opencode/skills/ui-ux-pro-max/
+  6. User-global ~/.claude/skills/ui-ux-pro-max/
+  7. User-global ~/.config/opencode/skills/ui-ux-pro-max/
+  8. sys.path / pip / conda
 
 Once found, scripts/ is added to sys.path so that the relative imports
 inside ui-ux-pro-max (``from core import search``) work correctly.
@@ -41,8 +43,10 @@ _INSTALL_INSTRUCTIONS = (
     "  - $UX_PRO_MAX_DIR\n"
     "  - <project>/.opencode/skills/ui-ux-pro-max/\n"
     "  - <project>/.claude/skills/ui-ux-pro-max/\n"
+    "  - <ppt-design-skill sibling>/ui-ux-pro-max/\n"
     "  - ~/.opencode/skills/ui-ux-pro-max/\n"
     "  - ~/.claude/skills/ui-ux-pro-max/\n"
+    "  - ~/.config/opencode/skills/ui-ux-pro-max/\n"
 )
 
 
@@ -58,20 +62,35 @@ def _search_skill_root() -> Path | None:
             return p
 
     try:
-        project_root = Path(__file__).resolve().parents[3]
+        this_file = Path(__file__).resolve()
     except IndexError:
-        project_root = Path.cwd()
+        this_file = Path.cwd()
 
     home = Path.home()
 
-    candidates = [
-        project_root / ".opencode" / "skills" / "ui-ux-pro-max",
-        project_root / ".claude" / "skills" / "ui-ux-pro-max",
+    skill_dir_candidates = []
+
+    try:
+        project_root = this_file.parents[3]
+        skill_dir_candidates.extend([
+            project_root / ".opencode" / "skills" / "ui-ux-pro-max",
+            project_root / ".claude" / "skills" / "ui-ux-pro-max",
+        ])
+    except IndexError:
+        pass
+
+    for parent in this_file.parents:
+        if (parent / "SKILL.md").exists() and (parent / "src").exists():
+            skill_dir_candidates.append(parent.parent / "ui-ux-pro-max")
+            break
+
+    skill_dir_candidates.extend([
         home / ".opencode" / "skills" / "ui-ux-pro-max",
         home / ".claude" / "skills" / "ui-ux-pro-max",
-    ]
+        home / ".config" / "opencode" / "skills" / "ui-ux-pro-max",
+    ])
 
-    for c in candidates:
+    for c in skill_dir_candidates:
         if (c / "scripts" / "core.py").exists():
             return c
 

@@ -1,8 +1,8 @@
 ---
 name: ppt-design-skill
-version: 0.7.0
-description: "AI-powered PPT generation — design-intelligent, fully editable .pptx. Requires ui-ux-pro-max skill for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. 5,500+ chart templates. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style-description] [--fetch-images] [--project DIR] [--proposal]"
+version: 0.8.0
+description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand compliance), Build (pixel-perfect). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. 5,500+ chart templates. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style] [--fetch-images] [--project DIR] [--build]"
 license: MIT
 metadata:
   author: sunchaokun
@@ -33,11 +33,47 @@ ALWAYS follow this 5-step workflow. Do NOT skip steps — rework is extremely co
 - Design skeleton: total pages, per-page goal, core title
 - Present outline, confirm before proceeding
 
-### Step 2: Visual Proposals (3 styles)
+### Step 2: Visual Proposals (Build Mode, 1-3 Options)
 
-- Generate 3 preview PPTs — each uses different ui-ux-pro-max queries for differentiated palettes/typography
-- `generate_ppt(query, content_file=temp_json, style="dark cyberpunk")` × 3 styles
-- User picks style direction (A/B/C) or requests adjustments
+**ALWAYS use Build Mode for proposals** — it produces truly differentiated designs (different layouts, visual languages, page structures), unlike FreeStyle which only swaps colors/fonts.
+
+- Generate 1-3 Build Mode PPTs based on user needs:
+  - **1 proposal**: User has clear style preference → single Build script with that style
+  - **2 proposals**: User wants comparison → two contrasting styles (e.g., business vs creative)
+  - **3 proposals**: User wants full exploration → three distinct design strategies
+- Each proposal uses a **completely different design strategy** (not just palette swap):
+  - Different layout patterns (sidebar vs grid vs centered)
+  - Different visual language (data-driven vs narrative vs visual-impact)
+  - Different shape vocabulary (rectangles vs rounded vs circles)
+  - Different color philosophy (monochrome accent vs dual-tone vs multi-color)
+- Use ui-ux-pro-max `get_design_system()` to derive colors, fonts, effects per proposal
+- Write a `build_X.py` script per proposal using python-pptx directly
+- User picks direction (A/B/C) or requests adjustments
+
+**Build Mode template structure:**
+```python
+# build_proposal.py — each proposal is a standalone python-pptx script
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
+from pptx.enum.shapes import MSO_SHAPE
+
+# 1. Define color palette (from ui-ux-pro-max design_system)
+C = {'bg': '#...', 'primary': '#...', 'accent': '#...', ...}
+
+# 2. Helper functions: _rect, _rrect, _oval, _text, _multiline
+
+# 3. Build each slide with unique layout strategy
+#    - Cover: sidebar | split-screen | centered-hero | circles
+#    - Problem: numbered-cards | error-log | emoji-cards
+#    - Solution: sidebar+cards | code-block | step-circles
+#    - Data: comparison-table | dashboard-metrics | before-after
+#    - Features: accent-bar-cards | neon-cards | bubble-cards
+#    - CTA: dark-full | grid-overlay | warm-circles
+
+prs.save('proposal-X-style.pptx')
+```
 
 ### Step 3: Detailed Content → content.json
 
@@ -46,14 +82,42 @@ ALWAYS follow this 5-step workflow. Do NOT skip steps — rework is extremely co
 - **CRITICAL: Prefer component library over bullet lists** for diagrams (see Component Library section)
 - Present to user for review
 
-### Step 4: Draft Generation & Revision
+### Step 4: Draft Generation & Revision (Build Mode)
 
-- `generate_ppt(query, content_file=..., style=confirmed_style, fetch_images=True, ...)`
-- Verify output: page count, file size, content rendering
+- Rename selected proposal: `build_A.py` → `build.py` (canonical working script)
+- Expand from 8-page skeleton to full content (15-20+ pages), add images, data, polish
+- **Version management** (Build scripts are plain text — git tracks every change):
+
+| Change Type | Strategy | Example |
+|-------------|----------|---------|
+| Content tweak | Edit `build.py`, git commit | Fix wording, add bullet, adjust number |
+| Layout tweak | Edit `build.py`, git commit | Move shape, resize, recolor |
+| Style overhaul | Snapshot `build.py` → `build_v1.py`, start fresh | Switch from sidebar to grid layout |
+| Output versioning | Auto-increment filename | `output_v1.pptx` → `output_v2.pptx` |
+
+```python
+# build.py — version management pattern
+import os, glob
+
+def _next_version(basename="output", ext=".pptx"):
+    existing = glob.glob(f"{basename}_v*{ext}")
+    nums = [int(f.split("_v")[1].split(".")[0]) for f in existing if "_v" in f]
+    return f"{basename}_v{max(nums, default=0) + 1}{ext}"
+
+output = _next_version()  # output_v1.pptx, output_v2.pptx, ...
+prs.save(output)
+print(f"Saved: {output}")
+```
+
+- Each revision: edit `build.py` → run → user reviews → commit
+- Major style change: `cp build.py build_v1.py` then rewrite `build.py`
+- If using FreeStyle/Enterprise → `generate_ppt(query, content_file=..., style=confirmed_style, fetch_images=True, ...)`
 
 ### Step 5: Final Delivery
 
-- User confirms, pipeline auto-saves with version control
+- User confirms final version
+- `build.py` is the single source of truth — re-run anytime to regenerate identical output
+- Deliver: final `.pptx` + `build.py` (client can edit/rebuild)
 
 ## Design Intelligence (powered by ui-ux-pro-max)
 
@@ -154,9 +218,17 @@ results = query_component_library(type="group", category="hierarchy", node_count
 - Page-level CRUD on existing PPT (add/delete/swap/move pages)
 - Diagrams in PPT (flowchart, funnel, timeline, SWOT, etc.)
 
-## Dual-Mode Architecture
+## Three-Mode Architecture
 
-### FreeStyle (Quick Exploration)
+| Mode | User | Scenario | One-liner |
+|------|------|----------|-----------|
+| **FreeStyle** | Everyone | One sentence → one PPT | "给我做个AI路演" → 30s done |
+| **Enterprise** | Corporate teams | VI compliance, brand consistency, version control | brand.json + template.pptx lock style |
+| **Build** | Designers / AI | Pixel-perfect, proposal comparison, version management | python-pptx script = source of truth |
+
+### FreeStyle — 傻瓜模式
+
+One sentence, one PPT. Simplest, fastest way to create a presentation.
 
 ```bash
 python -m ppt_pro_max "AI startup investor pitch"
@@ -165,7 +237,13 @@ python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream --llm-ap
 python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif
 ```
 
-### Enterprise (Brand Compliance)
+- Auto: StoryPlanner → DesignDecider → ContentGenerator → PPTRenderer
+- 35 mood keywords, 40,000+ style combos
+- Good for: quick drafts, personal use, non-designers
+
+### Enterprise — 企业模式
+
+Brand compliance pipeline. Reads brand.json + template.pptx + content.json, enforces VI rules, manages versions.
 
 ```bash
 python -m ppt_pro_max "路演" --project ./my-project --density 6
@@ -173,6 +251,37 @@ python -m ppt_pro_max "" --project ./my-project --review
 python -m ppt_pro_max "" --project ./my-project --pages "-3,2<>5,10>3,+6"
 python -m ppt_pro_max "" --project ./my-project --history
 ```
+
+- Brand lock: colors, fonts, logo, footer, watermark from brand.json
+- Template inheritance: slide masters, layouts from template.pptx
+- Content priority: content.json > README.md > StoryPlanner
+- Version control: output/v1/, output/v2/ auto-incremented
+- Page operations: add, delete, swap, move pages
+- Good for: corporate teams, agencies, brand-managed organizations
+
+### Build — 设计师模式
+
+Write python-pptx scripts directly. Full control over every shape, color, position. Each script is a standalone, version-manageable design.
+
+```python
+# build.py — full control over every shape, color, position
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+
+C = {'bg': '#0A0E17', 'primary': '#00F0FF', 'accent': '#FF2E97', ...}
+prs = Presentation()
+prs.slide_width = Inches(13.333)
+prs.slide_height = Inches(7.5)
+# ... build slides with _rect, _rrect, _oval, _text helpers
+prs.save('output.pptx')
+```
+
+- **Proposal phase**: 1-3 `build_X.py` scripts, each with completely different design strategy
+- **Revision phase**: single `build.py`, git commit per change, auto-increment output versions
+- **Delivery**: `.pptx` + `build.py` (client can edit/rebuild)
+- Good for: proposal comparison, pixel-perfect output, designer-quality work, AI-assisted design
 
 ### Python API
 
