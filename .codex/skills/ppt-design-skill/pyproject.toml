@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ppt-design-skill"
+version = "0.7.0"
+description = "AI-powered PPT generation skill — narrative-driven, design-intelligent, fully editable .pptx output"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "sunchaokun" },
+]
+keywords = ["ppt", "presentation", "design", "ai", "skill", "opencode", "claude-code"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Presentation",
+]
+dependencies = [
+    "python-pptx>=1.0.2",
+    "lxml>=4.9.0",
+    "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+images = [
+    "httpx>=0.24.0",
+]
+llm-images = [
+    "openai>=1.0.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+ppt-design = "ppt_pro_max.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ppt_pro_max = ["../data/ppt/*.csv"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"

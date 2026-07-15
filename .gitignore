@@ -43,17 +43,20 @@ docs/*-review*.md
 docs/*-requirements*.md
 docs/revision-plan.md
 
-# Skill dirs are created by install.py at install time, not tracked in git
-.opencode/skills/ppt-design-skill/
-.claude/skills/ppt-design-skill/
-.cursor/skills/ppt-design-skill/
-.codex/skills/ppt-design-skill/
-.windsurf/skills/ppt-design-skill/
-.roo/skills/ppt-design-skill/
-.gemini/skills/ppt-design-skill/
-.trae/skills/ppt-design-skill/
-.continue/skills/ppt-design-skill/
-.factory/skills/ppt-design-skill/
-.kilocode/skills/ppt-design-skill/
-.augment/skills/ppt-design-skill/
-.github/skills/ppt-design-skill/
+# Skill dirs: tracked in git for SKILL.md/src/install.py, but data assets are installed at runtime
+.opencode/skills/ppt-design-skill/docs/
+.claude/skills/ppt-design-skill/docs/
+.cursor/skills/ppt-design-skill/docs/
+.codex/skills/ppt-design-skill/docs/
+.opencode/skills/ppt-design-skill/component_library/
+.claude/skills/ppt-design-skill/component_library/
+.cursor/skills/ppt-design-skill/component_library/
+.codex/skills/ppt-design-skill/component_library/
+.opencode/skills/ppt-design-skill/data/
+.claude/skills/ppt-design-skill/data/
+.cursor/skills/ppt-design-skill/data/
+.codex/skills/ppt-design-skill/data/
+.opencode/skills/ppt-design-skill/scripts/
+.claude/skills/ppt-design-skill/scripts/
+.cursor/skills/ppt-design-skill/scripts/
+.codex/skills/ppt-design-skill/scripts/
