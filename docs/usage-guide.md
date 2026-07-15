@@ -54,7 +54,15 @@ PPT-Design-Skill 提供三种生成模式，从快速到精确：
 ```bash
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
+
+# 一键安装 — 自动检测 AI 平台 + 安装 skill + pip 依赖 + ui-ux-pro-max
+python install.py
+
+# 手动安装
 pip install -e .
+
+# 单独安装 ui-ux-pro-max（必需依赖）
+npx ui-ux-pro-max-cli init --ai opencode
 ```
 
 ### 一句话生成
@@ -66,6 +74,8 @@ ppt-design "AI startup investor pitch"
 # Enterprise — 从项目目录生成，品牌合规
 ppt-design "AI Platform" --project ./my-project
 ```
+
+> **必需依赖**：ui-ux-pro-max 提供设计智能（192 色彩方案、84 风格、74 字体、161 反模式），`python install.py` 会自动安装。缺失时运行会报 `UiUxProMaxNotFoundError`。
 
 ---
 
