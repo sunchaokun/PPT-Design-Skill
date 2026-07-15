@@ -1,4 +1,4 @@
-"""PPT Design Skill â€” AI-powered PPT generation."""
+"""PPT Design Skill â€?AI-powered PPT generation."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.5.0"
+__version__ = "0.7.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -363,7 +363,7 @@ def _persist_design_system(design_system: dict, pptx_path: str) -> None:
     typo = theme.get("typography", {})
 
     lines = [
-        "# Design System â€” MASTER.md",
+        "# Design System â€?MASTER.md",
         "",
         "## Colors",
         "",
