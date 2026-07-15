@@ -121,6 +121,14 @@ def get_source_skill_dir() -> Path:
     return script_dir
 
 
+def get_project_root() -> Path:
+    start = Path(__file__).resolve().parent
+    for candidate in [start] + list(start.parents):
+        if (candidate / "src" / "ppt_pro_max").exists() and (candidate / "component_library").exists():
+            return candidate
+    return start
+
+
 def _ignore_patterns(directory: str, contents: list[str]) -> list[str]:
     ignored = []
     for name in contents:
@@ -144,6 +152,20 @@ def copy_skill(source_dir: Path, dest_dir: Path, force: bool = False) -> bool:
 
     shutil.copytree(source_dir, dest_dir, ignore=_ignore_patterns)
     return True
+
+
+def _copy_data_assets(project_root: Path, dest_dir: Path) -> None:
+    for asset_name in ("component_library", "data", "scripts"):
+        src = project_root / asset_name
+        if not src.exists():
+            continue
+        dst = dest_dir / asset_name
+        if dst.exists():
+            if dst.resolve() == src.resolve():
+                continue
+            shutil.rmtree(dst, ignore_errors=True)
+        shutil.copytree(src, dst, ignore=_ignore_patterns)
+        print(f"    + {asset_name}/ -> {dst}")
 
 
 def detect_platforms(target_dir: Path) -> list[str]:
@@ -170,15 +192,23 @@ def _read_skill_version(skill_dir: Path) -> str:
 def _skill_status(skill_dir: Path) -> str:
     skill_md = skill_dir / "SKILL.md"
     has_src = (skill_dir / "src" / "ppt_pro_max").exists()
+    has_clib = (skill_dir / "component_library" / "index.db").exists()
+    has_data = (skill_dir / "data").exists()
     if skill_md.exists() and has_src:
         ver = _read_skill_version(skill_dir)
-        return f"INSTALLED v{ver}" if ver else "INSTALLED"
+        parts = []
+        if not has_clib:
+            parts.append("no component_library")
+        if not has_data:
+            parts.append("no data")
+        suffix = f" [{', '.join(parts)}]" if parts else ""
+        return f"INSTALLED v{ver}{suffix}" if ver else f"INSTALLED{suffix}"
     elif skill_md.exists():
         return "PARTIAL (no src/)"
     return "NOT INSTALLED"
 
 
-def install_to_dir(source_dir: Path, dest_dir: Path, label: str, force: bool = False) -> str | None:
+def install_to_dir(source_dir: Path, dest_dir: Path, label: str, force: bool = False, project_root: Path | None = None) -> str | None:
     if dest_dir.resolve() == source_dir.resolve():
         return None
     if dest_dir.exists() and not force:
@@ -191,6 +221,10 @@ def install_to_dir(source_dir: Path, dest_dir: Path, label: str, force: bool = F
 
     copy_skill(source_dir, dest_dir, force=force)
     print(f"  [OK] {label} -> {dest_dir}")
+
+    if project_root:
+        _copy_data_assets(project_root, dest_dir)
+
     return str(dest_dir)
 
 
@@ -214,6 +248,40 @@ def install_python_package(source_dir: Path) -> bool:
         print(f"  [WARN] pip install failed: {e}")
         print(f"  You can install manually: pip install -e {project_root}")
         return False
+
+
+def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
+    print("\n  Checking ui-ux-pro-max skill (required dependency)...")
+    from ppt_pro_max.adapters.ui_ux_adapter import is_available, found_path, _UX_FOUND_PATH
+
+    if is_available():
+        print(f"  [OK] ui-ux-pro-max found at: {found_path()}")
+        return True
+
+    print("  ui-ux-pro-max NOT found. Installing via npx...")
+    try:
+        result = subprocess.run(
+            ["npx", "ui-ux-pro-max-cli", "init", "--ai", "opencode", "--force"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(target_dir),
+        )
+        if result.returncode == 0:
+            print("  [OK] ui-ux-pro-max installed via npx")
+            return True
+        else:
+            print(f"  [WARN] npx install failed (exit {result.returncode})")
+            if result.stderr:
+                print(f"  {result.stderr[:300]}")
+    except FileNotFoundError:
+        print("  [WARN] npx not found. Install Node.js first: https://nodejs.org/")
+    except Exception as e:
+        print(f"  [WARN] npx install failed: {e}")
+
+    print()
+    print("  *** ui-ux-pro-max is REQUIRED. Install it manually: ***")
+    print("  npx ui-ux-pro-max-cli init --ai opencode")
+    print("  Or set UX_PRO_MAX_DIR environment variable to its location.")
+    return False
 
 
 def check_installation(target_dir: Path) -> None:
@@ -265,6 +333,7 @@ def main():
 
     target_dir = Path(args.target) if args.target else Path.cwd()
     source_skill_dir = get_source_skill_dir()
+    project_root = get_project_root()
 
     if args.check:
         check_installation(target_dir)
@@ -284,7 +353,7 @@ def main():
         print("Installing to global directories...\n")
         for platform, info in PLATFORMS.items():
             dest_dir = Path.home() / info["global_path"] / SKILL_NAME
-            result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (global)", force=args.force)
+            result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (global)", force=args.force, project_root=project_root)
             if result:
                 all_installed.append(result)
         print()
@@ -313,7 +382,7 @@ def main():
             print(f"  [SKIP] Unknown platform: {platform}")
             continue
         dest_dir = target_dir / info["project_dir"] / "skills" / SKILL_NAME
-        result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (project)", force=args.force)
+        result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (project)", force=args.force, project_root=project_root)
         if result:
             all_installed.append(result)
 
@@ -331,6 +400,9 @@ def main():
     if not args.no_pip:
         print()
         install_python_package(source_skill_dir)
+
+    # --- ui-ux-pro-max skill (required) ---
+    install_ui_ux_pro_max(target_dir, force=args.force)
 
     # --- Summary ---
     print(f"\n{'='*60}")

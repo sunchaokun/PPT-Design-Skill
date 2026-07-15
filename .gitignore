@@ -14,9 +14,8 @@ nonexistent_dir/
 eval_output/
 ppt-project/
 research_ppt_design/
-component_library/
+
 .cache/
-/scripts/
 
 tmp_*.txt
 tests/tmp_*
@@ -44,8 +43,17 @@ docs/*-review*.md
 docs/*-requirements*.md
 docs/revision-plan.md
 
-# Skill dirs should not duplicate docs/ or src/ from root
-.opencode/skills/ppt-design-skill/docs/
-.claude/skills/ppt-design-skill/docs/
-.cursor/skills/ppt-design-skill/docs/
-.codex/skills/ppt-design-skill/docs/
+# Skill dirs are created by install.py at install time, not tracked in git
+.opencode/skills/ppt-design-skill/
+.claude/skills/ppt-design-skill/
+.cursor/skills/ppt-design-skill/
+.codex/skills/ppt-design-skill/
+.windsurf/skills/ppt-design-skill/
+.roo/skills/ppt-design-skill/
+.gemini/skills/ppt-design-skill/
+.trae/skills/ppt-design-skill/
+.continue/skills/ppt-design-skill/
+.factory/skills/ppt-design-skill/
+.kilocode/skills/ppt-design-skill/
+.augment/skills/ppt-design-skill/
+.github/skills/ppt-design-skill/
