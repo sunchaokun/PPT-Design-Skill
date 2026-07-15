@@ -155,7 +155,7 @@ def copy_skill(source_dir: Path, dest_dir: Path, force: bool = False) -> bool:
 
 
 def _copy_data_assets(project_root: Path, dest_dir: Path) -> None:
-    for asset_name in ("component_library", "data", "scripts"):
+    for asset_name in ("component_library", "data"):
         src = project_root / asset_name
         if not src.exists():
             continue
