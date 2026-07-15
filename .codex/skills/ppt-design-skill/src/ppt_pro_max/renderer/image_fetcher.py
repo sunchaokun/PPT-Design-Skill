@@ -444,7 +444,7 @@ class ImageFetcher:
                 return str(cache_path)
 
             req = urllib.request.Request(url, headers={
-                "User-Agent": "PPT-Design-Skill/0.1.0",
+                "User-Agent": "PPT-Design-Skill/0.7.0",
             })
             with urllib.request.urlopen(req, timeout=30) as resp:
                 image_data = resp.read()

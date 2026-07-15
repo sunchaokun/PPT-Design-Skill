@@ -34,3 +34,5 @@ tests/test_db_e2e.py
 
 sync_skills.py
 PREMIUM_UPGRADE_PLAN.md
+
+.opencode/skills/ui-ux-pro-max/

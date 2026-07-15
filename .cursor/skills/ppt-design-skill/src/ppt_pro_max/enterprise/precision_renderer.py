@@ -131,9 +131,10 @@ class PrecisionRenderer:
 
     def add_text(self, slide, text: str, x: float, y: float, w: float, h: float,
                  font: str | None = None, size: int = 20, color_role: str = "foreground",
+                 color_hex: str | None = None,
                  bold: bool = False, align: str = "left") -> object:
         font = font or self._font_h()
-        color = self._c(color_role)
+        color = color_hex or self._c(color_role)
         tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
         tf = tb.text_frame
         tf.word_wrap = True
@@ -152,9 +153,10 @@ class PrecisionRenderer:
 
     def add_multiline(self, slide, lines: list[str], x: float, y: float, w: float, h: float,
                       font: str | None = None, size: int = 14, color_role: str = "foreground",
+                      color_hex: str | None = None,
                       bold: bool = False, align: str = "left", spacing: int = 6) -> object:
         font = font or self._font_b()
-        color = self._c(color_role)
+        color = color_hex or self._c(color_role)
         tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
         tf = tb.text_frame
         tf.word_wrap = True
@@ -264,9 +266,12 @@ class PrecisionRenderer:
     def add_oval(self, slide, x: float, y: float, w: float, h: float,
                  fill_role: str | None = None, fill_hex: str | None = None,
                  gradient: bool = True, shadow: bool = True,
-                 label: str = "", font_size: int = 14,
-                 font_color: str = "#FFFFFF") -> object:
-        fill = fill_hex or self._c(fill_role or "primary")
+                 label: str = "", font_size: int = 16,
+                 font_color: str | None = None) -> object:
+        if fill_role is None and fill_hex is None:
+            fill_role = "muted" if self._is_dark() else "primary"
+        fill = fill_hex or self._c(fill_role)
+        effective_font_color = font_color or (self._c("foreground", "#FFFFFF") if self._is_dark() else self._c("on-primary", "#FFFFFF"))
         sh = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(x), Inches(y), Inches(w), Inches(h))
         if gradient:
             apply_gradient(sh, fill, self._darken(fill), gradient_type="path")
@@ -284,7 +289,7 @@ class PrecisionRenderer:
             run = p.add_run()
             run.text = label
             run.font.size = Pt(font_size)
-            run.font.color.rgb = self._rgb(font_color)
+            run.font.color.rgb = self._rgb(effective_font_color)
             run.font.bold = True
         return sh
 
@@ -292,7 +297,10 @@ class PrecisionRenderer:
                   fill_role: str | None = None, fill_hex: str | None = None,
                   gradient: bool = True, shadow: bool = True,
                   label: str = "", font_size: int = 18) -> object:
-        fill = fill_hex or self._c(fill_role or "primary")
+        if fill_role is None and fill_hex is None:
+            fill_role = "muted" if self._is_dark() else "primary"
+        fill = fill_hex or self._c(fill_role)
+        font_color = self._c("foreground", "#FFFFFF") if self._is_dark() else self._c("on-primary", "#FFFFFF")
         sh = slide.shapes.add_shape(MSO_SHAPE.DONUT, Inches(x), Inches(y), Inches(size), Inches(size))
         if gradient:
             apply_gradient(sh, fill, self._darken(fill), gradient_type="path")
@@ -310,15 +318,18 @@ class PrecisionRenderer:
             run = p.add_run()
             run.text = label
             run.font.size = Pt(font_size)
-            run.font.color.rgb = self._rgb("#FFFFFF")
+            run.font.color.rgb = self._rgb(font_color)
             run.font.bold = True
         return sh
 
     def add_hexagon(self, slide, x: float, y: float, size: float,
                     fill_role: str | None = None, fill_hex: str | None = None,
                     gradient: bool = True, shadow: bool = True,
-                    label: str = "", font_size: int = 13) -> object:
-        fill = fill_hex or self._c(fill_role or "primary")
+                    label: str = "", font_size: int = 16) -> object:
+        if fill_role is None and fill_hex is None:
+            fill_role = "muted" if self._is_dark() else "primary"
+        fill = fill_hex or self._c(fill_role)
+        font_color = self._c("on-primary", "#FFFFFF") if not self._is_dark() else self._c("foreground", "#FFFFFF")
         sh = slide.shapes.add_shape(MSO_SHAPE.HEXAGON, Inches(x), Inches(y), Inches(size), Inches(size * 0.87))
         if gradient:
             apply_gradient(sh, fill, self._darken(fill), gradient_type="linear", angle=5400000)
@@ -336,7 +347,7 @@ class PrecisionRenderer:
             run = p.add_run()
             run.text = label
             run.font.size = Pt(font_size)
-            run.font.color.rgb = self._rgb("#FFFFFF")
+            run.font.color.rgb = self._rgb(font_color)
             run.font.bold = True
         return sh
 
@@ -392,11 +403,29 @@ class PrecisionRenderer:
         )
         grad.apply(ov)
 
+    def add_overlay(self, slide, x: float, y: float, w: float, h: float,
+                    color_hex: str = "#000000", opacity: float = 0.65) -> None:
+        ov = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+        ov.fill.solid()
+        ov.fill.fore_color.rgb = self._rgb(color_hex)
+        ov.line.fill.background()
+        el = ov._element.find(qn('p:spPr')).find(qn('a:solidFill')).find(qn('a:srgbClr'))
+        if el is not None:
+            a = etree.SubElement(el, qn('a:alpha'))
+            a.set('val', str(int(opacity * 100000)))
+
     # ── Brand visual design ──
 
     def render_slide(self, prs: Presentation, page: dict[str, Any], 
                      component_lib=None, layout_variant: dict | None = None,
                      page_index: int = 0, total_pages: int = 0) -> object:
+        elements = page.get("elements")
+        if elements:
+            slide_layout = prs.slide_layouts[6]
+            slide = prs.slides.add_slide(slide_layout)
+            self._render_elements(slide, elements)
+            return slide
+
         goal = page.get("goal", "content")
         title = page.get("title", "")
         subtitle = page.get("subtitle")
@@ -435,29 +464,35 @@ class PrecisionRenderer:
         if is_section:
             section_num = page.get("section_number", page_index + 1)
             section_sub = subtitle or ""
-            self.render_section_divider(prs, section_num, title, section_sub)
+            self.render_section_divider(slide, section_num, title, section_sub)
             return slide
 
         if is_hero:
+            blocks = page.get("blocks")
+            has_blocks = bool(blocks)
             self.apply_hero_overlay(slide, prs, image_path=image_path if image_path and os.path.isfile(image_path) else None)
+            title_y = 1.0 if has_blocks else 2.0
+            subtitle_y = title_y + 1.4
             if title:
-                self.add_text(slide, title, 1.2, 2.0, 8, 1.5,
-                              size=52, color_role="on-primary" if not (image_path and os.path.isfile(image_path)) else "foreground", bold=True)
+                self.add_text(slide, title, 1.2, title_y, 8, 1.5,
+                              size=52 if not has_blocks else 44, color_role="on-primary" if not (image_path and os.path.isfile(image_path)) else "foreground", bold=True)
             if subtitle:
-                self.add_text(slide, subtitle, 1.2, 3.6, 8, 0.6,
-                              font=self._font_b(), size=22, color_role="accent")
-            if bullets:
+                self.add_text(slide, subtitle, 1.2, subtitle_y, 8, 0.8,
+                              font=self._font_b(), size=28, color_role="foreground")
+            if bullets and not has_blocks:
                 bullet_text = "  \u2022  ".join(bullets[:5])
-                self.add_text(slide, bullet_text, 1.2, 4.4, 8, 0.5,
+                self.add_text(slide, bullet_text, 1.2, subtitle_y + 0.8, 8, 0.5,
                               font=self._font_b(), size=14, color_role="muted-foreground")
+            if blocks:
+                self._render_blocks(slide, blocks, is_hero=True)
         else:
             self.apply_brand_background(slide, prs, goal=goal, 
                                         page_index=page_index, total_pages=total_pages)
 
             if title:
                 align = "center" if title_align == "center" else "left"
-                self.add_text(slide, title, margin_left, 0.5, 11, 0.6,
-                              size=28, color_role="foreground", bold=True, align=align)
+                self.add_text(slide, title, margin_left, 0.5, 11, 0.8,
+                              size=36, color_role="foreground", bold=True, align=align)
                 accent_hex = self._c("accent", self._c("primary", "#2563EB"))
                 self.add_gradient_line(slide, margin_left, 1.2, 2.5, 0.04, accent_hex)
 
@@ -480,7 +515,10 @@ class PrecisionRenderer:
                 self.add_text(slide, subtitle, margin_left, 1.5, 10, 0.5,
                               font=self._font_b(), size=14, color_role="muted-foreground")
 
-            if cards:
+            blocks = page.get("blocks")
+            if blocks:
+                self._render_blocks(slide, blocks)
+            elif cards:
                 n = len(cards)
                 card_w = min(3.6, (11.5 - 0.4 * (n - 1)) / n)
                 for i, card in enumerate(cards):
@@ -518,6 +556,116 @@ class PrecisionRenderer:
             self._render_notes_on_slide(slide, notes)
 
         return slide
+
+    def _render_blocks(self, slide, blocks: list[dict], is_hero: bool = False) -> None:
+        from ppt_pro_max.enterprise.block_renderer import BlockRenderer
+        br = BlockRenderer(self)
+        br.render(slide, blocks, is_hero=is_hero)
+
+    def _render_elements(self, slide, elements: list[dict]) -> None:
+        for el in elements:
+            self._dispatch_element(slide, el)
+
+    def _dispatch_element(self, slide, el: dict) -> None:
+        kind = el.get("type")
+        x = el.get("x", 0.0)
+        y = el.get("y", 0.0)
+        w = el.get("w", 4.0)
+        h = el.get("h", 1.0)
+
+        if kind == "text":
+            color = el.get("color")
+            color_role = el.get("color_role")
+            effective_color = color or self._c(color_role or "foreground", "#1A1A1A")
+            self.add_text(slide, el.get("text", ""), x, y, w, h,
+                          font=el.get("font", self._font_h()),
+                          size=el.get("size", 18),
+                          color_hex=effective_color,
+                          bold=el.get("bold", False),
+                          align=el.get("align", "left"))
+
+        elif kind == "multiline":
+            lines = el.get("lines", [])
+            color = el.get("color")
+            color_role = el.get("color_role")
+            effective_color = color or self._c(color_role or "foreground", "#1A1A1A")
+            self.add_multiline(slide, lines, x, y, w, h,
+                               font=el.get("font", self._font_b()),
+                               size=el.get("size", 14),
+                               color_hex=effective_color,
+                               bold=el.get("bold", False),
+                               align=el.get("align", "left"),
+                               spacing=el.get("spacing", 6))
+
+        elif kind == "rect":
+            fill = el.get("fill")
+            fill_role = el.get("fill_role")
+            border = el.get("border")
+            border_role = el.get("border_role")
+            self.add_rect(slide, x, y, w, h,
+                          fill_hex=fill, fill_role=fill_role,
+                          border_hex=border, border_role=border_role,
+                          gradient=el.get("gradient", False),
+                          shadow=el.get("shadow", False))
+
+        elif kind == "rounded_rect":
+            fill = el.get("fill")
+            fill_role = el.get("fill_role")
+            border = el.get("border")
+            border_role = el.get("border_role")
+            self.add_rounded_rect(slide, x, y, w, h,
+                                  fill_hex=fill, fill_role=fill_role,
+                                  border_hex=border, border_role=border_role,
+                                  gradient=el.get("gradient", False),
+                                  shadow=el.get("shadow", False),
+                                  corner_radius=el.get("radius", "md"))
+
+        elif kind == "image":
+            path = el.get("path", "")
+            if os.path.isfile(path):
+                self.add_image(slide, path, x, y, w, h)
+
+        elif kind == "overlay":
+            color = el.get("color") or self._c("background", "#000000")
+            opacity = el.get("opacity", 0.65)
+            self.add_overlay(slide, x, y, w, h, color, opacity)
+
+        elif kind == "gradient_line":
+            color = el.get("color") or self._c("accent", self._c("primary", "#2563EB"))
+            self.add_gradient_line(slide, x, y, w, h, color)
+
+        elif kind == "hexagon":
+            size = el.get("size", min(w, h))
+            fill = el.get("fill")
+            fill_role = el.get("fill_role", "primary")
+            label_color = el.get("label_color") or self._c("on-primary", "#FFFFFF")
+            self.add_hexagon(slide, x, y, size,
+                             fill_hex=fill, fill_role=fill_role,
+                             gradient=el.get("gradient", True),
+                             shadow=el.get("shadow", True),
+                             label=el.get("label", ""),
+                             font_size=el.get("font_size", 16))
+
+        elif kind == "oval":
+            fill = el.get("fill")
+            fill_role = el.get("fill_role", "primary")
+            self.add_oval(slide, x, y, w, h,
+                          fill_hex=fill, fill_role=fill_role,
+                          gradient=el.get("gradient", True),
+                          shadow=el.get("shadow", True),
+                          label=el.get("label", ""),
+                          font_size=el.get("font_size", 16))
+
+        elif kind == "donut":
+            size = el.get("size", min(w, h))
+            fill = el.get("fill")
+            fill_role = el.get("fill_role", "primary")
+            self.add_donut(slide, x, y, size,
+                           fill_hex=fill, fill_role=fill_role,
+                           gradient=el.get("gradient", True),
+                           shadow=el.get("shadow", True),
+                           label=el.get("label", ""),
+                           font_size=el.get("font_size", 18))
 
     def _render_bullets_on_slide(self, slide, bullets: list, margin_left: float = 0.9) -> None:
         if len(bullets) >= 6:
@@ -702,20 +850,20 @@ class PrecisionRenderer:
         accent_hex = self._c(accent_role)
         card_bg = self._c("muted", "#0D152A" if self._is_dark() else "#F8FAFC")
         card_bd = self._c("border", "#1A2A4A" if self._is_dark() else "#E2E8F0")
-        title_size = 22 if featured else 20
+        title_size = 24 if featured else 20
         self.add_rounded_rect(slide, x, y, w, h, fill_hex=card_bg, border_hex=card_bd, gradient=True, shadow=True)
         if featured:
             self.add_rect(slide, x, y, w, 0.15, fill_hex=accent_hex, gradient=True)
             self.add_text(slide, title, x + 0.2, y + 0.25, w - 0.4, 0.5,
-                          self._font_h(), title_size, accent_role, True)
+                          self._font_h(), title_size, accent_role, bold=True)
             self.add_multiline(slide, body.split("\n"), x + 0.2, y + 0.8, w - 0.4, h - 1.1,
-                               self._font_b(), 14, "muted-foreground")
+                               self._font_b(), 15, "muted-foreground")
         else:
             self.add_rect(slide, x + 0.2, y + 0.2, w - 0.4, 0.04, fill_hex=accent_hex, gradient=True)
             self.add_text(slide, title, x + 0.2, y + 0.4, w - 0.4, 0.5,
-                          self._font_h(), title_size, accent_role, True)
+                          self._font_h(), title_size, accent_role, bold=True)
             self.add_multiline(slide, body.split("\n"), x + 0.2, y + 0.9, w - 0.4, h - 1.2,
-                               self._font_b(), 14, "muted-foreground")
+                               self._font_b(), 15, "muted-foreground")
 
     # ── Brand compliance: logo, footer, watermark ──
 
@@ -900,9 +1048,12 @@ class PrecisionRenderer:
 
     # ── §2.4 Section divider ──
 
-    def render_section_divider(self, prs, section_number: int,
+    def render_section_divider(self, slide_or_prs, section_number: int,
                                 section_title: str, section_subtitle: str = "") -> object:
-        slide = self.add_slide(prs)
+        if hasattr(slide_or_prs, 'background'):
+            slide = slide_or_prs
+        else:
+            slide = self.add_slide(slide_or_prs)
         primary_hex = self._c("primary", "#2563EB")
         if self._is_dark():
             bg = self._lighten(primary_hex, 120)

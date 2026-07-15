@@ -1,14 +1,22 @@
-"""Adapter for slide_search_core context-aware decision functions."""
+"""Adapter for slide_search_core context-aware decision functions.
+
+When ui-ux-pro-max is available, uses its reasoning engine for
+layout/typography/color decisions. Falls back to hardcoded tables otherwise.
+"""
 
 from __future__ import annotations
 
 from typing import Any
 
+from ppt_pro_max.adapters.ui_ux_adapter import (
+    is_available as _ux_available,
+    search_reasoning as _ux_reasoning,
+)
+
 _SEARCH_AVAILABLE = False
 
 try:
     from slide_search_core import (
-        search_with_context,
         get_layout_for_goal,
         get_typography_for_slide,
         get_color_for_emotion,
@@ -32,6 +40,17 @@ def layout_for_goal(goal: str) -> str:
             return get_layout_for_goal(goal)
         except Exception:
             pass
+
+    if _ux_available():
+        try:
+            reasoning = _ux_reasoning(goal)
+            pattern = reasoning.get("pattern", "")
+            layout = _pattern_to_layout(pattern, goal)
+            if layout:
+                return layout
+        except Exception:
+            pass
+
     return _fallback_layout(goal)
 
 
@@ -78,6 +97,23 @@ def pattern_break(position: int, total: int) -> bool:
         except Exception:
             pass
     return position in (total // 3, 2 * total // 3)
+
+
+_PATTERN_LAYOUT_MAP: dict[str, str] = {
+    "Hero + Features + CTA": "title-slide",
+    "Hero + Testimonials + CTA": "title-slide",
+    "Funnel (3-Step Conversion)": "content-with-title",
+    "Comparison Table + CTA": "two-column",
+    "Scroll-Triggered Storytelling": "content-with-title",
+    "Pricing Page + CTA": "cta-closing",
+    "Enterprise Gateway": "section-header",
+}
+
+
+def _pattern_to_layout(pattern: str, goal: str) -> str:
+    if pattern in _PATTERN_LAYOUT_MAP:
+        return _PATTERN_LAYOUT_MAP[pattern]
+    return ""
 
 
 _LAYOUT_FALLBACK = {

@@ -1,6 +1,10 @@
 """Theme Composer — infinite design combinations from composable atoms.
 
-Design atoms:
+When ui-ux-pro-max is available, delegates color/typography/style search
+to its rich CSV databases (192 palettes, 74 font pairs, 84 styles).
+Falls back to the hardcoded atoms below when the package is absent.
+
+Design atoms (fallback):
   - ColorPalette: 25+ curated palettes (mood + industry based)
   - FontPair: 20+ heading+body font combinations
   - DecorationStyle: 10+ visual decoration patterns
@@ -18,6 +22,13 @@ from __future__ import annotations
 
 import random
 from typing import Any
+
+from ppt_pro_max.adapters.ui_ux_adapter import (
+    is_available as _ux_available,
+    search_color as _ux_search_color,
+    search_typography as _ux_search_typography,
+    search_style as _ux_search_style,
+)
 
 
 # ============================================================
@@ -499,7 +510,12 @@ _PRESET_ATOM_MAP: dict[str, dict[str, str]] = {
 
 
 class ThemeComposer:
-    """Compose infinite theme combinations from design atoms."""
+    """Compose infinite theme combinations from design atoms.
+
+    When ui-ux-pro-max is available, uses its search engine to find
+    product-specific colors, typography, and styles from the CSV databases.
+    Falls back to the hardcoded atoms above when the package is absent.
+    """
 
     def compose(
         self,
@@ -510,6 +526,7 @@ class ThemeComposer:
         layout: str | None = None,
         mood: str | None = None,
         seed: int | None = None,
+        query: str | None = None,
     ) -> dict[str, Any]:
         if style and style in _PRESET_ATOM_MAP:
             atoms = _PRESET_ATOM_MAP[style]
@@ -526,27 +543,137 @@ class ThemeComposer:
 
         rng = random.Random(seed) if seed is not None else random.Random()
 
-        p = palette or self._pick_from_mood(detected_moods, _MOOD_PALETTE_MAP, rng)
-        f = fonts or self._pick_from_mood(detected_moods, _MOOD_FONT_MAP, rng)
+        ux_colors = None
+        ux_typo = None
+        ux_style_name = ""
+        ux_style_effects = ""
+        ux_anti_patterns = ""
+
+        search_query = query or style or " ".join(detected_moods[:2])
+
+        if _ux_available() and not palette and not fonts:
+            ux_colors = self._ux_find_colors(search_query, detected_moods, rng)
+            ux_typo = self._ux_find_typography(search_query, detected_moods, rng)
+            ux_style_info = self._ux_find_style(search_query, detected_moods)
+            if ux_style_info:
+                ux_style_name = ux_style_info.get("name", "")
+                ux_style_effects = ux_style_info.get("effects", "")
+                ux_anti_patterns = ux_style_info.get("anti_patterns", "")
+
+        if ux_colors:
+            colors = ux_colors
+        else:
+            p = palette or self._pick_from_mood(detected_moods, _MOOD_PALETTE_MAP, rng)
+            colors = dict(COLOR_PALETTES.get(p, COLOR_PALETTES["ocean-blue"]))
+
+        if ux_typo:
+            typo = ux_typo
+        else:
+            f = fonts or self._pick_from_mood(detected_moods, _MOOD_FONT_MAP, rng)
+            typo = dict(FONT_PAIRS.get(f, FONT_PAIRS["modern-sans"]))
+
         d = decoration or self._pick_from_mood(detected_moods, _MOOD_DECORATION_MAP, rng)
         lay_atom = layout or self._pick_from_mood(detected_moods, _MOOD_LAYOUT_MAP, rng)
 
-        colors = dict(COLOR_PALETTES.get(p, COLOR_PALETTES["ocean-blue"]))
-        typo = dict(FONT_PAIRS.get(f, FONT_PAIRS["modern-sans"]))
         deco = dict(DECORATION_STYLES.get(d, DECORATION_STYLES["accent-bar"]))
         lay = dict(LAYOUT_VARIANTS.get(lay_atom, LAYOUT_VARIANTS["standard"]))
 
         dark_mode = self._is_dark(colors)
 
-        return {
-            "name": f"{p}+{f}+{d}+{lay_atom}",
+        result = {
+            "name": f"{ux_style_name or 'custom'}+{d}+{lay_atom}",
             "colors": colors,
             "typography": typo,
             "dark_mode": dark_mode,
             "decoration": deco,
             "layout_variant": lay,
-            "atoms": {"palette": p, "fonts": f, "decoration": d, "layout": lay_atom, "moods": detected_moods},
+            "atoms": {"palette": palette or "ux-dynamic", "fonts": fonts or "ux-dynamic", "decoration": d, "layout": lay_atom, "moods": detected_moods},
         }
+
+        if ux_style_effects:
+            result["style_effects"] = ux_style_effects
+        if ux_anti_patterns:
+            result["anti_patterns"] = ux_anti_patterns
+        if ux_style_name:
+            result["style_name"] = ux_style_name
+
+        return result
+
+    def _ux_find_colors(self, query: str, moods: list[str], rng: random.Random) -> dict[str, str] | None:
+        try:
+            results = _ux_search_color(query, 3)
+            if not results:
+                for mood in moods:
+                    results = _ux_search_color(mood, 2)
+                    if results:
+                        break
+            if results:
+                best = results[0]
+                mapped = {}
+                _KEY_MAP = {
+                    "Primary": "primary", "On Primary": "on-primary",
+                    "Secondary": "secondary", "On Secondary": "on-secondary",
+                    "Accent": "accent", "On Accent": "on-accent",
+                    "Background": "background", "Foreground": "foreground",
+                    "Card": "card", "Card Foreground": "card-foreground",
+                    "Muted": "muted", "Muted Foreground": "muted-foreground",
+                    "Border": "border", "Destructive": "destructive",
+                    "On Destructive": "on-destructive", "Ring": "ring",
+                }
+                for csv_key, our_key in _KEY_MAP.items():
+                    val = best.get(csv_key, "")
+                    if val:
+                        mapped[our_key] = val
+                if mapped.get("primary"):
+                    return mapped
+        except Exception:
+            pass
+        return None
+
+    def _ux_find_typography(self, query: str, moods: list[str], rng: random.Random) -> dict[str, str] | None:
+        try:
+            results = _ux_search_typography(query, 3)
+            if not results:
+                for mood in moods:
+                    results = _ux_search_typography(mood, 2)
+                    if results:
+                        break
+            if results:
+                best = results[0]
+                heading = best.get("Heading Font", "")
+                body = best.get("Body Font", "")
+                if heading or body:
+                    return {
+                        "heading": heading or "Inter",
+                        "body": body or "Inter",
+                        "mood": best.get("Mood/Style Keywords", ""),
+                        "best_for": best.get("Best For", ""),
+                    }
+        except Exception:
+            pass
+        return None
+
+    def _ux_find_style(self, query: str, moods: list[str]) -> dict[str, str] | None:
+        try:
+            results = _ux_search_style(query, 3)
+            if not results:
+                for mood in moods:
+                    results = _ux_search_style(mood, 2)
+                    if results:
+                        break
+            if results:
+                best = results[0]
+                return {
+                    "name": best.get("Style Category", ""),
+                    "effects": best.get("Effects & Animation", ""),
+                    "keywords": best.get("Keywords", ""),
+                    "best_for": best.get("Best For", ""),
+                    "dark_mode": best.get("Dark Mode ✓", ""),
+                    "light_mode": best.get("Light Mode ✓", ""),
+                }
+        except Exception:
+            pass
+        return None
 
     def _detect_moods(self, text: str) -> list[str]:
         text_lower = " " + text.lower() + " "

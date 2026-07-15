@@ -337,6 +337,8 @@ def load_enterprise_content(
             "component_type": slide_data.get("component_type"),
             "component_category": slide_data.get("component_category"),
             "component_variant": slide_data.get("component_variant"),
+            "blocks": slide_data.get("blocks"),
+            "elements": slide_data.get("elements"),
         })
 
     return result

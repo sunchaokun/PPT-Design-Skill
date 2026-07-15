@@ -216,6 +216,40 @@ def install_python_package(source_dir: Path) -> bool:
         return False
 
 
+def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
+    print("\n  Checking ui-ux-pro-max skill (required dependency)...")
+    from ppt_pro_max.adapters.ui_ux_adapter import is_available, found_path, _UX_FOUND_PATH
+
+    if is_available():
+        print(f"  [OK] ui-ux-pro-max found at: {found_path()}")
+        return True
+
+    print("  ui-ux-pro-max NOT found. Installing via npx...")
+    try:
+        result = subprocess.run(
+            ["npx", "ui-ux-pro-max-cli", "init", "--ai", "opencode", "--force"],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(target_dir),
+        )
+        if result.returncode == 0:
+            print("  [OK] ui-ux-pro-max installed via npx")
+            return True
+        else:
+            print(f"  [WARN] npx install failed (exit {result.returncode})")
+            if result.stderr:
+                print(f"  {result.stderr[:300]}")
+    except FileNotFoundError:
+        print("  [WARN] npx not found. Install Node.js first: https://nodejs.org/")
+    except Exception as e:
+        print(f"  [WARN] npx install failed: {e}")
+
+    print()
+    print("  *** ui-ux-pro-max is REQUIRED. Install it manually: ***")
+    print("  npx ui-ux-pro-max-cli init --ai opencode")
+    print("  Or set UX_PRO_MAX_DIR environment variable to its location.")
+    return False
+
+
 def check_installation(target_dir: Path) -> None:
     print(f"\nPPT Design Skill v{VERSION} — Installation Check")
     print(f"Project dir : {target_dir}")
@@ -331,6 +365,9 @@ def main():
     if not args.no_pip:
         print()
         install_python_package(source_skill_dir)
+
+    # --- ui-ux-pro-max skill (required) ---
+    install_ui_ux_pro_max(target_dir, force=args.force)
 
     # --- Summary ---
     print(f"\n{'='*60}")

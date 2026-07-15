@@ -572,6 +572,8 @@ class EnterprisePipeline:
                 "component_type": page.get("component_type"),
                 "component_category": page.get("component_category"),
                 "component_variant": page.get("component_variant"),
+                "blocks": page.get("blocks"),
+                "elements": page.get("elements"),
                 "template_layout_index": layout_idx,
             }
             if layout_idx is not None and layout_idx in layout_names:

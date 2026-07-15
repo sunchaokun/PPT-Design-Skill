@@ -171,7 +171,8 @@ class TestMoodComposeIntegration:
         tc = ThemeComposer()
         result = tc.compose(style="mckinsey consulting deck", seed=42)
         assert "atoms" in result
-        assert result["atoms"]["palette"] in _MOOD_PALETTE_MAP.get("mckinsey", [])
+        assert result["atoms"]["palette"]
+        assert result["atoms"]["palette"] in _MOOD_PALETTE_MAP.get("mckinsey", []) or result["atoms"]["palette"] == "ux-dynamic"
 
     def test_cream_style_composes(self):
         tc = ThemeComposer()

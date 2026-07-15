@@ -49,6 +49,18 @@ python -m ruff check src/
 - `src/ppt_pro_max/enterprise/component_renderer.py` — P14: Component rendering bridge (match→fill data→apply brand colors→inject to slide)
 - `src/ppt_pro_max/renderer/theme_composer.py` — 35 moods (P3: added international/cream/frosted/mckinsey/consulting/pastel/retro/government/legal/pharma/realestate/automotive/aviation/energy/telecom/logistics)
 
+## Prerequisites
+
+- Python 3.x
+- **ui-ux-pro-max skill** is a **required** dependency (not optional):
+  ```bash
+  npx ui-ux-pro-max-cli init --ai opencode
+  ```
+  If not found, the system raises `UiUxProMaxNotFoundError` at runtime.
+  Install location is auto-detected (see `adapters/ui_ux_adapter.py` search order).
+  You can also set `UX_PRO_MAX_DIR` env var to explicitly specify the path.
+- **Pillow >= 10.0** required for cover-fit image cropping
+
 ## Key Constraints
 
 - **python-pptx 1.0.2**: `PP_TRANSITION_TYPE` does NOT exist, must use XML for transitions

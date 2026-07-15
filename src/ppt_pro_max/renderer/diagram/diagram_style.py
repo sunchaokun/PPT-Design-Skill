@@ -80,6 +80,11 @@ class DiagramStyle:
         style = cls()
         if hasattr(brand_spec, "colors") and brand_spec.colors:
             style._color_map = dict(brand_spec.colors)
+            bg = brand_spec.colors.get("background", "#FFFFFF")
+            if _is_dark(bg):
+                style.node_fill = "muted"
+                style.node_font_color = "foreground"
+                style.connector_color = "muted-foreground"
         if hasattr(brand_spec, "spacing") and brand_spec.spacing:
             style.node_font_size_pt = brand_spec.spacing.get("body_size_pt", 13)
             margins = brand_spec.spacing.get("margins_inches", 1.0)

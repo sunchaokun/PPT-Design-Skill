@@ -26,12 +26,10 @@ classifiers = [
 dependencies = [
     "python-pptx>=1.0.2",
     "lxml>=4.9.0",
+    "Pillow>=10.0",
 ]
 
 [project.optional-dependencies]
-search = [
-    "ui-ux-pro-max>=1.0.0",
-]
 images = [
     "httpx>=0.24.0",
 ]
