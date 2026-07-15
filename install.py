@@ -4,18 +4,16 @@
 Auto-detects AI coding platform, installs skill files + dependencies.
 
 Usage:
-    python install.py                  # Auto-detect + install
+    python install.py                  # Auto-detect + install to project dir
+    python install.py --global         # Install to global dirs for all platforms
     python install.py --platform claude  # Install for specific platform
     python install.py --platform all    # Install for all platforms
-    python install.py --global         # Install to home directory
     python install.py --check          # Check current installation status
 """
 
 from __future__ import annotations
 
 import argparse
-import io
-import os
 import shutil
 import subprocess
 import sys
@@ -29,79 +27,195 @@ for _stream_name in ("stdout", "stderr"):
         except Exception:
             pass
 
-REPO_URL = "https://github.com/sunchaokun/PPT-Design-Skill"
+VERSION = "0.7.0"
 SKILL_NAME = "ppt-design-skill"
-VERSION = "0.2.0"
 
-PLATFORMS: dict[str, dict[str, str]] = {
-    "claude":    {"dir": ".claude",    "desc": "Claude Code"},
-    "opencode":  {"dir": ".opencode",  "desc": "OpenCode"},
-    "codex":     {"dir": ".codex",     "desc": "Codex / OpenClaw"},
-    "cursor":    {"dir": ".cursor",    "desc": "Cursor / Windsurf"},
-    "windsurf":  {"dir": ".windsurf",  "desc": "Windsurf"},
-    "roocode":   {"dir": ".roo",       "desc": "RooCode"},
-    "gemini":    {"dir": ".gemini",    "desc": "Gemini CLI"},
-    "trae":      {"dir": ".trae",      "desc": "Trae"},
-    "continue":  {"dir": ".continue",  "desc": "Continue"},
-    "droid":     {"dir": ".factory",   "desc": "Droid (Factory)"},
-    "kilocode":  {"dir": ".kilocode",  "desc": "KiloCode"},
-    "augment":   {"dir": ".augment",   "desc": "Augment"},
-    "copilot":   {"dir": ".github",    "desc": "GitHub Copilot"},
+SKILL_FILES = [
+    "SKILL.md",
+    "AGENTS.md",
+    "pyproject.toml",
+    ".env.example",
+]
+
+SKILL_DIRS = [
+    "src",
+    "docs",
+    "scripts",
+]
+
+# Each platform: project-level dir, global skill path (relative to HOME), description
+# Global paths based on official docs research:
+#   Claude Code: ~/.claude/skills/<name>/SKILL.md
+#   OpenCode:    ~/.config/opencode/skills/<name>/SKILL.md
+#   Codex:       ~/.agents/skills/<name>/SKILL.md  (current standard)
+#   Cursor:      ~/.agents/plugins/<name>/SKILL.md  (Open Plugins spec)
+PLATFORMS: dict[str, dict] = {
+    "claude": {
+        "project_dir": ".claude",
+        "global_path": ".claude/skills",
+        "desc": "Claude Code",
+    },
+    "opencode": {
+        "project_dir": ".opencode",
+        "global_path": ".config/opencode/skills",
+        "desc": "OpenCode",
+    },
+    "codex": {
+        "project_dir": ".codex",
+        "global_path": ".agents/skills",
+        "desc": "Codex / OpenClaw",
+    },
+    "cursor": {
+        "project_dir": ".cursor",
+        "global_path": ".agents/plugins",
+        "desc": "Cursor",
+    },
+    "windsurf": {
+        "project_dir": ".windsurf",
+        "global_path": ".windsurf/skills",
+        "desc": "Windsurf",
+    },
+    "roocode": {
+        "project_dir": ".roo",
+        "global_path": ".roo/skills",
+        "desc": "RooCode",
+    },
+    "gemini": {
+        "project_dir": ".gemini",
+        "global_path": ".gemini/skills",
+        "desc": "Gemini CLI",
+    },
+    "trae": {
+        "project_dir": ".trae",
+        "global_path": ".trae/skills",
+        "desc": "Trae",
+    },
+    "continue": {
+        "project_dir": ".continue",
+        "global_path": ".continue/skills",
+        "desc": "Continue",
+    },
+    "droid": {
+        "project_dir": ".factory",
+        "global_path": ".factory/skills",
+        "desc": "Droid (Factory)",
+    },
+    "kilocode": {
+        "project_dir": ".kilocode",
+        "global_path": ".kilocode/skills",
+        "desc": "KiloCode",
+    },
+    "augment": {
+        "project_dir": ".augment",
+        "global_path": ".augment/skills",
+        "desc": "Augment",
+    },
+    "copilot": {
+        "project_dir": ".github",
+        "global_path": ".github/skills",
+        "desc": "GitHub Copilot",
+    },
 }
+
+
+def get_source_dir() -> Path:
+    script_dir = Path(__file__).resolve().parent
+    if (script_dir / "SKILL.md").exists() and (script_dir / "src" / "ppt_pro_max").exists():
+        return script_dir
+    return script_dir
 
 
 def detect_platforms(target_dir: Path) -> list[str]:
     detected = []
     for name, info in PLATFORMS.items():
-        if (target_dir / info["dir"]).exists():
+        if (target_dir / info["project_dir"]).exists():
             detected.append(name)
     return detected
 
 
-def get_skill_source_dir() -> Path:
-    script_dir = Path(__file__).resolve().parent
-    for candidate in [script_dir, script_dir.parent]:
-        if (candidate / "SKILL.md").exists() and (candidate / "src" / "ppt_pro_max").exists():
-            return candidate
-    return script_dir
+def get_project_skill_dir(target_dir: Path, platform: str) -> Path:
+    info = PLATFORMS[platform]
+    return target_dir / info["project_dir"] / "skills" / SKILL_NAME
 
 
-def install_skill_files(target_dir: Path, platform: str, source_dir: Path, force: bool = False) -> list[str]:
+def get_global_skill_dir(platform: str) -> Path:
+    info = PLATFORMS[platform]
+    return Path.home() / info["global_path"] / SKILL_NAME
+
+
+def _copy_skill_files(dest_dir: Path, source_dir: Path) -> None:
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    for fname in SKILL_FILES:
+        src = source_dir / fname
+        if src.exists():
+            shutil.copy2(src, dest_dir / fname)
+
+    for dname in SKILL_DIRS:
+        src_d = source_dir / dname
+        dst_d = dest_dir / dname
+        if src_d.exists():
+            if dst_d.exists():
+                shutil.rmtree(dst_d)
+            shutil.copytree(src_d, dst_d)
+
+
+def _read_skill_version(skill_dir: Path) -> str:
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        return ""
+    try:
+        for line in skill_md.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("version:"):
+                return line.split(":", 1)[1].strip().strip('"')
+    except Exception:
+        pass
+    return ""
+
+
+def _skill_status(skill_dir: Path) -> str:
+    skill_md = skill_dir / "SKILL.md"
+    has_src = (skill_dir / "src" / "ppt_pro_max").exists()
+    if skill_md.exists() and has_src:
+        ver = _read_skill_version(skill_dir)
+        return f"INSTALLED v{ver}" if ver else "INSTALLED"
+    elif skill_md.exists():
+        return "PARTIAL (no src/)"
+    return "NOT INSTALLED"
+
+
+def install_to_dir(dest_dir: Path, source_dir: Path, label: str, force: bool = False) -> str | None:
+    if dest_dir.exists() and not force:
+        ver = _read_skill_version(dest_dir)
+        print(f"  [SKIP] {label} — already installed")
+        print(f"         Path: {dest_dir}")
+        if ver:
+            print(f"         Version: {ver}, Latest: {VERSION}")
+        print(f"         Use --force to overwrite")
+        return None
+
+    _copy_skill_files(dest_dir, source_dir)
+    print(f"  [OK] {label} -> {dest_dir}")
+    return str(dest_dir)
+
+
+def install_project_level(target_dir: Path, platform: str, source_dir: Path, force: bool = False) -> str | None:
     info = PLATFORMS.get(platform)
     if not info:
         print(f"  [SKIP] Unknown platform: {platform}")
-        return []
+        return None
 
-    platform_dir = target_dir / info["dir"] / "skills" / SKILL_NAME
-    scripts_dir = platform_dir / "scripts"
+    skill_dir = get_project_skill_dir(target_dir, platform)
+    return install_to_dir(skill_dir, source_dir, f"{info['desc']} (project)", force)
 
-    if platform_dir.exists() and not force:
-        print(f"  [SKIP] {info['desc']} — already installed ({platform_dir})")
-        print(f"         Use --force to overwrite")
-        return []
 
-    platform_dir.mkdir(parents=True, exist_ok=True)
-    scripts_dir.mkdir(parents=True, exist_ok=True)
+def install_global_level(platform: str, source_dir: Path, force: bool = False) -> str | None:
+    info = PLATFORMS.get(platform)
+    if not info:
+        return None
 
-    skill_md_source = source_dir / "SKILL.md"
-    if skill_md_source.exists():
-        shutil.copy2(skill_md_source, platform_dir / "SKILL.md")
-
-    script_source = source_dir / ".claude" / "skills" / SKILL_NAME / "scripts" / "generate_ppt.py"
-    if script_source.exists():
-        shutil.copy2(script_source, scripts_dir / "generate_ppt.py")
-
-    agents_source = source_dir / "AGENTS.md"
-    if agents_source.exists():
-        shutil.copy2(agents_source, target_dir / "AGENTS.md")
-
-    claude_source = source_dir / "CLAUDE.md"
-    if claude_source.exists() and platform == "claude":
-        shutil.copy2(claude_source, target_dir / "CLAUDE.md")
-
-    installed = [str(platform_dir)]
-    print(f"  [OK] {info['desc']} → {platform_dir}")
-    return installed
+    skill_dir = get_global_skill_dir(platform)
+    return install_to_dir(skill_dir, source_dir, f"{info['desc']} (global)", force)
 
 
 def install_python_package(source_dir: Path) -> bool:
@@ -144,19 +258,27 @@ def check_dependencies() -> dict[str, bool]:
 
 def check_installation(target_dir: Path) -> None:
     print(f"\nPPT Design Skill v{VERSION} — Installation Check")
-    print(f"Target: {target_dir}\n")
+    print(f"Project dir : {target_dir}")
+    print(f"Home dir    : {Path.home()}")
+    print()
 
-    print("Platform detections:")
+    print("Platform detections (project-level):")
     detected = detect_platforms(target_dir)
     if detected:
         for p in detected:
             info = PLATFORMS.get(p, {})
-            skill_dir = target_dir / info.get("dir", "") / "skills" / SKILL_NAME
-            skill_md = skill_dir / "SKILL.md"
-            status = "INSTALLED" if skill_md.exists() else "NOT INSTALLED"
+            skill_dir = get_project_skill_dir(target_dir, p)
+            status = _skill_status(skill_dir)
             print(f"  {info.get('desc', p):25s} [{status}]")
     else:
-        print("  No AI coding platforms detected")
+        print("  No AI coding platforms detected in current directory")
+
+    print("\nGlobal installations:")
+    for p, info in PLATFORMS.items():
+        global_dir = get_global_skill_dir(p)
+        status = _skill_status(global_dir)
+        if status != "NOT INSTALLED":
+            print(f"  {info['desc']:25s} [{status}]  ({global_dir})")
 
     print("\nPython dependencies:")
     deps = check_dependencies()
@@ -178,29 +300,38 @@ def main():
         description=f"PPT Design Skill v{VERSION} — One-click installer",
     )
     parser.add_argument("--platform", "-p", help="Specific platform (claude, opencode, codex, cursor, all)")
-    parser.add_argument("--target", "-t", help="Target directory (default: current)")
-    parser.add_argument("--global", dest="global_install", action="store_true", help="Install to home directory")
+    parser.add_argument("--target", "-t", help="Target project directory (default: current)")
+    parser.add_argument("--global", dest="global_install", action="store_true",
+                        help="Install to global home dirs for all platforms")
     parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing installation")
     parser.add_argument("--check", "-c", action="store_true", help="Check installation status only")
     parser.add_argument("--no-pip", action="store_true", help="Skip pip install")
     args = parser.parse_args()
 
     target_dir = Path(args.target) if args.target else Path.cwd()
-    if args.global_install:
-        target_dir = Path.home()
+    source_dir = get_source_dir()
 
     if args.check:
         check_installation(target_dir)
         return
 
-    source_dir = get_skill_source_dir()
-
     print(f"\n{'='*60}")
     print(f"  PPT Design Skill v{VERSION} — Installer")
-    print(f"  40,000+ style combinations · 4 image engines + 1 enhancer")
+    print(f"  40,000+ style combos · 28 design quality upgrades · 5 image engines")
     print(f"{'='*60}\n")
 
-    # Detect platforms
+    all_installed = []
+
+    # --- Global install ---
+    if args.global_install:
+        print("Installing to global directories...\n")
+        for platform in PLATFORMS:
+            result = install_global_level(platform, source_dir, force=args.force)
+            if result:
+                all_installed.append(result)
+        print()
+
+    # --- Project-level install ---
     if args.platform == "all":
         platforms_to_install = list(PLATFORMS.keys())
     elif args.platform:
@@ -212,24 +343,33 @@ def main():
             print(f"Auto-detected platforms: {', '.join(PLATFORMS[p]['desc'] for p in detected)}")
         else:
             print("No AI coding platforms detected in current directory.")
-            print("Installing for all common platforms...")
+            print("Installing for common platforms (claude, opencode, codex, cursor)...")
             platforms_to_install = ["claude", "opencode", "codex", "cursor"]
 
     print(f"\nInstalling for: {', '.join(PLATFORMS.get(p, {}).get('desc', p) for p in platforms_to_install)}")
     print()
 
-    # Install skill files
-    all_installed = []
     for platform in platforms_to_install:
-        installed = install_skill_files(target_dir, platform, source_dir, force=args.force)
-        all_installed.extend(installed)
+        result = install_project_level(target_dir, platform, source_dir, force=args.force)
+        if result:
+            all_installed.append(result)
 
-    # Install Python package
+    # Also copy AGENTS.md to project root
+    agents_source = source_dir / "AGENTS.md"
+    if agents_source.exists():
+        root_agents = target_dir / "AGENTS.md"
+        if not root_agents.exists() or args.force:
+            try:
+                shutil.copy2(agents_source, root_agents)
+            except PermissionError:
+                print(f"  [WARN] Cannot overwrite {root_agents} (file locked)")
+
+    # --- pip install ---
     if not args.no_pip:
         print()
         install_python_package(source_dir)
 
-    # Summary
+    # --- Summary ---
     print(f"\n{'='*60}")
     if all_installed:
         print(f"  Installed successfully!")
