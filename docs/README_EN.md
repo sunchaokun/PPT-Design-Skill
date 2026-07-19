@@ -65,17 +65,13 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 | **28 Design Quality Upgrades** | OKLCH color depth · Shadow elevation · Gradient overlay · Progress bar · Corner radius · CJK font pairing · Noise texture · Two-column bullets · 4 Hero patterns · Section dividers · Badge system · Gradient lines · Image masking · Decoration renderer · Code block redesign · Card upgrade · Adaptive margins · Typography scale |
 | **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
 | **Build Script Mode** | 10 page templates + Design Token system + post-build checks, delivery-grade quality |
-| **Brand Visual Design** | Auto-mapped brand colors: backgrounds, accent bars, branded title/body text, logo placement |
 | **VI Build Mode** | `analyze_template.py` extracts template VI → LLM generates build.py → `build_helpers` precise construction, enterprise VI compliance |
-| **Page Revision** | `--pages` CRUD: delete / swap / move / insert with full content preservation |
-| **Version Management** | v1 → v2 → v3 auto-numbering, meta.json tracks per-page goal/title |
 | **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
 | **12 Master Layouts** | 13.333"×7.5" 16:9 precise coordinates |
 | **AI Image Engines** | Seedream / GPT Image / DALL-E / Wanx — 4 generation engines + Kimi enhancement |
 | **Animation System** | 12 transition types + 10 entrance effects, motion 1-10 smart mapping |
 | **Code/Exercise Blocks** | Dark code blocks + language badges + exercise badges + step lists — education-ready |
 | **CJK Fonts** | 12 CJK font pairings with auto-fallback (Microsoft YaHei / STSong / SimHei etc.) |
-| **QA Gates** | 5 automated quality checks + `--review` proposal confirmation |
 
 ---
 
@@ -212,78 +208,6 @@ my-project/
 
 ---
 
-## 📋 content.json — Precise Content Control
-
-```json
-{
-  "meta": {"title": "Acme Corp — Series B Pitch"},
-  "slides": [
-    {"goal": "hook", "title": "The Future of AI", "subtitle": "Acme Corp", "image": "images/hero.png"},
-    {"goal": "problem", "title": "The Problem", "bullets": ["75% fail", "Data silos"]},
-    {"goal": "solution", "title": "Our Solution", "bullets": ["Unified gateway"], "image": "images/product.png"},
-    {"goal": "features", "title": "Key Features", "cards": [
-      {"title": "Fast", "text": "Sub-100ms"},
-      {"title": "Secure", "text": "SOC2+HIPAA"}
-    ]},
-    {"goal": "market", "title": "Market", "diagram": {"type": "funnel", "data": {"items": [{"text": "TAM $120B"}, {"text": "SOM $8B"}]}}},
-    {"goal": "code_demo", "title": "Quick Start", "code": {"language": "python", "source": "from acme import AIPlatform\nplatform = AIPlatform(key='x')"}},
-    {"goal": "exercise", "title": "Try It", "exercise": {"instructions": "Deploy in 5 min", "duration": "5 min", "steps": ["Sign up", "Deploy"]}},
-    {"goal": "cta", "title": "Join Us", "subtitle": "contact@acme.ai"}
-  ]
-}
-```
-
-> Full field reference: [Usage Guide §6](usage-guide.md#6-contentjson-内容格式)
-
----
-
-## 🎨 brand.json — Brand Visual Specification
-
-```json
-{
-  "colors": {
-    "primary": "#2563EB",
-    "accent": "#F97316",
-    "foreground": "#1A1A2E",
-    "muted-foreground": "#94A3B8",
-    "background": "#FFFFFF",
-    "muted": "#F1F5F9"
-  },
-  "fonts": {"heading": "Calibri", "body": "Calibri"},
-  "logo": {"position": "top_right", "width_inches": 1.2, "skip_slides": ["hook"]},
-  "footer": {
-    "show_page_number": true,
-    "page_number_format": "{n} / {total}"
-  }
-}
-```
-
-> Full field reference: [Usage Guide §7](usage-guide.md#7-brandjson-品牌格式)
-
----
-
-## ✏️ Page Revision — CRUD Operations
-
-> Page revision requires Enterprise Pipeline (deprecated). For new projects, use Build Script or VI Build mode.
-
-<details>
-<summary>Click to expand deprecated page revision syntax</summary>
-
-```bash
-# Delete page 3
-ppt-design "" --project . --pages "-3"
-
-# Swap pages 2 and 5
-ppt-design "" --project . --pages "2<>5"
-
-# Combined operations
-ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
-```
-
-</details>
-
----
-
 ## 🖼️ Image Engines
 
 | Engine | Type | CLI | Default Model |
@@ -384,68 +308,6 @@ v0.7.0 introduces 28 design quality upgrades across three tiers:
 | 3.7 | **4 Hero Patterns** | gradient / split-left / bottom-fade / asymmetric cover layouts |
 
 ---
-
-## 📁 Project Structure
-
-```
-PPT-Design-Skill/
-├── pyproject.toml
-├── install.py                        # One-click installer
-├── SKILL.md                          # AI skill definition
-├── AGENTS.md                         # Project instructions
-├── docs/
-│   ├── README_EN.md                  # This file
-│   ├── usage-guide.md                # Full usage guide (Chinese, incl. Build Script)
-│   └── showcase/                     # Showcase screenshots
-├── examples/                         # Example PPTs
-│   ├── showcase-professional.pptx
-│   ├── showcase-dark-tech.pptx
-│   ├── showcase-warm-elegant.pptx
-│   ├── showcase-vibrant-startup.pptx
-│   └── showcase-nature-calm.pptx
-├── src/ppt_pro_max/
-│   ├── __init__.py                   # generate_ppt() API
-│   ├── cli.py                        # ppt-design CLI
-│   ├── analyze_template.py           # Template analysis script (VI Build Step 1)
-│   ├── build_helpers.py              # Build helper library (VI Build Step 3)
-│   ├── enterprise/                   # ~~Enterprise Pipeline~~ (deprecated)
-│   │   ├── pipeline.py               # ~~Main orchestrator~~ (deprecated)
-│   │   ├── precision_renderer.py     # Unified renderer (8 goal layouts + 28 design upgrades)
-│   │   ├── brand_spec.py             # Brand specification
-│   │   ├── content_parser.py         # Content parser (content.json + README.md)
-│   │   ├── image_matcher.py          # Image matching + size classification + AI prompts
-│   │   ├── proposal_generator.py     # Style preview (2-3 proposals)
-│   │   ├── slide_extractor.py        # PPT content extraction (beautify mode)
-│   │   ├── component_library.py      # Component library (SQLite index + dedup)
-│   │   ├── component_renderer.py     # Component rendering bridge
-│   │   ├── page_revision.py          # Page revision engine
-│   │   ├── density_profile.py        # Density profiles
-│   │   └── ...
-│   ├── renderer/
-│   │   ├── ppt_renderer.py           # FreeStyle renderer
-│   │   ├── diagram_engine.py         # 10-type diagram engine
-│   │   ├── diagram/                  # Diagram implementations
-│   │   │   ├── flowchart.py / funnel.py / timeline.py / swot.py
-│   │   │   ├── matrix.py / cycle.py / table.py
-│   │   │   ├── hierarchy.py / pyramid.py / venn.py
-│   │   │   └── connector_router.py / text_measurer.py / ...
-│   │   ├── animation.py              # 12 transitions + 10 entrance effects
-│   │   ├── theme_composer.py         # 40,000+ style combinations + 35 moods
-│   │   ├── typography.py             # Typography scale (TypeScale)
-│   │   ├── color_system.py           # OKLCH color depth + alpha levels
-│   │   ├── elevation.py              # 5-level shadow elevation
-│   │   ├── layout_engine.py          # Layout engine + adaptive margins
-│   │   ├── image_processor.py        # Image color grading + noise texture
-│   │   ├── decoration_renderer.py    # 10 decoration style renderer
-│   │   ├── visual_effects.py         # Gradient / glow / letter spacing
-│   │   ├── image_fetcher.py          # 5 engines + caching
-│   │   └── ...
-│   ├── planner/story_planner.py      # Story planning
-│   ├── decider/design_decider.py     # Design decisions
-│   └── content/content_generator.py  # Content generation
-├── tests/                            # 824 tests
-└── e2e-test-project/                 # E2E test project
-```
 
 ## License
 

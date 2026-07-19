@@ -2,13 +2,13 @@
 
 # PPT Design Skill
 
-**三种模式 · 叙事驱动 · AI 配图 · **40,000+ 风格组合** · **ui-ux-pro-max 设计智能** · 6 种 AI 图片引擎
+**三种模式 · 叙事驱动 · AI 配图 · 40,000+ 风格组合 · ui-ux-pro-max 设计智能 · 6 种 AI 图片引擎**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
 
-| FreeStyle 傻瓜模式 | Build 设计师模式 | VI Build 企业模式 |
+| FreeStyle 自由模式 | Build 设计师模式 | VI Build 企业模式 |
 |:---:|:---:|:---:|
 | 一句话出PPT | **像素级控制 + 方案对比** | **基于企业模板 VI 精确生成** |
 | 30秒快速生成 | **python-pptx 精确构建** | **保留框架页 + build_helpers** |
@@ -67,21 +67,17 @@
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
 | **ui-ux-pro-max 设计智能** | 192 色彩方案 · 84 风格 · 74 字体 · 161 反模式 — 必需依赖，自动匹配行业/场景 |
 | **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 + 35 种 mood |
-| **5,560+ 图表组件库** | SQLite 索引 + 5,537 GroupShape + 23 SmartArt（依赖已弃用 Enterprise，可选补充） |
 | **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
 | **28 项设计质量升级** | OKLCH 色彩深度 · 阴影层级 · 渐变叠层 · 进度条 · 圆角系统 · CJK 字体配对 · 噪点纹理 · 双栏要点 · 4 种 Hero 布局 · 章节分隔页 · 徽章系统 · 渐变线 · 图片遮罩 · 装饰渲染器 · 代码块重设计 · 卡片升级 · 自适应边距 · 排版比例尺 |
 | **10 种图形引擎** | 流程图/漏斗/时间线/SWOT/矩阵/循环/表格/层级/金字塔/韦恩 |
 | **Build Script 模式** | 10 种页面模板 + Design Token 系统 + 生成后自动检查，交付级质量 |
 | **VI Build 模式** | `analyze_template.py` 提取模板 VI → LLM 生成 build.py → `build_helpers` 精确构建，企业 VI 合规 |
-| **页面修订** | `--pages` 增删改查：删除/交换/移动/插入，内容完整保留 |
-| **版本管理** | v1 → v2 → v3 自动编号，meta.json 记录每页 goal/title |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
 | **12 母版布局** | 13.333"×7.5" 16:9 精确坐标 |
 | **AI 智能配图** | Seedream / GPT Image / DALL-E / Gemini / Wanx — 5 种生成引擎 + Kimi 增强 |
 | **动画系统** | 12 种切换 + 10 种入场动画，motion 1-10 智能映射 |
 | **代码块/练习** | 深色代码块 + 语言徽章 + 练习徽章 + 步骤列表 — 教育场景标配 |
 | **CJK 字体** | 12 种 CJK 配对自动回退（Microsoft YaHei / STSong / SimHei 等） |
-| **QA 门禁** | 5 项自动质量检查 + `--review` 方案确认 |
 
 ---
 
@@ -221,78 +217,6 @@ my-project/
 
 ---
 
-## 📋 content.json — 精确控制内容
-
-```json
-{
-  "meta": {"title": "Acme Corp — Series B Pitch"},
-  "slides": [
-    {"goal": "hook", "title": "The Future of AI", "subtitle": "Acme Corp", "image": "images/hero.png"},
-    {"goal": "problem", "title": "The Problem", "bullets": ["75% fail", "Data silos"]},
-    {"goal": "solution", "title": "Our Solution", "bullets": ["Unified gateway"], "image": "images/product.png"},
-    {"goal": "features", "title": "Key Features", "cards": [
-      {"title": "Fast", "text": "Sub-100ms"},
-      {"title": "Secure", "text": "SOC2+HIPAA"}
-    ]},
-    {"goal": "market", "title": "Market", "diagram": {"type": "funnel", "data": {"items": [{"text": "TAM $120B"}, {"text": "SOM $8B"}]}}},
-    {"goal": "code_demo", "title": "Quick Start", "code": {"language": "python", "source": "from acme import AIPlatform\nplatform = AIPlatform(key='x')"}},
-    {"goal": "exercise", "title": "Try It", "exercise": {"instructions": "Deploy in 5 min", "duration": "5 min", "steps": ["Sign up", "Deploy"]}},
-    {"goal": "cta", "title": "Join Us", "subtitle": "contact@acme.ai"}
-  ]
-}
-```
-
-> 完整字段说明见 [使用手册](docs/usage-guide.md#6-contentjson-内容格式)
-
----
-
-## 🎨 brand.json — 品牌视觉规范
-
-```json
-{
-  "colors": {
-    "primary": "#2563EB",
-    "accent": "#F97316",
-    "foreground": "#1A1A2E",
-    "muted-foreground": "#94A3B8",
-    "background": "#FFFFFF",
-    "muted": "#F1F5F9"
-  },
-  "fonts": {"heading": "Calibri", "body": "Calibri"},
-  "logo": {"position": "top_right", "width_inches": 1.2, "skip_slides": ["hook"]},
-  "footer": {
-    "show_page_number": true,
-    "page_number_format": "第 {n} 页 / 共 {total} 页"
-  }
-}
-```
-
-> 完整字段说明见 [使用手册](docs/usage-guide.md#7-brandjson-品牌格式)
-
----
-
-## ✏️ 页面修订 — 增删改查
-
-> 页面修订依赖已弃用的 Enterprise Pipeline。新项目请使用 Build Script 或 VI Build 模式。
-
-<details>
-<summary>点击展开已弃用的页面修订语法</summary>
-
-```bash
-# 删除第 3 页
-ppt-design "" --project . --pages "-3"
-
-# 交换第 2 和第 5 页
-ppt-design "" --project . --pages "2<>5"
-
-# 组合操作
-ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
-```
-
-</details>
-
----
-
 ## 🖼️ 图片引擎
 
 | 引擎 | 类型 | CLI | 默认模型 |
@@ -392,78 +316,6 @@ v0.8.0 引入 Build 设计师模式 + 28 项设计质量升级：
 | 3.7 | **Hero 4 变体** | gradient / split-left / bottom-fade / asymmetric 4 种封面布局 |
 
 ---
-
-## 📁 项目结构
-
-```
-PPT-Design-Skill/
-├── pyproject.toml
-├── install.py                        # 一键安装器（自动复制数据资产到 skill 目录）
-├── SKILL.md                          # AI skill 定义
-├── AGENTS.md                         # 项目指令
-├── component_library/                # 图表组件库（5,560+ 组件）
-│   ├── index.db                      # SQLite 索引
-│   └── storage/                      # GroupShape/SmartArt XML（gzip 压缩）
-├── data/                             # PPT 数据文件
-│   └── ppt/                          # 动画/布局/主题/过渡 CSV
-├── scripts/
-│   └── generate_ppt.py               # CLI 入口（AI 助手调用）
-├── docs/
-│   ├── README_EN.md                  # 英文 README
-│   ├── usage-guide.md                # 完整使用手册（含 Build Script 模式）
-│   └── showcase/                     # 案例截图
-├── examples/                         # 案例 PPT
-│   ├── showcase-professional.pptx
-│   ├── showcase-dark-tech.pptx
-│   ├── showcase-warm-elegant.pptx
-│   ├── showcase-vibrant-startup.pptx
-│   └── showcase-nature-calm.pptx
-├── src/ppt_pro_max/
-│   ├── __init__.py                   # generate_ppt() API
-│   ├── cli.py                        # ppt-design CLI
-│   ├── analyze_template.py           # 模板分析脚本（VI Build Step 1）
-│   ├── build_helpers.py              # Build 辅助库（VI Build Step 3）
-│   ├── enterprise/                   # ~~Enterprise Pipeline~~（已弃用）
-│   │   ├── pipeline.py               # ~~主编排器~~（已弃用）
-│   │   ├── precision_renderer.py     # 统一渲染器（8 种 goal 布局 + 28 项设计升级）
-│   │   ├── brand_spec.py             # 品牌规范
-│   │   ├── content_parser.py         # 内容解析（content.json + README.md）
-│   │   ├── image_matcher.py          # 图片匹配 + 尺寸分类 + AI 提示词
-│   │   ├── proposal_generator.py     # 方案预览（2-3 种风格）
-│   │   ├── slide_extractor.py        # PPT 内容提取（美化模式）
-│   │   ├── component_library.py      # 组件库（SQLite 索引 + 去重）
-│   │   ├── component_renderer.py     # 组件渲染桥接
-│   │   ├── page_revision.py          # 页面修订引擎
-│   │   ├── density_profile.py        # 密度配置
-│   │   └── ...
-│   ├── renderer/
-│   │   ├── ppt_renderer.py           # FreeStyle 渲染器
-│   │   ├── diagram_engine.py         # 10 种图形引擎
-│   │   ├── diagram/                  # 图形实现
-│   │   │   ├── flowchart.py / funnel.py / timeline.py / swot.py
-│   │   │   ├── matrix.py / cycle.py / table.py
-│   │   │   ├── hierarchy.py / pyramid.py / venn.py
-│   │   │   └── connector_router.py / text_measurer.py / ...
-│   │   ├── animation.py              # 12 切换 + 10 入场
-│   │   ├── theme_composer.py         # 40,000+ 风格组合 + 35 种 mood
-│   │   ├── typography.py             # 排版比例尺（TypeScale）
-│   │   ├── color_system.py           # OKLCH 色彩深度 + alpha 层级
-│   │   ├── elevation.py              # 5 级阴影层级
-│   │   ├── layout_engine.py          # 布局引擎 + 自适应边距
-│   │   ├── image_processor.py        # 图片调色 + 噪点纹理
-│   │   ├── decoration_renderer.py    # 10 种装饰风格渲染
-│   │   ├── visual_effects.py         # 渐变/发光/字间距
-│   │   ├── image_fetcher.py          # 5 引擎 + 缓存
-│   │   └── ...
-│   ├── planner/story_planner.py      # 叙事规划
-│   ├── decider/design_decider.py     # 设计决策
-│   └── content/content_generator.py  # 内容生成
-├── tests/                            # 865 个测试
-│   └── conftest.py                    # 测试环境 UX_PRO_MAX_DIR 自动检测
-└── e2e-test-project/                 # E2E 测试项目
-```
-
-> **安装说明**：`python install.py` 会自动将 `component_library/`、`data/`、`scripts/` 复制到各平台 skill 目录（`.opencode/`、`.claude/`、`.cursor/`、`.codex/`），确保运行时数据文件可达。
 
 ## License
 
