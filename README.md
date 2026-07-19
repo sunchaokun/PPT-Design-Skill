@@ -2,16 +2,16 @@
 
 # PPT Design Skill
 
-**三种模式 · 叙事驱动 · 品牌合规 · AI 配图 · **40,000+ 风格组合** · **ui-ux-pro-max 设计智能** · **5,560+ 图表组件库**
+**三种模式 · 叙事驱动 · AI 配图 · **40,000+ 风格组合** · **ui-ux-pro-max 设计智能** · 6 种 AI 图片引擎
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
 
-| FreeStyle 傻瓜模式 | Enterprise 企业模式 | Build 设计师模式 |
+| FreeStyle 傻瓜模式 | ~~Enterprise~~ 已弃用 | Build 设计师模式 |
 |:---:|:---:|:---:|
-| 一句话出PPT | VI合规 + 版本管理 | 像素级控制 + 方案对比 |
-| 30秒快速生成 | brand.json 锁死风格 | python-pptx 精确构建 |
+| 一句话出PPT | ~~VI合规 + 版本管理~~ | **像素级控制 + 方案对比** |
+| 30秒快速生成 | ~~brand.json 锁死风格~~ | **python-pptx 精确构建** |
 
 适配 OpenCode · Claude Code · Codex · Cursor
 
@@ -63,11 +63,11 @@
 
 | 特性 | 说明 |
 |------|------|
-| **三模式引擎** | FreeStyle 快速生成 + Enterprise 品牌合规 + Build Script 逐页精确控制 |
+| **三模式引擎** | FreeStyle 快速生成 + ~~Enterprise 已弃用~~ + Build Script 逐页精确控制 |
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
 | **ui-ux-pro-max 设计智能** | 192 色彩方案 · 84 风格 · 74 字体 · 161 反模式 — 必需依赖，自动匹配行业/场景 |
 | **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 + 35 种 mood |
-| **5,560+ 图表组件库** | SQLite 索引 + 5,537 GroupShape + 23 SmartArt，自动匹配注入品牌色 |
+| **5,560+ 图表组件库** | SQLite 索引 + 5,537 GroupShape + 23 SmartArt（Build 原子级编辑可替代，组件库为可选补充） |
 | **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
 | **28 项设计质量升级** | OKLCH 色彩深度 · 阴影层级 · 渐变叠层 · 进度条 · 圆角系统 · CJK 字体配对 · 噪点纹理 · 双栏要点 · 4 种 Hero 布局 · 章节分隔页 · 徽章系统 · 渐变线 · 图片遮罩 · 装饰渲染器 · 代码块重设计 · 卡片升级 · 自适应边距 · 排版比例尺 |
 | **10 种图形引擎** | 流程图/漏斗/时间线/SWOT/矩阵/循环/表格/层级/金字塔/韦恩 |
@@ -77,7 +77,7 @@
 | **版本管理** | v1 → v2 → v3 自动编号，meta.json 记录每页 goal/title |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
 | **12 母版布局** | 13.333"×7.5" 16:9 精确坐标 |
-| **AI 智能配图** | Seedream / GPT Image / DALL-E / Wanx — 4 种生成引擎 + Kimi 增强 |
+| **AI 智能配图** | Seedream / GPT Image / DALL-E / Gemini / Wanx — 5 种生成引擎 + Kimi 增强 |
 | **动画系统** | 12 种切换 + 10 种入场动画，motion 1-10 智能映射 |
 | **代码块/练习** | 深色代码块 + 语言徽章 + 练习徽章 + 步骤列表 — 教育场景标配 |
 | **CJK 字体** | 12 种 CJK 配对自动回退（Microsoft YaHei / STSong / SimHei 等） |
@@ -120,26 +120,23 @@ ppt-design "融资路演" --style "dark cyberpunk" \
   --motion 7 --density 6
 ```
 
-### Enterprise — 品牌合规 + 版本管理
+### ~~Enterprise~~ 已弃用
+
+> **注意**：Enterprise Pipeline 已弃用，存在品牌色覆盖、文本槽位丢失等质量问题。推荐使用 **Build 模式 + LLM 分析企业模板** 替代，可保持 VI 一致性和像素级精度。
 
 ```bash
-# 1. 创建项目目录
-mkdir my-pitch && cd my-pitch
+# 已弃用 — 不推荐使用
+# ppt-design "AI Platform" --project . --density 6 --motion 5
 
-# 2. 放入品牌资产（均可选）
-#    template.pptx / brand.json / content.json / logo.png / images/
-
-# 3. 生成
-ppt-design "AI Platform" --project . --density 6 --motion 5
-
-# 4. 修订页面
-ppt-design "" --project . --pages "-3,2<>5"
-
-# 5. 查看历史
-ppt-design "" --project . --history
+# 推荐替代方案：Build 模式
+# 1. 用 LLM 分析企业模板提取 Design Token（颜色/字体/布局）
+# 2. 将 Token 写入 build.py，逐页精确控制
+# 3. 自动保持 VI 合规，精度远超 Enterprise
 ```
 
-### Build Script — 逐页精确控制（交付级质量）
+详见 [使用手册 §4](docs/usage-guide.md#4-enterprise-模式已弃用)
+
+### Build Script — 逐页精确控制（推荐模式）
 
 ```python
 # build.py — 直接用 python-pptx 逐页精确控制
@@ -176,30 +173,22 @@ prs.save("output/presentation.pptx")
 
 适用：快速探索、风格实验、个人演示
 
-### Enterprise Pipeline
+### ~~Enterprise Pipeline~~ 已弃用
 
-```
-项目目录 → 资产扫描 → 品牌合并 → 内容解析 → 视觉设计 → 渲染+动画 → 版本管理 → .pptx
-               ↓          ↓          ↓          ↓
-          template   brand.json  content.json  accent bar
-          logo.png   颜色/字体    diagram      品牌色覆盖
-          images/    LOGO定位     code/exercise  页脚/水印
-```
+> Enterprise Pipeline 已弃用（品牌色覆盖、文本槽位丢失等质量问题）。企业 VI 合规场景请使用 **Build 模式**：LLM 分析企业模板 → 提取 Design Token → build.py 逐页精确控制。
 
-适用：企业合规、团队协作、多版本迭代
-
-### Build Script 模式
+### Build Script 模式（推荐）
 
 ```
 build.py → Design Token → 页面模板 → python-pptx → .pptx → check.py 验证
-              ↓              ↓            ↓
-          颜色/字体      10种模板     逐元素精确控制
-          一键切换主题   x/y/w/h     run-level 字体
+               ↓              ↓            ↓
+           颜色/字体      10种模板     逐元素精确控制
+           一键切换主题   x/y/w/h     run-level 字体
 ```
 
-适用：**最终交付、精确控制、质量保证**
+适用：**最终交付、企业 VI 合规、精确控制、质量保证**
 
-> **推荐工作流**：FreeStyle 原型 → Enterprise 内容填充 → Build Script 精细交付
+> **推荐工作流**：FreeStyle 原型 → Build Script 精细交付（用 LLM 分析企业模板保持 VI）
 
 ### 项目目录结构
 
@@ -299,6 +288,7 @@ ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
 | `seedream` | AI 生成 | `--llm-provider seedream` | `doubao-seedream-5-0-260128` |
 | `gpt-image` | AI 生成 | `--llm-provider gpt-image` | `gpt-image-1` |
 | `dalle` | AI 生成 | `--llm-provider dalle` | `dall-e-3` |
+| `gemini` | AI 生成 | `--llm-provider gemini` | `gemini-2.5-flash-image` |
 | `wanx` | AI 生成 | `--llm-provider wanx` | `wanx-v1` |
 | `kimi` | 增强搜索 | `--llm-provider kimi` | `kimi-k2-0711-preview` |
 
@@ -417,8 +407,8 @@ PPT-Design-Skill/
 ├── src/ppt_pro_max/
 │   ├── __init__.py                   # generate_ppt() API
 │   ├── cli.py                        # ppt-design CLI
-│   ├── enterprise/                   # Enterprise Pipeline
-│   │   ├── pipeline.py               # 主编排器
+│   ├── enterprise/                   # ~~Enterprise Pipeline~~（已弃用）
+│   │   ├── pipeline.py               # ~~主编排器~~（已弃用）
 │   │   ├── precision_renderer.py     # 统一渲染器（8 种 goal 布局 + 28 项设计升级）
 │   │   ├── brand_spec.py             # 品牌规范
 │   │   ├── content_parser.py         # 内容解析（content.json + README.md）

@@ -441,8 +441,20 @@ class PrecisionRenderer:
         _image_grid = page.get("image_grid")
         _icons = page.get("icons")
         component_type = page.get("component_type")
-
+        component_category = page.get("component_category")
         explicit_layout = page.get("layout")
+
+        if component_lib is not None and not component_type:
+            if bullets or cards:
+                p_type, p_cat = self._proactive_component_match(
+                    bullets, cards, explicit_layout or "auto", component_lib,
+                    existing_component_type=component_type,
+                    mood=page.get("mood"),
+                )
+                if p_type:
+                    component_type = p_type
+                    component_category = p_cat
+
         if explicit_layout:
             goal = self._remap_layout_to_goal(explicit_layout, goal)
 
@@ -529,7 +541,11 @@ class PrecisionRenderer:
                                   featured=(i == 0))
 
             elif component_type and component_lib is not None:
-                self._render_component_on_slide(slide, page, component_lib)
+                enriched_page = dict(page)
+                enriched_page["component_type"] = component_type
+                if component_category:
+                    enriched_page["component_category"] = component_category
+                self._render_component_on_slide(slide, enriched_page, component_lib)
 
             elif diagram_type and diagram_data:
                 self._render_diagram_on_slide(slide, diagram_type, diagram_data)
@@ -638,7 +654,6 @@ class PrecisionRenderer:
             size = el.get("size", min(w, h))
             fill = el.get("fill")
             fill_role = el.get("fill_role", "primary")
-            label_color = el.get("label_color") or self._c("on-primary", "#FFFFFF")
             self.add_hexagon(slide, x, y, size,
                              fill_hex=fill, fill_role=fill_role,
                              gradient=el.get("gradient", True),
@@ -690,9 +705,14 @@ class PrecisionRenderer:
         component_type = page.get("component_type", "")
         component_category = page.get("component_category", "")
         component_variant = page.get("component_variant", "")
+        component_fit = page.get("component_fit", "contain")
         bullets = page.get("bullets") or []
 
-        bounds = (0.9, 1.6, 11.5, 5.0)
+        component_bounds = page.get("component_bounds")
+        if component_bounds and len(component_bounds) == 4:
+            content_area = tuple(float(v) for v in component_bounds)
+        else:
+            content_area = self._compute_content_area(page)
 
         element = {
             "type": component_type,
@@ -700,7 +720,9 @@ class PrecisionRenderer:
             "variant": component_variant,
             "texts": bullets,
             "nodes": [{"text": b} for b in bullets],
-            "bounds": bounds,
+            "node_count": len(bullets) if bullets else 0,
+            "bounds": content_area,
+            "component_fit": component_fit,
         }
 
         renderer = ComponentRenderer()
@@ -713,6 +735,34 @@ class PrecisionRenderer:
                 bullet_lines = [f"\u2022  {b}" for b in bullets[:8]]
                 self.add_multiline(slide, bullet_lines, 0.9, 1.6, 7, 4.5,
                                    size=14, color_role="foreground", spacing=6)
+
+    def _compute_content_area(self, page: dict[str, Any]) -> tuple[float, float, float, float]:
+        goal = page.get("goal", "content")
+        has_image = bool(page.get("image"))
+        has_title = bool(page.get("title"))
+        has_subtitle = bool(page.get("subtitle"))
+
+        slide_w = SLIDE_WIDTH
+        slide_h = SLIDE_HEIGHT
+
+        margin_left = 0.9
+        margin_right = 0.4
+        margin_bottom = 0.5
+
+        top = 0.5
+        if has_title:
+            top += 0.9
+        if has_subtitle:
+            top += 0.5
+
+        right_edge = slide_w - margin_right
+        if has_image and goal not in ("hook", "cta"):
+            right_edge = 8.0
+
+        content_w = right_edge - margin_left
+        content_h = slide_h - top - margin_bottom
+
+        return (margin_left, top, content_w, content_h)
 
     def _remap_layout_to_goal(self, layout_name: str, fallback_goal: str) -> str:
         layout_to_goal = {
@@ -764,7 +814,7 @@ class PrecisionRenderer:
             self.add_rounded_rect(slide, 1.0, 1.2, badge_w, 0.3,
                                   fill_role="primary", corner_radius="sm")
             self.add_text(slide, badge_text, 1.1, 1.22, badge_w - 0.2, 0.26,
-                          size=10, color_role="on-primary", bold=True)
+                          size=11, color_role="on-primary", bold=True)
         lines = code_text.split("\n")
         all_lines = [f"  {line}" for line in lines[:30]]
         self.add_multiline(slide, all_lines, 1.2, 1.7, 11, 4.5,
@@ -1020,7 +1070,7 @@ class PrecisionRenderer:
 
     def add_badge(self, slide, text: str, x: float, y: float,
                   variant: str = "default", size: str = "sm") -> None:
-        font_size = {"sm": 10, "md": 11, "lg": 12}.get(size, 10)
+        font_size = {"sm": 11, "md": 11, "lg": 12}.get(size, 11)
         badge_text = text.upper()
         cjk_count = sum(1 for ch in badge_text if '\u4e00' <= ch <= '\u9fff' or '\u3000' <= ch <= '\u303f')
         latin_count = len(badge_text) - cjk_count
@@ -1130,3 +1180,91 @@ class PrecisionRenderer:
         if mood in ("creative", "bold", "vibrant", "startup"):
             return "asymmetric"
         return "bottom-fade"
+
+    _MOOD_CATEGORY_MAP: dict[str, str] = {
+        "mckinsey": "hierarchy",
+        "consulting": "process",
+        "tech": "cycle",
+        "creative": "radial",
+        "dark": "chart",
+        "fintech": "funnel",
+        "education": "pyramid",
+        "health": "cycle",
+        "government": "hierarchy",
+        "industrial": "process",
+        "startup": "infographic",
+        "luxury": "pyramid",
+        "nature": "cycle",
+        "minimal": "infographic",
+        "bold": "comparison",
+        "international": "matrix",
+        "cream": "infographic",
+        "frosted": "matrix",
+        "pastel": "infographic",
+        "retro": "timeline",
+        "legal": "hierarchy",
+        "pharma": "funnel",
+        "realestate": "pyramid",
+        "automotive": "process",
+        "aviation": "process",
+        "energy": "funnel",
+        "telecom": "cycle",
+        "logistics": "process",
+    }
+
+    def _mood_to_preferred_category(self, mood: str | None) -> str | None:
+        if not mood:
+            return None
+        return self._MOOD_CATEGORY_MAP.get(mood)
+
+    def _proactive_component_match(
+        self,
+        bullets: list[str],
+        cards: list[dict],
+        layout: str,
+        component_lib,
+        existing_component_type: str | None = None,
+        mood: str | None = None,
+    ) -> tuple[str | None, str | None]:
+        if existing_component_type:
+            return (None, None)
+        if component_lib is None:
+            return (None, None)
+        if not bullets and not cards:
+            return (None, None)
+
+        from ppt_pro_max.enterprise.content_parser import infer_component_category
+
+        items = bullets if bullets else [c.get("title", "") for c in cards]
+        n = len(items)
+        if n < 2:
+            return (None, None)
+
+        _, category = infer_component_category(items)
+
+        if layout == "cards" and category in ("process", "pyramid", "matrix"):
+            category = "infographic"
+
+        matched = self._search_and_validate(component_lib, category, n)
+        if matched:
+            return ("group", matched)
+
+        mood_cat = self._mood_to_preferred_category(mood)
+        if mood_cat and mood_cat != category:
+            matched = self._search_and_validate(component_lib, mood_cat, n)
+            if matched:
+                return ("group", matched)
+
+        return (None, None)
+
+    def _search_and_validate(self, component_lib, category: str, n: int) -> str | None:
+        candidates = component_lib.search(type="group", category=category, node_count=n, limit=5)
+        if not candidates:
+            candidates = component_lib.search(type="group", category=category, limit=5)
+        if not candidates:
+            return None
+        for cand in candidates:
+            xml_parts = component_lib.load_xml(cand["id"])
+            if xml_parts and "group" in xml_parts:
+                return category
+        return None

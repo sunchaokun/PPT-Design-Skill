@@ -133,13 +133,18 @@ def classify_image_size(image_path: str) -> str:
     try:
         with PILImage.open(image_path) as img:
             width = img.width
+            height = img.height
     except Exception:
         return "unknown"
-    if width > 1500:
+    min_dim = min(width, height)
+    max_dim = max(width, height)
+    if width > 1500 and min_dim > 600:
         return "background"
-    if width > 800:
+    if max_dim > 800 and min_dim > 300:
         return "scene"
-    return "icon"
+    if max_dim <= 800:
+        return "icon"
+    return "scene"
 
 
 def assign_images_by_size(

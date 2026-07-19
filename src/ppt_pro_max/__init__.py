@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -37,6 +37,58 @@ def query_component_library(
         return results
     finally:
         lib.close()
+
+
+def extract_design_dna(pptx_path: str) -> dict[str, Any]:
+    from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
+
+    extractor = DesignDNAExtractor()
+    dna = extractor.extract(pptx_path)
+
+    return {
+        "source_path": dna.source_path,
+        "slide_width_emu": dna.slide_width_emu,
+        "slide_height_emu": dna.slide_height_emu,
+        "num_slides": len(dna.slides),
+        "slides": [
+            {
+                "slide_index": s.slide_index,
+                "page_type": s.page_type,
+                "text_zones": [
+                    {
+                        "zone_id": z.zone_id,
+                        "role": z.role,
+                        "text": z.text,
+                        "font_name": z.font_name,
+                        "font_size_pt": z.font_size_pt,
+                        "bold": z.bold,
+                        "color_hex": z.color_hex,
+                        "bounds": list(z.bounds),
+                    }
+                    for z in s.text_zones
+                ],
+                "image_refs": [{"shape_id": r.get("shape_id"), "is_background": r.get("is_background")} for r in s.image_refs],
+                "layout_name": s.layout_name,
+                "background_colors": s.background_colors,
+                "notes": s.notes_text,
+            }
+            for s in dna.slides
+        ],
+        "color_palette": dna.color_palette,
+        "font_scheme": dna.font_scheme,
+        "cjk_font_scheme": dna.cjk_font_scheme,
+        "actual_colors": dna.actual_colors,
+        "actual_fonts": dna.actual_fonts,
+        "actual_font_sizes": {str(k): v for k, v in dna.actual_font_sizes.items()},
+        "has_logo": dna.logo_blob is not None,
+        "decorative_groups_count": len(dna.decorative_groups),
+        "brand_spec": {
+            "source": dna.brand_spec.source if dna.brand_spec else "none",
+            "colors": dna.brand_spec.colors if dna.brand_spec else None,
+            "fonts": dna.brand_spec.fonts if dna.brand_spec else None,
+            "dark_mode": dna.brand_spec.dark_mode if dna.brand_spec else False,
+        },
+    }
 
 
 def generate_ppt(
@@ -80,6 +132,8 @@ def generate_ppt(
     beautify_mode: str | None = None,
     component_library: str | None = None,
     content: dict[str, Any] | None = None,
+    auto_detect: bool = True,
+    patches: list[dict[str, Any]] | None = None,
 ) -> dict:
     if content is not None and content_file is None:
         import tempfile as _tf
@@ -101,6 +155,7 @@ def generate_ppt(
             motion=motion,
             beautify_mode=beautify_mode,
             component_library=component_library,
+            patches=patches,
         )
     if proposal:
         return _generate_proposals(
@@ -123,6 +178,7 @@ def generate_ppt(
             materials_dir=materials_dir,
             confirmed_proposal=confirmed_proposal,
             component_library=component_library,
+            auto_detect=auto_detect,
         )
     return _generate_ppt_freestyle(
         query=query, strategy=strategy, theme=theme, style=style,
@@ -134,6 +190,8 @@ def generate_ppt(
         llm_provider=llm_provider, llm_api_key=llm_api_key,
         llm_base_url=llm_base_url, llm_model=llm_model,
         persist=persist, dry_run=dry_run, output=output,
+        auto_detect=auto_detect,
+        component_library=component_library,
     )
 
 
@@ -163,6 +221,8 @@ def _generate_ppt_freestyle(
     persist: bool = False,
     dry_run: bool = False,
     output: str | None = None,
+    auto_detect: bool = True,
+    component_library: str | None = None,
 ) -> dict:
     planner = StoryPlanner()
     story_plan = planner.plan(query, strategy_override=strategy, slide_count_override=slides)
@@ -208,6 +268,11 @@ def _generate_ppt_freestyle(
         if llm_model:
             image_config["llm_model"] = llm_model
 
+    if image_config is None:
+        image_config = {}
+    if not auto_detect:
+        image_config["auto_detect"] = False
+
     composed_theme = None
     if style or palette or fonts or decoration or layout_variant or mood:
         composer = ThemeComposer()
@@ -221,13 +286,36 @@ def _generate_ppt_freestyle(
             seed=style_seed,
         )
 
-    renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
-    result = renderer.render(
-        page_designs, page_contents,
-        output_path=output, fetch_images=fetch_images,
-        theme_name=theme, design_system=decider.design_system,
-        composed_theme=composed_theme,
-    )
+    from ppt_pro_max.enterprise.component_library import ComponentLibrary, find_db_path
+    db_path = find_db_path(component_library)
+    component_lib = None
+    if db_path:
+        try:
+            component_lib = ComponentLibrary(db_path)
+        except Exception:
+            component_lib = None
+
+    try:
+        if component_lib is not None:
+            result = _render_freestyle_with_components(
+                page_designs, page_contents, composed_theme,
+                component_lib, output, fetch_images, effective_image_mode,
+                image_config, decider.design_system, query,
+            )
+        else:
+            renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
+            result = renderer.render(
+                page_designs, page_contents,
+                output_path=output, fetch_images=fetch_images,
+                theme_name=theme, design_system=decider.design_system,
+                composed_theme=composed_theme,
+            )
+    finally:
+        if component_lib:
+            try:
+                component_lib.close()
+            except Exception:
+                pass
 
     if composed_theme:
         result["theme_atoms"] = composed_theme.get("atoms", {})
@@ -236,6 +324,78 @@ def _generate_ppt_freestyle(
         _persist_design_system(decider.design_system, result.get("output_path", ""))
 
     return result
+
+
+def _render_freestyle_with_components(
+    page_designs,
+    page_contents,
+    composed_theme,
+    component_lib,
+    output,
+    fetch_images,
+    image_mode,
+    image_config,
+    design_system,
+    query,
+) -> dict:
+    from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+    from ppt_pro_max.enterprise.brand_spec import BrandSpec
+    from ppt_pro_max.enterprise.content_parser import infer_component_category
+
+    effective_theme = composed_theme or design_system or {}
+    colors = effective_theme.get("colors", {})
+    typography = effective_theme.get("typography", {})
+    brand_spec = BrandSpec(
+        source="freestyle_composed",
+        colors=colors,
+        fonts=typography,
+        dark_mode=effective_theme.get("dark_mode", False),
+    )
+
+    page_dicts = []
+    for design, content in zip(page_designs, page_contents):
+        page = {
+            "goal": design.goal,
+            "title": content.title,
+            "subtitle": content.subtitle,
+            "bullets": content.bullets,
+            "metrics": content.metrics,
+            "chart_data": content.chart_data,
+            "quote": content.quote,
+            "image_keywords": content.image_keywords,
+        }
+        if content.bullets and not page.get("component_type"):
+            comp_type, comp_cat = infer_component_category(content.bullets)
+            if comp_type:
+                page["component_type"] = comp_type
+                page["component_category"] = comp_cat
+        page_dicts.append(page)
+
+    precision = PrecisionRenderer(brand_spec=brand_spec)
+    prs = precision.create_presentation()
+
+    total = len(page_dicts)
+    for i, page in enumerate(page_dicts):
+        precision.render_slide(prs, page, component_lib=component_lib,
+                               page_index=i, total_pages=total)
+
+    if output is None:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output = f"presentation_{timestamp}.pptx"
+
+    output_dir = os.path.dirname(output)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    precision.save(prs, output)
+
+    return {
+        "output_path": os.path.abspath(output),
+        "page_count": len(page_dicts),
+        "strategy": "generated",
+        "render_mode": "precision_with_components",
+    }
 
 
 def _generate_proposals(
@@ -290,7 +450,15 @@ def _generate_ppt_enterprise(
     materials_dir: str | None = None,
     confirmed_proposal: str | None = None,
     component_library: str | None = None,
+    auto_detect: bool = True,
 ) -> dict:
+    import warnings
+    warnings.warn(
+        "Enterprise pipeline (project=) is deprecated due to known quality issues. "
+        "Use FreeStyle or Build mode instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
 
     effective_image_mode = image_mode
@@ -301,6 +469,10 @@ def _generate_ppt_enterprise(
             effective_image_mode = "auto"
 
     pipeline = EnterprisePipeline()
+    if image_config is None:
+        image_config = {}
+    if not auto_detect:
+        image_config["auto_detect"] = False
     return pipeline.run(
         query=query,
         project_dir=project,
@@ -335,7 +507,15 @@ def _generate_ppt_beautify(
     brand_spec=None,
     beautify_mode: str | None = None,
     component_library: str | None = None,
+    patches: list[dict[str, Any]] | None = None,
 ) -> dict:
+    import warnings
+    warnings.warn(
+        "Beautify pipeline is deprecated due to known quality issues. "
+        "Use FreeStyle or Build mode instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     from ppt_pro_max.enterprise.pipeline import EnterprisePipeline
 
     pipeline = EnterprisePipeline()
@@ -348,6 +528,7 @@ def _generate_ppt_beautify(
         motion=motion,
         beautify_mode=beautify_mode,
         component_library=component_library,
+        patches=patches,
     )
 
 

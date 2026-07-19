@@ -41,7 +41,7 @@ def test_build_image_prompt():
 def test_cache_dir_created():
     import tempfile
     cache_dir = os.path.join(tempfile.gettempdir(), "test_ppt_images")
-    fetcher = ImageFetcher(mode="placeholder", image_cache_dir=cache_dir)
+    ImageFetcher(mode="placeholder", image_cache_dir=cache_dir)
     assert os.path.exists(cache_dir)
 
 
@@ -75,10 +75,16 @@ def test_available_providers():
     assert "seedream" in providers
     assert "gpt-image" in providers
     assert "dalle" in providers
+    assert "gemini" in providers
     assert providers["seedream"]["default_model"] == "doubao-seedream-5-0-260128"
     assert "doubao-seedream-5-0-260128" in providers["seedream"]["models"]
     assert "doubao-seedream-4-5-251128" in providers["seedream"]["models"]
     assert "gpt-image-2" in providers["gpt-image"]["models"]
+    assert providers["gemini"]["env_key"] == "GEMINI_API_KEY"
+    assert providers["gemini"]["env_base_url"] == "GEMINI_BASE_URL"
+    assert providers["gemini"]["env_model"] == "GEMINI_IMAGE_MODEL"
+    assert "env_base_url" in providers["seedream"]
+    assert "env_model" in providers["seedream"]
 
 
 def test_auto_mode_with_provider():

@@ -23,6 +23,8 @@ import os
 import sqlite3
 from typing import Any
 
+from lxml import etree
+
 
 _CREATE_TABLES = """
 CREATE TABLE IF NOT EXISTS components (
@@ -193,16 +195,86 @@ class ComponentLibrary:
         if not comp_type or not category:
             return None
 
-        results = self.search(type=comp_type, category=category, node_count=node_count, limit=5)
-        if results:
+        results = self.search(type=comp_type, category=category, node_count=node_count, limit=50)
+        if not results:
+            results = self.search(type=comp_type, category=category, limit=50)
+
+        if not results:
+            return None
+
+        if len(results) == 1:
             return results[0]
 
-        results = self.search(type=comp_type, category=category, limit=5)
-        if results:
-            closest = min(results, key=lambda r: abs(r["node_count"] - node_count))
-            return closest
+        bounds = extracted.get("bounds", (0, 0, 11.5, 5.0))
+        target_aspect = 0.0
+        if bounds and len(bounds) >= 4 and bounds[3] > 0:
+            target_aspect = bounds[2] / bounds[3]
 
-        return None
+        scored = self._score_by_text_distribution(results, target_aspect=target_aspect, node_count=node_count)
+        return scored[0]
+
+    def _score_by_text_distribution(self, candidates: list[dict], target_aspect: float = 0.0, node_count: int = 0) -> list[dict]:
+        pn = "http://schemas.openxmlformats.org/presentationml/2006/main"
+        an = "http://schemas.openxmlformats.org/drawingml/2006/main"
+
+        scored_list: list[tuple[float, dict]] = []
+        for cand in candidates:
+            xp = self.load_xml(cand["id"])
+            if not xp or "group" not in xp:
+                scored_list.append((0.0, cand))
+                continue
+            grp = xp["group"]
+            if isinstance(grp, bytes):
+                grp = grp.decode("utf-8")
+            try:
+                root = etree.fromstring(grp)
+            except Exception:
+                scored_list.append((0.0, cand))
+                continue
+
+            total_sps = 0
+            sps_with_text = 0
+            for sp in root.findall(f"{{{pn}}}sp"):
+                total_sps += 1
+                ptxb = sp.find(f"{{{pn}}}txBody")
+                if ptxb is not None:
+                    for t in ptxb.iter(f"{{{an}}}t"):
+                        if t.text and t.text.strip():
+                            sps_with_text += 1
+                            break
+
+            if total_sps > 0 and sps_with_text > 0:
+                text_coverage = sps_with_text / total_sps
+            else:
+                text_coverage = 0.0
+
+            cxn_count = len(root.findall(f"{{{pn}}}cxnSp"))
+            richness = (total_sps + cxn_count * 0.5) / 20.0
+
+            aspect_score = 0.0
+            if target_aspect > 0:
+                grpSpPr = root.find(f"{{{pn}}}grpSpPr")
+                if grpSpPr is not None:
+                    xfrm = grpSpPr.find(f"{{{an}}}xfrm")
+                    if xfrm is not None:
+                        chExt = xfrm.find(f"{{{an}}}chExt")
+                        if chExt is not None:
+                            cx = int(chExt.get("cx", "0"))
+                            cy = int(chExt.get("cy", "0"))
+                            if cx > 0 and cy > 0:
+                                comp_aspect = cx / cy
+                                aspect_ratio = min(comp_aspect, target_aspect) / max(comp_aspect, target_aspect)
+                                aspect_score = aspect_ratio
+
+            min_shapes = max(3, node_count)
+            shape_penalty = max(0, min_shapes - total_sps) / min_shapes if min_shapes > 0 else 0
+
+            score = richness * 0.3 + text_coverage * 0.1 + aspect_score * 0.5 - shape_penalty * 0.3
+
+            scored_list.append((score, cand))
+
+        scored_list.sort(key=lambda x: x[0], reverse=True)
+        return [cand for _, cand in scored_list]
 
     def load_xml(self, component_id: int) -> dict[str, bytes] | None:
         comp = self.get(component_id)
@@ -386,14 +458,17 @@ class ComponentLibrary:
 
 
 def find_db_path(component_library: str | None = None, project_dir: str | None = None) -> str | None:
-    if component_library and os.path.exists(component_library):
-        return component_library
+    if component_library:
+        if os.path.exists(component_library):
+            return component_library
+        return None
     if project_dir:
         p = os.path.join(project_dir, "component_library", "index.db")
         if os.path.exists(p):
             return p
     pkg_dir = os.path.dirname(os.path.abspath(__file__))
-    for parent in (pkg_dir, os.path.dirname(pkg_dir), os.path.dirname(os.path.dirname(pkg_dir))):
+    for parent in (pkg_dir, os.path.dirname(pkg_dir), os.path.dirname(os.path.dirname(pkg_dir)),
+                   os.path.dirname(os.path.dirname(os.path.dirname(pkg_dir)))):
         p = os.path.join(parent, "component_library", "index.db")
         if os.path.exists(p):
             return p

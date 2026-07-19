@@ -89,10 +89,10 @@ class TestReadmeGoalInference:
         if len(pages) >= 3:
             assert pages[2]["goal"] == "content"
 
-    def test_architecture_keyword_infers_data_goal(self, tmp_path):
+    def test_architecture_keyword_infers_overview_goal(self, tmp_path):
         readme = _write_readme(tmp_path / "README.md", "# Architecture\n\nSystem design")
         pages = parse_readme(str(readme), str(tmp_path))
-        assert pages[0]["goal"] == "data"
+        assert pages[0]["goal"] == "overview"
 
     def test_code_keyword_infers_code_goal(self, tmp_path):
         readme = _write_readme(tmp_path / "README.md", "# Quick Start\n\nGetting started")

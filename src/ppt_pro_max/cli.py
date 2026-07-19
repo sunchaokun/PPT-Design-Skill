@@ -71,10 +71,11 @@ def main():
     img_group.add_argument("--fetch-images", action="store_true", help="Shortcut for --image-mode search")
     img_group.add_argument("--unsplash-key", help="Unsplash API access key (or set UNSPLASH_ACCESS_KEY)")
     img_group.add_argument("--pexels-key", help="Pexels API key (or set PEXELS_API_KEY)")
-    img_group.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot"], help="LLM image provider")
+    img_group.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot", "gemini", "google"], help="LLM image provider")
     img_group.add_argument("--llm-api-key", help="LLM API key (or set PPT_IMAGE_LLM_API_KEY)")
     img_group.add_argument("--llm-base-url", help="LLM API base URL override")
     img_group.add_argument("--llm-model", help="LLM model name override")
+    img_group.add_argument("--no-auto-detect", action="store_true", help="Disable auto-detection of LLM config from host tools (opencode/claude-code/codex)")
 
     parser.add_argument("--persist", action="store_true", help="Persist design system as MASTER.md")
     parser.add_argument("--dry-run", action="store_true", help="Output design decisions only")
@@ -120,6 +121,8 @@ def main():
         image_config["llm_base_url"] = args.llm_base_url
     if args.llm_model:
         image_config["llm_model"] = args.llm_model
+    if args.no_auto_detect:
+        image_config["auto_detect"] = False
 
     image_mode = args.image_mode
 
@@ -183,6 +186,7 @@ def main():
             beautify=args.beautify,
             beautify_mode=args.beautify_mode,
             component_library=args.component_library,
+            auto_detect=not args.no_auto_detect,
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -235,6 +239,7 @@ def main():
                 from_version=args.from_version,
                 pages=args.pages,
                 history=False,
+                auto_detect=not args.no_auto_detect,
             )
             if result.get("error"):
                 print(f"Error: {result['error']}", file=sys.stderr)

@@ -12,7 +12,6 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from pathlib import Path
-from typing import Any
 
 
 class ImageFetcher:
@@ -26,6 +25,7 @@ class ImageFetcher:
         llm_base_url: str | None = None,
         llm_model: str | None = None,
         image_cache_dir: str | None = None,
+        auto_detect: bool = True,
     ):
         self.mode = mode
         self.unsplash_access_key = unsplash_access_key or os.environ.get("UNSPLASH_ACCESS_KEY", "")
@@ -34,12 +34,78 @@ class ImageFetcher:
         self.llm_api_key = llm_api_key or os.environ.get("PPT_IMAGE_LLM_API_KEY", "")
         self.llm_base_url = llm_base_url or os.environ.get("PPT_IMAGE_LLM_BASE_URL", "")
         self.llm_model = llm_model or os.environ.get("PPT_IMAGE_LLM_MODEL", "")
+        self._detected_from = ""
+
+        if auto_detect and not self.llm_provider and not self.llm_api_key:
+            self._apply_host_detection()
+
+        self._resolve_provider_env_overrides()
 
         if image_cache_dir:
             self._cache_dir = Path(image_cache_dir)
         else:
             self._cache_dir = Path(tempfile.gettempdir()) / "ppt-design-skill-images"
         self._cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _apply_host_detection(self) -> None:
+        from ppt_pro_max.adapters.llm_config_adapter import detect_host_llm_config
+
+        detected = detect_host_llm_config()
+        if not detected:
+            return
+        if not self.llm_provider and detected.get("llm_provider"):
+            self.llm_provider = detected["llm_provider"].lower()
+        if not self.llm_api_key and detected.get("llm_api_key"):
+            self.llm_api_key = detected["llm_api_key"]
+        if not self.llm_base_url and detected.get("llm_base_url"):
+            self.llm_base_url = detected["llm_base_url"]
+        if not self.llm_model and detected.get("llm_model"):
+            self.llm_model = detected["llm_model"]
+        self._detected_from = detected.get("detected_from", "")
+
+    def _resolve_provider_env_overrides(self) -> None:
+        if self.llm_provider in ("seedream", "doubao", "volcengine"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("ARK_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("ARK_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("ARK_IMAGE_MODEL", "")
+        elif self.llm_provider in ("gpt-image", "gpt_image", "gptimage"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("OPENAI_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("OPENAI_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("OPENAI_IMAGE_MODEL", "")
+        elif self.llm_provider in ("dalle", "dall-e"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("OPENAI_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("OPENAI_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("OPENAI_IMAGE_MODEL", "")
+        elif self.llm_provider in ("gemini", "google"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("GEMINI_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("GEMINI_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("GEMINI_IMAGE_MODEL", "")
+        elif self.llm_provider in ("wanx", "tongyi", "aliyun"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("DASHSCOPE_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("DASHSCOPE_IMAGE_MODEL", "")
+        elif self.llm_provider in ("kimi", "moonshot"):
+            if not self.llm_api_key:
+                self.llm_api_key = os.environ.get("MOONSHOT_API_KEY", "")
+            if not self.llm_base_url:
+                self.llm_base_url = os.environ.get("MOONSHOT_BASE_URL", "")
+            if not self.llm_model:
+                self.llm_model = os.environ.get("MOONSHOT_IMAGE_MODEL", "")
 
     def fetch(self, keywords: str, emotion: str = "", goal: str = "", width: int = 1920, height: int = 1080) -> str | None:
         if self.mode == "placeholder":
@@ -143,8 +209,11 @@ class ImageFetcher:
         if self.llm_provider in ("gpt-image", "gpt_image", "gptimage"):
             return self._generate_gpt_image(prompt, width, height)
 
-        if self.llm_provider in ("dalle", "openai", "dall-e"):
+        if self.llm_provider in ("dalle", "dall-e"):
             return self._generate_dalle(prompt, width, height)
+
+        if self.llm_provider in ("gemini", "google"):
+            return self._generate_gemini(prompt, width, height)
 
         if self.llm_provider in ("wanx", "tongyi", "aliyun"):
             return self._generate_wanx(prompt, width, height)
@@ -198,7 +267,7 @@ class ImageFetcher:
 
     def _generate_seedream(self, prompt: str, width: int, height: int) -> str | None:
         try:
-            api_key = self.llm_api_key or os.environ.get("ARK_API_KEY", "")
+            api_key = self.llm_api_key
             if not api_key:
                 return None
 
@@ -244,7 +313,7 @@ class ImageFetcher:
 
     def _generate_gpt_image(self, prompt: str, width: int, height: int) -> str | None:
         try:
-            api_key = self.llm_api_key or os.environ.get("OPENAI_API_KEY", "")
+            api_key = self.llm_api_key
             if not api_key:
                 return None
 
@@ -303,22 +372,23 @@ class ImageFetcher:
 
     def _generate_dalle(self, prompt: str, width: int, height: int) -> str | None:
         try:
-            api_key = self.llm_api_key or os.environ.get("OPENAI_API_KEY", "")
+            api_key = self.llm_api_key
             if not api_key:
                 return None
 
             base_url = self.llm_base_url or "https://api.openai.com/v1"
+            model = self.llm_model or "dall-e-3"
             size = "1792x1024" if width > height else "1024x1792"
             if width <= 1024:
                 size = "1024x1024"
 
-            cache_key = f"dalle:{self.llm_model or 'dall-e-3'}:{prompt[:80]}:{size}"
+            cache_key = f"dalle:{model}:{prompt[:80]}:{size}"
             cached = self._check_cache(cache_key)
             if cached:
                 return cached
 
             payload = json.dumps({
-                "model": self.llm_model or "dall-e-3",
+                "model": model,
                 "prompt": prompt,
                 "n": 1,
                 "size": size,
@@ -340,17 +410,75 @@ class ImageFetcher:
         except Exception:
             return None
 
+    def _generate_gemini(self, prompt: str, width: int, height: int) -> str | None:
+        try:
+            api_key = self.llm_api_key
+            if not api_key:
+                return None
+
+            base_url = self.llm_base_url or "https://generativelanguage.googleapis.com/v1beta"
+            model = self.llm_model or "gemini-2.5-flash-image"
+
+            cache_key = f"gemini:{model}:{prompt[:80]}"
+            cached = self._check_cache(cache_key)
+            if cached:
+                return cached
+
+            payload = json.dumps({
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }],
+                "generationConfig": {
+                    "responseModalities": ["IMAGE", "TEXT"],
+                }
+            }).encode("utf-8")
+
+            url = f"{base_url}/models/{model}:generateContent"
+            req = urllib.request.Request(url, data=payload, headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            })
+
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            candidates = data.get("candidates", [])
+            if not candidates:
+                return None
+
+            parts = candidates[0].get("content", {}).get("parts", [])
+            for part in parts:
+                inline_data = part.get("inlineData", {})
+                mime_type = inline_data.get("mimeType", "")
+                b64_data = inline_data.get("data", "")
+                if b64_data and mime_type.startswith("image/"):
+                    ext = ".png"
+                    if "jpeg" in mime_type or "jpg" in mime_type:
+                        ext = ".jpg"
+                    elif "webp" in mime_type:
+                        ext = ".webp"
+                    cache_hash = hashlib.md5(cache_key.encode()).hexdigest()
+                    cache_path = self._cache_dir / f"{cache_hash}{ext}"
+                    if not (cache_path.exists() and cache_path.stat().st_size > 1000):
+                        cache_path.write_bytes(base64.b64decode(b64_data))
+                    return str(cache_path)
+
+            return None
+        except Exception:
+            return None
+
     def _generate_wanx(self, prompt: str, width: int, height: int) -> str | None:
         try:
-            api_key = self.llm_api_key or os.environ.get("DASHSCOPE_API_KEY", "")
+            api_key = self.llm_api_key
             if not api_key:
                 return None
 
             base_url = self.llm_base_url or "https://dashscope.aliyuncs.com/api/v1"
+            model = self.llm_model or "wanx-v1"
             size_str = f"{width}*{height}"
 
             payload = json.dumps({
-                "model": self.llm_model or "wanx-v1",
+                "model": model,
                 "input": {"prompt": prompt},
                 "parameters": {
                     "size": size_str,
@@ -397,7 +525,7 @@ class ImageFetcher:
 
     def _kimi_enhance_keywords(self, keywords: str, emotion: str, goal: str) -> str | None:
         try:
-            api_key = self.llm_api_key or os.environ.get("MOONSHOT_API_KEY", "")
+            api_key = self.llm_api_key
             if not api_key:
                 return None
 
@@ -470,7 +598,7 @@ class ImageFetcher:
         return {
             "placeholder": "Gradient placeholder image (default, no API key needed)",
             "search": "Download from Unsplash/Pexels by keywords (needs API key)",
-            "generate": "AI image generation: Seedream / GPT Image / DALL-E / Wanx (needs API key)",
+            "generate": "AI image generation: Seedream / GPT Image / DALL-E / Gemini / Wanx (needs API key)",
             "enhance": "Use Kimi K2.6 to enhance search keywords, then download (needs Moonshot API key)",
             "auto": "Try AI generation first, fall back to search (recommended)",
         }
@@ -481,6 +609,8 @@ class ImageFetcher:
             "seedream": {
                 "name": "Doubao Seedream (ByteDance Volcengine)",
                 "env_key": "ARK_API_KEY",
+                "env_base_url": "ARK_BASE_URL",
+                "env_model": "ARK_IMAGE_MODEL",
                 "default_model": "doubao-seedream-5-0-260128",
                 "models": "doubao-seedream-5-0-260128, doubao-seedream-5-0-pro-260628, doubao-seedream-4-5-251128",
                 "base_url": "https://ark.cn-beijing.volces.com/api/v3",
@@ -488,20 +618,35 @@ class ImageFetcher:
             "gpt-image": {
                 "name": "GPT Image (OpenAI)",
                 "env_key": "OPENAI_API_KEY",
+                "env_base_url": "OPENAI_BASE_URL",
+                "env_model": "OPENAI_IMAGE_MODEL",
                 "default_model": "gpt-image-1",
-                "models": "gpt-image-2, gpt-image-1.5, gpt-image-1, dall-e-3",
+                "models": "gpt-image-2, gpt-image-1.5, gpt-image-1",
                 "base_url": "https://api.openai.com/v1",
             },
             "dalle": {
                 "name": "DALL-E 3 (OpenAI)",
                 "env_key": "OPENAI_API_KEY",
+                "env_base_url": "OPENAI_BASE_URL",
+                "env_model": "OPENAI_IMAGE_MODEL",
                 "default_model": "dall-e-3",
                 "models": "dall-e-3",
                 "base_url": "https://api.openai.com/v1",
             },
+            "gemini": {
+                "name": "Gemini Image (Google)",
+                "env_key": "GEMINI_API_KEY",
+                "env_base_url": "GEMINI_BASE_URL",
+                "env_model": "GEMINI_IMAGE_MODEL",
+                "default_model": "gemini-2.5-flash-image",
+                "models": "gemini-3.1-flash-image, gemini-3.1-flash-lite-image, gemini-3-pro-image, gemini-2.5-flash-image",
+                "base_url": "https://generativelanguage.googleapis.com/v1beta",
+            },
             "wanx": {
                 "name": "Wanx (Alibaba DashScope)",
                 "env_key": "DASHSCOPE_API_KEY",
+                "env_base_url": "DASHSCOPE_BASE_URL",
+                "env_model": "DASHSCOPE_IMAGE_MODEL",
                 "default_model": "wanx-v1",
                 "models": "wanx-v1",
                 "base_url": "https://dashscope.aliyuncs.com/api/v1",
@@ -509,6 +654,8 @@ class ImageFetcher:
             "kimi": {
                 "name": "Kimi K2.6 (Moonshot, enhance-only)",
                 "env_key": "MOONSHOT_API_KEY",
+                "env_base_url": "MOONSHOT_BASE_URL",
+                "env_model": "MOONSHOT_IMAGE_MODEL",
                 "default_model": "kimi-k2-0711-preview",
                 "models": "kimi-k2-0711-preview",
                 "base_url": "https://api.moonshot.cn/v1",

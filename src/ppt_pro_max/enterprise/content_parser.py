@@ -11,7 +11,8 @@ _GOAL_KEYWORDS: list[tuple[str, list[str]]] = [
     ("problem", ["problem", "痛点", "挑战", "问题", "pain point", "challenge"]),
     ("solution", ["solution", "方案", "解决", "approach", "how we"]),
     ("features", ["features", "功能", "特性", "能力", "capability", "what we offer"]),
-    ("data", ["architecture", "架构", "技术", "系统", "system", "tech stack"]),
+    ("data", ["技术", "tech stack", "数据", "指标", "metric", "kpi"]),
+    ("overview", ["architecture", "架构图", "系统架构", "技术架构", "overview", "概述"]),
     ("code", ["quick start", "快速开始", "getting started", "installation", "安装", "usage", "使用方法", "example", "示例"]),
     ("cta", ["contact", "联系", "get in touch", "next step", "下一步", "开始"]),
     ("overview", ["overview", "概述", "目录", "agenda", "议程", "table of content"]),
@@ -20,11 +21,33 @@ _GOAL_KEYWORDS: list[tuple[str, list[str]]] = [
 _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"}
 
 _COMPONENT_KEYWORDS: list[tuple[str, str, list[str]]] = [
-    ("group", "swot", ["优势", "劣势", "机会", "威胁", "strength", "weakness", "opportunity", "threat", "swot", "对比", "比较"]),
+    ("group", "swot", ["优势", "劣势", "机会", "威胁", "strength", "weakness", "opportunity", "threat", "swot"]),
     ("group", "hierarchy", ["组织", "架构", "层级", "汇报", "hierarchy", "org chart", "CEO", "CTO", "CFO", "VP", "director"]),
     ("group", "process", ["流程", "步骤", "阶段", "process", "step", "phase", "pipeline", "workflow"]),
     ("group", "timeline", ["时间线", "里程碑", "timeline", "milestone", "路线图", "roadmap"]),
+    ("group", "cycle", ["循环", "迭代", "闭环", "反馈", "cycle", "feedback", "loop", "iterate"]),
+    ("group", "pyramid", ["金字塔", "层次", "分层", "tier", "pyramid", "layered"]),
+    ("group", "matrix", ["矩阵", "象限", "四象限", "matrix", "quadrant"]),
+    ("group", "chart", ["图表", "柱状图", "饼图", "折线图", "chart", "bar chart", "pie chart", "line chart"]),
+    ("group", "comparison", ["对比", "比较", "comparison", "vs", "versus", "contrast"]),
+    ("group", "funnel", ["漏斗", "转化", "funnel", "conversion"]),
+    ("group", "radial", ["辐射", "中心", "核心", "radial", "hub", "spoke"]),
+    ("group", "infographic", ["信息图", "数据", "统计", "指标", "infographic", "statistic", "metric", "indicator"]),
 ]
+
+
+def _infer_by_count(n: int) -> tuple[str, str]:
+    if n == 2:
+        return ("group", "comparison")
+    if n == 3:
+        return ("group", "pyramid")
+    if n == 4:
+        return ("group", "matrix")
+    if n == 5:
+        return ("group", "process")
+    if 6 <= n <= 8:
+        return ("group", "cycle")
+    return ("group", "infographic")
 
 
 def infer_component_category(bullets: list[str]) -> tuple[str | None, str | None]:
@@ -38,10 +61,7 @@ def infer_component_category(bullets: list[str]) -> tuple[str | None, str | None
         if any(kw.lower() in combined for kw in keywords):
             return (comp_type, category)
 
-    if 3 <= n <= 8:
-        return ("group", "process")
-
-    return (None, None)
+    return _infer_by_count(n)
 
 
 def _infer_goal(title: str, page_index: int, total_pages: int) -> str:

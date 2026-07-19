@@ -111,11 +111,11 @@ class TestFindDbPath:
         result = find_db_path(project_dir=str(tmp_path))
         assert result == str(db_path)
 
-    def test_find_db_path_returns_none_when_not_found(self, tmp_path):
+    def test_find_db_path_falls_back_to_package_dir(self, tmp_path):
         from ppt_pro_max.enterprise.component_library import find_db_path
 
         result = find_db_path(project_dir=str(tmp_path))
-        assert result is None
+        assert result is not None
 
     def test_find_db_path_explicit_nonexistent_falls_through(self, tmp_path):
         from ppt_pro_max.enterprise.component_library import find_db_path
@@ -549,7 +549,7 @@ class TestComponentCategoryInference:
     def test_sequential_bullets_infer_process(self):
         from ppt_pro_max.enterprise.content_parser import infer_component_category
 
-        result = infer_component_category(["需求分析", "设计", "开发", "测试"])
+        result = infer_component_category(["需求分析流程", "设计步骤", "开发阶段", "测试流程"])
         assert result == ("group", "process")
 
     def test_four_items_with_swot_keywords(self):

@@ -70,10 +70,13 @@ class GroupExtractor:
                     pass
 
         orig_bounds = self._get_bounds_emu(grp_elem)
-        normalized_elem = self._normalize_coordinates(grp_elem, orig_bounds)
-        grp_xml = etree.tostring(normalized_elem, xml_declaration=False, encoding="unicode")
+        theme_colors = self._resolve_theme_colors(group_shape)
+        resolved_elem = self._resolve_scheme_colors(grp_elem, theme_colors)
+        grp_xml = etree.tostring(resolved_elem, xml_declaration=False, encoding="unicode")
 
         aspect = orig_bounds[2] / orig_bounds[3] if orig_bounds[3] > 0 else 1.0
+
+        import json as _json
 
         return {
             "type": "group",
@@ -86,8 +89,14 @@ class GroupExtractor:
             "child_count": child_count,
             "image_blobs": image_blobs,
             "rid_map": rId_map,
-            "xml_parts": {"group": grp_xml.encode("utf-8")},
-            "meta": {"aspect": round(aspect, 3), "normalized": True},
+            "xml_parts": {
+                "group": grp_xml.encode("utf-8"),
+                "_meta": _json.dumps({"orig_bounds_emu": list(orig_bounds)}, ensure_ascii=False).encode("utf-8"),
+            },
+            "meta": {
+                "aspect": round(aspect, 3),
+                "orig_bounds_emu": list(orig_bounds),
+            },
         }
 
     def extract_all(self, pptx_path: str) -> list[dict[str, Any]]:
@@ -162,10 +171,13 @@ class GroupExtractor:
                     pass
 
         orig_bounds = self._get_bounds_emu_from_xml(grp_elem)
-        normalized_elem = self._normalize_coordinates(grp_elem, orig_bounds)
-        grp_xml = etree.tostring(normalized_elem, xml_declaration=False, encoding="unicode")
+        theme_colors = self._resolve_theme_colors_from_zip(grp_elem, z, slide_rels, slide_path)
+        resolved_elem = self._resolve_scheme_colors(grp_elem, theme_colors)
+        grp_xml = etree.tostring(resolved_elem, xml_declaration=False, encoding="unicode")
 
         aspect = orig_bounds[2] / orig_bounds[3] if orig_bounds[3] > 0 else 1.0
+
+        import json as _json
 
         return {
             "type": "group",
@@ -178,8 +190,14 @@ class GroupExtractor:
             "child_count": child_count,
             "image_blobs": image_blobs,
             "rid_map": rId_map,
-            "xml_parts": {"group": grp_xml.encode("utf-8")},
-            "meta": {"aspect": round(aspect, 3), "normalized": True},
+            "xml_parts": {
+                "group": grp_xml.encode("utf-8"),
+                "_meta": _json.dumps({"orig_bounds_emu": list(orig_bounds)}, ensure_ascii=False).encode("utf-8"),
+            },
+            "meta": {
+                "aspect": round(aspect, 3),
+                "orig_bounds_emu": list(orig_bounds),
+            },
         }
 
     def _is_title_context(self, t_elem) -> bool:
@@ -324,149 +342,140 @@ class GroupExtractor:
     def _get_bounds_emu_from_xml(self, grp_elem) -> tuple[int, int, int, int]:
         return self._get_bounds_emu(grp_elem)
 
-    def _normalize_coordinates(self, grp_elem, orig_bounds: tuple[int, int, int, int]) -> Any:
+    def _resolve_theme_colors(self, group_shape) -> dict[str, str]:
+        try:
+            slide_part = group_shape.part
+            theme_part = self._find_theme_part(slide_part)
+            if theme_part is None:
+                return {}
+            return self._parse_theme_xml(theme_part.blob)
+        except Exception:
+            return {}
+
+    def _find_theme_part(self, slide_part):
+        for rel in slide_part.rels.values():
+            if "theme" in str(getattr(rel, "reltype", "")):
+                return rel.target_part
+        for rel in slide_part.rels.values():
+            if "slideLayout" in str(getattr(rel, "reltype", "")):
+                layout_part = rel.target_part
+                for lr in layout_part.rels.values():
+                    if "theme" in str(getattr(lr, "reltype", "")):
+                        return lr.target_part
+                for lr in layout_part.rels.values():
+                    if "slideMaster" in str(getattr(lr, "reltype", "")):
+                        master_part = lr.target_part
+                        for mr in master_part.rels.values():
+                            if "theme" in str(getattr(mr, "reltype", "")):
+                                return mr.target_part
+        return None
+
+    def _resolve_theme_colors_from_zip(self, grp_elem, z, slide_rels, slide_path) -> dict[str, str]:
+        try:
+            rel_ns = _NS["rel"]
+            for rId, target in slide_rels.items():
+                if "slideLayout" in target:
+                    layout_path = os.path.normpath(os.path.join(os.path.dirname(slide_path), target)).replace("\\", "/")
+                    if layout_path not in z.namelist():
+                        continue
+                    layout_dir = os.path.dirname(layout_path)
+                    layout_basename = os.path.basename(layout_path)
+                    layout_rels_path = os.path.join(layout_dir, "_rels", layout_basename + ".rels").replace("\\", "/")
+                    if layout_rels_path not in z.namelist():
+                        continue
+                    lr_xml = z.read(layout_rels_path)
+                    lr_root = etree.fromstring(lr_xml)
+                    for lr in lr_root.findall(f"{{{rel_ns}}}Relationship"):
+                        lr_target = lr.get("Target", "")
+                        if "theme" in lr_target.lower():
+                            abs_theme = os.path.normpath(os.path.join(os.path.dirname(layout_path), lr_target)).replace("\\", "/")
+                            if abs_theme in z.namelist():
+                                return self._parse_theme_xml(z.read(abs_theme))
+                        if "slideMaster" in lr_target:
+                            master_path = os.path.normpath(os.path.join(os.path.dirname(layout_path), lr_target)).replace("\\", "/")
+                            if master_path not in z.namelist():
+                                continue
+                            master_dir = os.path.dirname(master_path)
+                            master_basename = os.path.basename(master_path)
+                            master_rels_path = os.path.join(master_dir, "_rels", master_basename + ".rels").replace("\\", "/")
+                            if master_rels_path not in z.namelist():
+                                continue
+                            mr_xml = z.read(master_rels_path)
+                            mr_root = etree.fromstring(mr_xml)
+                            for mr in mr_root.findall(f"{{{rel_ns}}}Relationship"):
+                                mr_target = mr.get("Target", "")
+                                if "theme" in mr_target.lower():
+                                    abs_theme = os.path.normpath(os.path.join(os.path.dirname(master_path), mr_target)).replace("\\", "/")
+                                    if abs_theme in z.namelist():
+                                        return self._parse_theme_xml(z.read(abs_theme))
+                    break
+            return {}
+        except Exception:
+            return {}
+
+    def _parse_theme_xml(self, theme_blob: bytes) -> dict[str, str]:
+        a_ns = _NS["a"]
+        try:
+            root = etree.fromstring(theme_blob)
+            color_map = {}
+            theme_elements = root.find(f".//{{{a_ns}}}themeElements")
+            if theme_elements is None:
+                return {}
+            clr_scheme = theme_elements.find(f"{{{a_ns}}}clrScheme")
+            if clr_scheme is None:
+                return {}
+            for child in clr_scheme:
+                tag = child.tag.split("}")[-1]
+                srgb = child.find(f"{{{a_ns}}}srgbClr")
+                sys_clr = child.find(f"{{{a_ns}}}sysClr")
+                if srgb is not None:
+                    color_map[tag] = f"#{srgb.get('val', '000000')}"
+                elif sys_clr is not None:
+                    color_map[tag] = f"#{sys_clr.get('lastClr', '000000')}"
+            if "lt1" in color_map and "bg1" not in color_map:
+                color_map["bg1"] = color_map["lt1"]
+            if "dk1" in color_map and "tx1" not in color_map:
+                color_map["tx1"] = color_map["dk1"]
+            if "lt2" in color_map and "bg2" not in color_map:
+                color_map["bg2"] = color_map["lt2"]
+            if "dk2" in color_map and "tx2" not in color_map:
+                color_map["tx2"] = color_map["dk2"]
+            return color_map
+        except Exception:
+            return {}
+
+    def _resolve_scheme_colors(self, grp_elem, theme_colors: dict[str, str]):
+        if not theme_colors:
+            return grp_elem
         import copy as _copy
         a_ns = _NS["a"]
-
-        ox, oy, ow, oh = orig_bounds
-        if ow <= 0 or oh <= 0:
-            return grp_elem
-
         elem = _copy.deepcopy(grp_elem)
-
-        self._normalize_group_recursive(elem, ox, oy, ow, oh, is_root=True)
-
-        for ln in elem.iter(f"{{{a_ns}}}ln"):
-            w = ln.get("w")
-            if w:
-                try:
-                    rel_w = int(w) / oh
-                    ln.set("w", _f(rel_w))
-                except (ValueError, TypeError):
-                    pass
-
-        for rpr in elem.iter(f"{{{a_ns}}}rPr"):
-            sz = rpr.get("sz")
-            if sz:
-                try:
-                    rel_sz = int(sz) / oh
-                    rpr.set("sz", _f(rel_sz))
-                except (ValueError, TypeError):
-                    pass
-
-        for end_rpr in elem.iter(f"{{{a_ns}}}endParaRPr"):
-            sz = end_rpr.get("sz")
-            if sz:
-                try:
-                    rel_sz = int(sz) / oh
-                    end_rpr.set("sz", _f(rel_sz))
-                except (ValueError, TypeError):
-                    pass
-
-        for bodyPr in elem.iter(f"{{{a_ns}}}bodyPr"):
-            for attr in ("lIns", "tIns", "rIns", "bIns"):
-                val = bodyPr.get(attr)
-                if val:
-                    try:
-                        rel_val = int(val) / oh
-                        bodyPr.set(attr, _f(rel_val))
-                    except (ValueError, TypeError):
-                        pass
-
+        style_elems = set()
+        for style in elem.iter(f"{{{a_ns}}}style"):
+            style_elems.add(id(style))
+        for scheme in list(elem.iter(f"{{{a_ns}}}schemeClr")):
+            parent = scheme.getparent()
+            if parent is not None and id(parent) in style_elems:
+                continue
+            in_style = False
+            p = scheme.getparent()
+            while p is not None:
+                if p.tag == f"{{{a_ns}}}style":
+                    in_style = True
+                    break
+                p = p.getparent()
+            if in_style:
+                continue
+            val = scheme.get("val", "")
+            if val in theme_colors:
+                if parent is not None:
+                    idx = list(parent).index(scheme)
+                    srgb = etree.SubElement(parent, f"{{{a_ns}}}srgbClr")
+                    srgb.set("val", theme_colors[val].lstrip("#"))
+                    for child in scheme:
+                        srgb.append(_copy.deepcopy(child))
+                    parent.remove(scheme)
+                    parent.insert(idx, srgb)
         return elem
 
-    def _normalize_group_recursive(self, grp_elem, parent_chx: int, parent_chy: int, parent_chw: int, parent_chh: int, is_root: bool = False) -> None:
-        a_ns = _NS["a"]
-        p_ns = _NS["p"]
 
-        grpSpPr = grp_elem.find(f"{{{p_ns}}}grpSpPr")
-        if grpSpPr is None:
-            return
-
-        xfrm = grpSpPr.find(f"{{{a_ns}}}xfrm")
-        if xfrm is None:
-            return
-
-        off = xfrm.find(f"{{{a_ns}}}off")
-        ext = xfrm.find(f"{{{a_ns}}}ext")
-        chOff = xfrm.find(f"{{{a_ns}}}chOff")
-        chExt = xfrm.find(f"{{{a_ns}}}chExt")
-
-        if off is not None:
-            try:
-                rel_x = (int(off.get("x", "0")) - parent_chx) / parent_chw
-                rel_y = (int(off.get("y", "0")) - parent_chy) / parent_chh
-                off.set("x", _f(rel_x))
-                off.set("y", _f(rel_y))
-            except (ValueError, TypeError):
-                pass
-
-        if ext is not None:
-            try:
-                rel_cx = int(ext.get("cx", "0")) / parent_chw
-                rel_cy = int(ext.get("cy", "0")) / parent_chh
-                ext.set("cx", _f(rel_cx))
-                ext.set("cy", _f(rel_cy))
-            except (ValueError, TypeError):
-                pass
-
-        orig_chx = parent_chx
-        orig_chy = parent_chy
-        orig_chw = parent_chw
-        orig_chh = parent_chh
-
-        if chOff is not None:
-            try:
-                orig_chx = int(chOff.get("x", "0"))
-                orig_chy = int(chOff.get("y", "0"))
-                rel_x = (orig_chx - parent_chx) / parent_chw
-                rel_y = (orig_chy - parent_chy) / parent_chh
-                chOff.set("x", _f(rel_x))
-                chOff.set("y", _f(rel_y))
-            except (ValueError, TypeError):
-                pass
-
-        if chExt is not None:
-            try:
-                orig_chw = int(chExt.get("cx", "0"))
-                orig_chh = int(chExt.get("cy", "0"))
-                rel_cx = orig_chw / parent_chw
-                rel_cy = orig_chh / parent_chh
-                chExt.set("cx", _f(rel_cx))
-                chExt.set("cy", _f(rel_cy))
-            except (ValueError, TypeError):
-                pass
-
-        for child in grp_elem:
-            tag = child.tag
-            if tag == f"{{{p_ns}}}grpSp":
-                self._normalize_group_recursive(child, orig_chx, orig_chy, orig_chw, orig_chh)
-            elif tag in (f"{{{p_ns}}}sp", f"{{{p_ns}}}pic", f"{{{p_ns}}}cxnSp", f"{{{p_ns}}}graphicFrame"):
-                spPr = child.find(f"{{{p_ns}}}spPr")
-                if spPr is None:
-                    continue
-                child_xfrm = spPr.find(f"{{{a_ns}}}xfrm")
-                if child_xfrm is None:
-                    continue
-                c_off = child_xfrm.find(f"{{{a_ns}}}off")
-                c_ext = child_xfrm.find(f"{{{a_ns}}}ext")
-                if c_off is not None:
-                    try:
-                        rel_x = (int(c_off.get("x", "0")) - orig_chx) / orig_chw
-                        rel_y = (int(c_off.get("y", "0")) - orig_chy) / orig_chh
-                        c_off.set("x", _f(rel_x))
-                        c_off.set("y", _f(rel_y))
-                    except (ValueError, TypeError):
-                        pass
-                if c_ext is not None:
-                    try:
-                        rel_cx = int(c_ext.get("cx", "0")) / orig_chw
-                        rel_cy = int(c_ext.get("cy", "0")) / orig_chh
-                        c_ext.set("cx", _f(rel_cx))
-                        c_ext.set("cy", _f(rel_cy))
-                    except (ValueError, TypeError):
-                        pass
-
-
-def _f(v: float) -> str:
-    return f"{v:.6f}"

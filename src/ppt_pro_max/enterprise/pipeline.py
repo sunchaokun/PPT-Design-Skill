@@ -1,8 +1,15 @@
-"""EnterprisePipeline — main orchestration flow."""
+"""EnterprisePipeline — main orchestration flow.
+
+.. deprecated::
+    EnterprisePipeline is deprecated and will be removed in a future version.
+    It has known quality issues (brand color override, text slot loss, coordinate transform).
+    Use PrecisionRenderer + ComponentRenderer directly, or the FreeStyle / Build paths instead.
+"""
 
 from __future__ import annotations
 
 import os
+import warnings
 from typing import Any
 
 from ppt_pro_max.enterprise.scanner import ProjectScanner
@@ -19,6 +26,15 @@ from ppt_pro_max.enterprise.density_profile import get_density_profile, apply_de
 
 class EnterprisePipeline:
 
+    def __init__(self) -> None:
+        warnings.warn(
+            "EnterprisePipeline is deprecated and will be removed in a future version. "
+            "It has known quality issues. Use PrecisionRenderer + ComponentRenderer directly, "
+            "or the FreeStyle / Build paths instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     def run_beautify(
         self,
         input_pptx: str,
@@ -29,6 +45,7 @@ class EnterprisePipeline:
         motion: int | None = None,
         beautify_mode: str | None = None,
         component_library: str | None = None,
+        patches: list[dict[str, Any]] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
         from ppt_pro_max.renderer.theme_composer import ThemeComposer
@@ -71,7 +88,8 @@ class EnterprisePipeline:
             )
 
         return self._beautify_full(
-            input_pptx, output_path, brand_spec, motion, num_slides, component_library
+            input_pptx, output_path, brand_spec, motion, num_slides, component_library,
+            patches=patches,
         )
 
     def _beautify_light(
@@ -174,7 +192,13 @@ class EnterprisePipeline:
     def _beautify_full(
         self, input_pptx: str, output_path: str, brand_spec: BrandSpec,
         motion: int | None, num_slides: int, component_library: str | None = None,
+        patches: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        if patches is not None:
+            return self._beautify_clone_patch(
+                input_pptx, output_path, patches, motion, num_slides
+            )
+
         from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
         from ppt_pro_max.enterprise.slide_extractor import SlideExtractor
         from ppt_pro_max.enterprise.content_parser import infer_component_category
@@ -234,6 +258,52 @@ class EnterprisePipeline:
             "render_mode": "precision_rebuild",
         }
 
+    def _beautify_clone_patch(
+        self,
+        input_pptx: str,
+        output_path: str,
+        patches: list[dict[str, Any]],
+        motion: int | None,
+        num_slides: int,
+        dna=None,
+    ) -> dict[str, Any]:
+        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
+
+        if dna is None:
+            extractor = DesignDNAExtractor()
+            try:
+                dna = extractor.extract(input_pptx)
+            except Exception:
+                return {"mode": "beautify", "beautify_mode": "clone_patch",
+                        "error": "DNA extraction failed", "num_slides": 0}
+
+        try:
+            extractor = DesignDNAExtractor()
+            result_path = extractor.clone_and_patch(dna, patches, output_path)
+        except Exception:
+            import shutil
+            shutil.copy2(input_pptx, output_path)
+            result_path = output_path
+
+        from pptx import Presentation as _Prs
+        try:
+            prs = _Prs(result_path)
+            out_slides = len(prs.slides)
+            del prs
+        except Exception:
+            out_slides = 0
+
+        return {
+            "mode": "beautify",
+            "beautify_mode": "clone_patch",
+            "input_pptx": input_pptx,
+            "output_path": result_path,
+            "num_slides": out_slides,
+            "render_mode": "clone_and_patch",
+            "dna_slides": len(dna.slides) if dna else 0,
+            "page_types": [s.page_type for s in dna.slides] if dna else [],
+        }
+
     def run(
         self,
         query: str,
@@ -259,7 +329,32 @@ class EnterprisePipeline:
         scanner = ProjectScanner()
         asset = scanner.scan(project_dir)
 
-        brand_spec = self._build_brand_spec(asset)
+        dna = None
+        if asset.template_path:
+            try:
+                from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
+                extractor = DesignDNAExtractor()
+                dna = extractor.extract(asset.template_path)
+            except Exception:
+                dna = None
+
+        if dna and dna.brand_spec:
+            template_spec = dna.brand_spec
+            if asset.brand_raw:
+                brand_spec = BrandSpec.merge_template_priority(template_spec, asset.brand_raw)
+            else:
+                brand_spec = template_spec
+        elif asset.template_path:
+            analyzer = TemplateAnalyzer()
+            template_spec = analyzer.analyze(asset.template_path)
+            if asset.brand_raw:
+                brand_spec = BrandSpec.merge(template_spec, asset.brand_raw)
+            else:
+                brand_spec = template_spec
+        elif asset.brand_raw:
+            brand_spec = BrandSpec.from_brand_json(asset.brand_raw)
+        else:
+            brand_spec = BrandSpec()
 
         if dry_run:
             return {
@@ -289,6 +384,17 @@ class EnterprisePipeline:
         page_contents = self._load_content(asset, project_dir, content_file)
 
         story_plan = self._build_story_plan(query, page_contents, effective_density, business_mode)
+
+        if dna and DesignDNAExtractor.dna_has_visual_content(dna):
+            return self._run_template_clone(
+                query, asset, brand_spec, story_plan, dna,
+                output=output, output_version=output_version,
+                from_version=from_version, project_dir=project_dir,
+                motion=motion, review=review, review_file=review_file,
+                page_contents=page_contents, component_library=component_library,
+                effective_density=effective_density,
+                **kwargs,
+            )
 
         page_designs = self._build_page_designs(
             story_plan, decider, asset, brand_spec
@@ -365,83 +471,91 @@ class EnterprisePipeline:
         page_designs = match_images(asset.image_pool, page_designs)
         page_designs = assign_images_by_size(asset.image_pool, page_designs)
         page_designs = auto_generate_image_prompts(page_designs)
+        from ppt_pro_max.enterprise.content_parser import infer_component_category
+
         density_profile = get_density_profile(effective_density)
         for design in page_designs:
             bullets = design.get("bullets")
             if bullets:
                 design["bullets"] = apply_density_to_bullets(bullets, density_profile)
+            if bullets and not design.get("component_type"):
+                comp_type, comp_cat = infer_component_category(bullets)
+                if comp_type:
+                    design["component_type"] = comp_type
+                    design["component_category"] = comp_cat
 
-        image_fetcher = self._build_image_fetcher(kwargs)
+        try:
+            image_fetcher = self._build_image_fetcher(kwargs)
 
-        for design in page_designs:
-            image_val = design.get("image")
-            if image_val and not os.path.isfile(image_val):
-                image_val = None
-                design["image"] = None
-            if not image_val and image_fetcher is not None:
-                prompt = design.get("image_prompt")
-                keywords = prompt or design.get("title", query)
-                goal = design.get("goal", "")
+            for design in page_designs:
+                image_val = design.get("image")
+                if image_val and not os.path.isfile(image_val):
+                    image_val = None
+                    design["image"] = None
+                if not image_val and image_fetcher is not None:
+                    prompt = design.get("image_prompt")
+                    keywords = prompt or design.get("title", query)
+                    goal = design.get("goal", "")
+                    try:
+                        fetched = image_fetcher.fetch(keywords, goal=goal)
+                        if fetched:
+                            design["image"] = fetched
+                    except Exception:
+                        pass
+
+            total = len(page_designs)
+            for i, design in enumerate(page_designs):
+                layout_variant = design.get("layout_variant") if isinstance(design, dict) else None
+                precision.render_slide(prs, design, component_lib=component_lib,
+                                       layout_variant=layout_variant,
+                                       page_index=i, total_pages=total)
+
+            if asset.logo_path:
+                for idx, slide in enumerate(prs.slides):
+                    design_goal = page_designs[idx].get("goal") if idx < len(page_designs) else None
+                    precision.apply_logo(slide, asset.logo_path, prs, current_goal=design_goal)
+
+            precision.apply_footer(prs)
+            precision.apply_watermark(prs)
+
+            effective_motion = motion
+            if effective_motion is None:
+                effective_motion = kwargs.get("motion")
+            if effective_motion and isinstance(effective_motion, int) and effective_motion > 0:
+                for slide in prs.slides:
+                    self._apply_animations(slide, {"goal": "content"}, effective_motion)
+
+            precision.save(prs, pptx_path)
+
+            meta = {
+                "version": vnum,
+                "query": query,
+                "business_mode": business_mode,
+                "density": effective_density,
+                "num_slides": len(page_designs),
+                "brand_source": brand_spec.source,
+                "render_mode": "precision",
+                "slides": [
+                    {"goal": d.get("goal"), "title": d.get("title", "")}
+                    for d in page_designs
+                ],
+            }
+            write_meta(version_dir, meta)
+
+            return {
+                "pipeline": "enterprise",
+                "project": project_dir,
+                "output_path": pptx_path,
+                "version": vnum,
+                "num_slides": len(page_designs),
+                "render_mode": "precision",
+            }
+        finally:
+            if component_lib:
                 try:
-                    fetched = image_fetcher.fetch(keywords, goal=goal)
-                    if fetched:
-                        design["image"] = fetched
+                    component_lib.close()
                 except Exception:
                     pass
-
-        total = len(page_designs)
-        for i, design in enumerate(page_designs):
-            layout_variant = design.get("layout_variant") if isinstance(design, dict) else None
-            precision.render_slide(prs, design, component_lib=component_lib,
-                                   layout_variant=layout_variant,
-                                   page_index=i, total_pages=total)
-
-        if asset.logo_path:
-            for idx, slide in enumerate(prs.slides):
-                design_goal = page_designs[idx].get("goal") if idx < len(page_designs) else None
-                precision.apply_logo(slide, asset.logo_path, prs, current_goal=design_goal)
-
-        precision.apply_footer(prs)
-        precision.apply_watermark(prs)
-
-        effective_motion = motion
-        if effective_motion is None:
-            effective_motion = kwargs.get("motion")
-        if effective_motion and isinstance(effective_motion, int) and effective_motion > 0:
-            for slide in prs.slides:
-                self._apply_animations(slide, {"goal": "content"}, effective_motion)
-
-        precision.save(prs, pptx_path)
-
-        if component_lib:
-            try:
-                component_lib.close()
-            except Exception:
-                pass
-
-        meta = {
-            "version": vnum,
-            "query": query,
-            "business_mode": business_mode,
-            "density": effective_density,
-            "num_slides": len(page_designs),
-            "brand_source": brand_spec.source,
-            "render_mode": "precision",
-            "slides": [
-                {"goal": d.get("goal"), "title": d.get("title", "")}
-                for d in page_designs
-            ],
-        }
-        write_meta(version_dir, meta)
-
-        return {
-            "pipeline": "enterprise",
-            "project": project_dir,
-            "output_path": pptx_path,
-            "version": vnum,
-            "num_slides": len(page_designs),
-            "render_mode": "precision",
-        }
 
     def _build_brand_spec(self, asset) -> BrandSpec:
         brand_spec = BrandSpec()
@@ -455,6 +569,157 @@ class EnterprisePipeline:
         elif asset.brand_raw:
             brand_spec = BrandSpec.from_brand_json(asset.brand_raw)
         return brand_spec
+
+    def _run_template_clone(
+        self,
+        query: str,
+        asset,
+        brand_spec: BrandSpec,
+        story_plan: dict[str, Any],
+        dna,
+        output: str | None = None,
+        output_version: int | None = None,
+        from_version: int | None = None,
+        project_dir: str = "",
+        motion: int | None = None,
+        review: bool = False,
+        review_file: str | None = None,
+        page_contents: list[dict[str, Any]] | None = None,
+        component_library: str | None = None,
+        effective_density: int = 5,
+        **kwargs,
+    ) -> dict[str, Any]:
+        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
+
+        extractor = DesignDNAExtractor()
+        plans = extractor.plan_pages(story_plan, page_contents)
+
+        if review:
+            gate = ReviewGate()
+            proposal = gate.generate_proposal(
+                project_dir=project_dir,
+                brand_spec={"source": brand_spec.source, "colors": brand_spec.colors, "fonts": brand_spec.fonts},
+                story_plan=story_plan,
+                page_designs=[{"goal": p.page_type, "title": p.title} for p in plans],
+                assets={
+                    "template": True,
+                    "logo": asset.logo_path is not None,
+                    "brand_json": asset.brand_raw is not None,
+                    "content_json": asset.content_raw is not None,
+                    "image_pool_count": len(asset.image_pool),
+                },
+            )
+            proposal_path = review_file or os.path.join(project_dir, "output", "proposal.json")
+            gate.write_proposal(proposal, proposal_path)
+            return {
+                "pipeline": "enterprise",
+                "review": True,
+                "proposal_path": proposal_path,
+                "proposal": proposal,
+                "render_mode": "template_clone",
+            }
+
+        output_dir = os.path.join(project_dir, "output")
+        if output_version is not None:
+            vnum = output_version
+        elif from_version is not None:
+            vnum = from_version
+        else:
+            vnum = next_version(output_dir)
+
+        version_dir = os.path.join(output_dir, f"v{vnum}")
+        pptx_path = output or os.path.join(version_dir, "presentation.pptx")
+
+        comp_lib = None
+        if component_library:
+            from ppt_pro_max.enterprise.component_library import ComponentLibrary, find_db_path
+            db_path = find_db_path(component_library=component_library, project_dir=project_dir)
+            if db_path:
+                comp_lib = ComponentLibrary(db_path)
+
+        expand_result = extractor.expand_and_patch(dna, plans, pptx_path, component_lib=comp_lib, brand_spec=brand_spec)
+
+        if asset.image_pool:
+            from ppt_pro_max.enterprise.image_matcher import match_images, assign_images_by_size
+            page_designs_for_images = [
+                {"goal": p.page_type, "title": p.title, "bullets": p.bullets}
+                for p in plans
+            ]
+            page_designs_for_images = match_images(asset.image_pool, page_designs_for_images)
+            page_designs_for_images = assign_images_by_size(asset.image_pool, page_designs_for_images)
+            self._inject_matched_images(pptx_path, page_designs_for_images, plans, brand_spec)
+
+        if asset.logo_path:
+            try:
+                from pptx import Presentation as _Prs
+                prs = _Prs(pptx_path)
+                from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+                precision = PrecisionRenderer(brand_spec=brand_spec)
+                for idx, slide in enumerate(prs.slides):
+                    design_goal = plans[idx].page_type if idx < len(plans) else None
+                    precision.apply_logo(slide, asset.logo_path, prs, current_goal=design_goal)
+                prs.save(pptx_path)
+            except Exception:
+                pass
+
+        try:
+            from ppt_pro_max.enterprise.delivery_gate import DeliveryGate
+            gate = DeliveryGate()
+            report = gate.check(pptx_path, dna, plans)
+
+            if report.fatals:
+                for _round in range(2):
+                    gate.auto_fix(pptx_path, dna, plans, report)
+                    report = gate.check(pptx_path, dna, plans)
+                    if not report.fatals:
+                        break
+        except Exception:
+            report = None
+
+        if motion and isinstance(motion, int) and motion > 0:
+            try:
+                from pptx import Presentation as _Prs
+                prs = _Prs(pptx_path)
+                for slide in prs.slides:
+                    self._apply_animations(slide, {"goal": "content"}, motion)
+                prs.save(pptx_path)
+            except Exception:
+                pass
+
+        meta = {
+            "version": vnum,
+            "query": query,
+            "num_slides": expand_result.total_slides,
+            "brand_source": brand_spec.source,
+            "render_mode": "template_clone",
+            "cloned_count": expand_result.cloned_count,
+            "deleted_originals": expand_result.deleted_originals,
+            "template_mapping": expand_result.template_mapping,
+            "slides": [
+                {"page_type": p.page_type, "title": p.title, "layout": p.layout}
+                for p in plans
+            ],
+        }
+        write_meta(version_dir, meta)
+
+        result = {
+            "pipeline": "enterprise",
+            "project": project_dir,
+            "output_path": pptx_path,
+            "version": vnum,
+            "num_slides": expand_result.total_slides,
+            "render_mode": "template_clone",
+            "cloned_count": expand_result.cloned_count,
+        }
+        if report:
+            result["quality_report"] = {
+                "total_checks": report.total_checks,
+                "passed": report.passed,
+                "fatals": len(report.fatals),
+                "warnings": len(report.warnings),
+                "auto_fixed": len(report.auto_fixed),
+            }
+        return result
 
     def _handle_history(self, project_dir: str) -> dict[str, Any]:
         output_dir = os.path.join(project_dir, "output")
@@ -581,6 +846,40 @@ class EnterprisePipeline:
             designs.append(design)
         return designs
 
+    def _inject_matched_images(
+        self,
+        pptx_path: str,
+        page_designs: list[dict],
+        plans: list,
+        brand_spec,
+    ) -> None:
+        try:
+            from pptx import Presentation as _Prs
+            from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+            prs = _Prs(pptx_path)
+            precision = PrecisionRenderer(brand_spec=brand_spec)
+            for idx, design in enumerate(page_designs):
+                if idx >= len(prs.slides):
+                    break
+                image_path = design.get("image_path")
+                if not image_path or not os.path.isfile(image_path):
+                    continue
+                slide = prs.slides[idx]
+                size_class = design.get("image_size_class", "scene")
+                goal = design.get("goal", "content")
+                try:
+                    if size_class == "background" and goal in ("hook", "cta"):
+                        precision.apply_hero_overlay(slide, image_path)
+                    elif size_class == "icon":
+                        precision.add_image(slide, image_path, 9.5, 2.0, 2.5, 2.5)
+                    else:
+                        precision.add_image(slide, image_path, 8.3, 1.2, 4.2, 5.3)
+                except Exception:
+                    pass
+            prs.save(pptx_path)
+        except Exception:
+            pass
+
     def _apply_animations(self, slide, design: dict[str, Any], motion: int) -> None:
         from ppt_pro_max.renderer.animation import (
             add_slide_transition, add_entrance_animation, TRANSITION_TYPES,
@@ -656,6 +955,7 @@ class EnterprisePipeline:
                 llm_api_key=image_config.get("llm_api_key"),
                 llm_base_url=image_config.get("llm_base_url"),
                 llm_model=image_config.get("llm_model"),
+                auto_detect=image_config.get("auto_detect", True),
             )
         except Exception:
             return None
