@@ -275,7 +275,7 @@ professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm,
 
 ## 🏆 设计质量升级 — 28 项专业级提升
 
-v0.8.0 引入 Build 设计师模式 + 28 项设计质量升级：
+v0.9.0 引入 VI Build 模式 + 28 项设计质量升级：
 
 ### Tier 1 — 基础视觉（10 项）
 

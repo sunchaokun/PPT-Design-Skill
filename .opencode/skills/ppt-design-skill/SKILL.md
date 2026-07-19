@@ -1,8 +1,8 @@
 ---
 name: ppt-design-skill
-version: 0.8.0
-description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand compliance), Build (pixel-perfect). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. 5,500+ chart templates. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style] [--fetch-images] [--project DIR] [--build]"
+version: 0.9.0
+description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Build Script (pixel-perfect), VI Build (enterprise template). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style] [--fetch-images] [--build]"
 license: MIT
 metadata:
   author: sunchaokun

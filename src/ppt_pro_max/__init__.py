@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner

@@ -1,8 +1,8 @@
 ---
 name: ppt-design-skill
-version: 0.8.0
-description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand compliance), Build (pixel-perfect). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. 5,500+ chart templates. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style] [--fetch-images] [--project DIR] [--build]"
+version: 0.9.0
+description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Build Script (pixel-perfect), VI Build (enterprise template). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style] [--fetch-images] [--build]"
 license: MIT
 metadata:
   author: sunchaokun
@@ -33,6 +33,56 @@ ALWAYS follow this 5-step workflow. Do NOT skip steps — rework is extremely co
 - Design skeleton: total pages, per-page goal, core title
 - Present outline, confirm before proceeding
 
+### Step 1.5: VI Build — 基于模板 Visual Identity 的 Build（用户提供模板时触发）
+
+**触发条件：** 用户提供 template.pptx 时，进入 VI Build 模式。不是 Build 模式，不是 Enterprise 模式。
+
+**与 Build 模式的区别：**
+- Build：从空白画布开始，自主设计颜色/字体/布局
+- VI Build：从模板的 Visual Identity 开始，继承模板的颜色/字体/装饰，只 Build 新内容
+
+**启动指令：**
+```bash
+python -m ppt_pro_max.analyze_template template.pptx
+```
+
+**LLM 调用顺序（严格按此执行）：**
+
+```
+1. 调用分析脚本
+   python -m ppt_pro_max.analyze_template template.pptx
+
+2. 读取输出文本，提取 VI 信息
+   - 颜色：从 COLOR FREQUENCY 按频率+亮度确定 primary/accent/muted/background 等
+   - 字体：从 FONT FREQUENCY 按频率确定 heading/body
+   - 装饰：从 [content] 页的 shape 列表识别装饰元素（top_bar/logo/侧边栏/圆点等）
+   - 模板页：记录哪个 slide index 是 [content] 类型，用于 copy_decorations()
+
+3. 根据用户需求设计页面结构
+   - 确定总页数、每页类型（数据页/对比页/总结页等）
+   - 为数据页选择可视化组件（kpi_card / bar_chart / comparison_bars / donut_chart / highlight_cards）
+
+4. 写 build 脚本
+   from ppt_pro_max.build_helpers import *
+   C = {...}  # 从 Step 2 填入
+   prs = Presentation(template_path)  # 保留模板原有页面
+   # 逐页 Build 新页面...
+
+5. 执行脚本生成 PPT
+   python build_xxx.py
+
+6. 验证输出（可选）
+   python -m ppt_pro_max.analyze_template output.pptx  # 检查输出结构
+```
+
+**analyze_template 输出格式：**
+- `=== TEMPLATE ANALYSIS ===` — 页面尺寸、slide 数量、layout 列表
+- `--- Slide N [type] ---` — 每页 shape 清单，type 为 cover/toc/content/transition/back_cover
+- 每个 shape：类型、位置、尺寸、文字、字号、颜色、几何类型、alpha、渐变
+- `=== COLOR FREQUENCY ===` — 颜色使用频率排序
+- `=== THEME COLORS ===` — PPT 主题色
+- `=== FONT FREQUENCY ===` — 字体使用频率排序
+
 ### Step 2: Visual Proposals (Build Mode, 1-3 Options)
 
 **ALWAYS use Build Mode for proposals** — it produces truly differentiated designs (different layouts, visual languages, page structures), unlike FreeStyle which only swaps colors/fonts.
@@ -54,22 +104,22 @@ ALWAYS follow this 5-step workflow. Do NOT skip steps — rework is extremely co
 ```python
 # build_proposal.py — each proposal is a standalone python-pptx script
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
-from pptx.enum.shapes import MSO_SHAPE
+from ppt_pro_max.build_helpers import *
 
-# 1. Define color palette (from ui-ux-pro-max design_system)
-C = {'bg': '#...', 'primary': '#...', 'accent': '#...', ...}
+# 1. Define color palette (from ui-ux-pro-max design_system OR template analysis)
+C = {'primary': '#...', 'accent': '#...', 'background': '#...', ...}
 
-# 2. Helper functions: _rect, _rrect, _oval, _text, _multiline
+# 2. build_helpers provides: rect, rrect, oval, text, multiline,
+#    add_slide, top_bar, page_header, kpi_card, bar_chart,
+#    comparison_bars, donut_chart, highlight_cards,
+#    copy_decorations, copy_logo
 
 # 3. Build each slide with unique layout strategy
 #    - Cover: sidebar | split-screen | centered-hero | circles
 #    - Problem: numbered-cards | error-log | emoji-cards
 #    - Solution: sidebar+cards | code-block | step-circles
-#    - Data: comparison-table | dashboard-metrics | before-after
-#    - Features: accent-bar-cards | neon-cards | bubble-cards
+#    - Data: kpi_card + bar_chart | dashboard-metrics | before-after
+#    - Features: highlight_cards | accent-bar-cards | bubble-cards
 #    - CTA: dark-full | grid-overlay | warm-circles
 
 prs.save('proposal-X-style.pptx')
@@ -263,14 +313,16 @@ results = query_component_library(type="group", category="hierarchy", node_count
 - Brand-compliant presentations with template + version control
 - Page-level CRUD on existing PPT (add/delete/swap/move pages)
 - Diagrams in PPT (flowchart, funnel, timeline, SWOT, etc.)
+- **User provides a template PPTX** → VI Build mode (analyze_template + build_helpers)
 
-## Three-Mode Architecture
+## Four-Mode Architecture
 
 | Mode | User | Scenario | One-liner |
 |------|------|----------|-----------|
 | **FreeStyle** | Everyone | One sentence → one PPT | "给我做个AI路演" → 30s done |
 | **Enterprise** | Corporate teams | VI compliance, brand consistency, version control | brand.json + template.pptx lock style |
-| **Build** | Designers / AI | Pixel-perfect, proposal comparison, version management | python-pptx script = source of truth |
+| **Build** | Designers / AI | Pixel-perfect, from scratch | python-pptx script = source of truth |
+| **VI Build** | Designers / AI | Pixel-perfect, based on template VI | analyze_template → build_helpers script |
 
 ### FreeStyle — 傻瓜模式
 
@@ -305,22 +357,51 @@ python -m ppt_pro_max "" --project ./my-project --history
 - Page operations: add, delete, swap, move pages
 - Good for: corporate teams, agencies, brand-managed organizations
 
-### Build — 设计师模式
+### Build — 设计师模式（无模板）
+
+从空白画布开始，自主设计颜色/字体/布局。
 
 Write python-pptx scripts directly. Full control over every shape, color, position. Each script is a standalone, version-manageable design.
 
+**有模板时（推荐路径）：**
 ```python
-# build.py — full control over every shape, color, position
+# build.py — 基于模板 VI 的 Build 脚本
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
-from pptx.enum.shapes import MSO_SHAPE
+from ppt_pro_max.build_helpers import *
 
-C = {'bg': '#0A0E17', 'primary': '#00F0FF', 'accent': '#FF2E97', ...}
+# 1. 色板（从 analyze_template 输出填入）
+C = {'primary': '#2E6504', 'accent': '#7DA92F', 'background': '#FFFFFF', ...}
+
+# 2. 读取模板，保留原有页面
+prs = Presentation('template.pptx')
+
+# 3. 新增页面（用模板的 VI 语言）
+s = add_slide(prs)
+rect(s, 0, 0, 13.333, 7.5, 'background', C=C)       # 背景
+top_bar(s, 'accent', C=C)                                # 顶部装饰条
+copy_decorations(s, prs.slides[1])                       # 复制模板装饰
+copy_logo(s, prs.slides[1], color_hints=['#2E6504'])    # 复制 logo
+page_header(s, '标题', '副标题', C=C)                     # 标题区
+kpi_card(s, 1.0, 1.5, 3.0, 1.35, '12.8亿', '年度产值', '+8.3%', C=C)  # KPI 卡片
+bar_chart(s, 1.65, 3.55, data, C=C)                     # 条形图
+comparison_bars(s, 1.65, 1.95, metrics, C=C)             # 对比图
+donut_chart(s, 9.0, 4.0, 1.3, 0.7, sectors, C=C)       # 环形图
+highlight_cards(s, 0.65, 5.0, cards, C=C)                # 高亮卡片
+
+prs.save('output.pptx')
+```
+
+**无模板时：**
+```python
+# build.py — 无模板，自主设计
+from pptx import Presentation
+from ppt_pro_max.build_helpers import *
+
+C = {'primary': '#00F0FF', 'accent': '#FF2E97', 'background': '#0A0E17', ...}
 prs = Presentation()
 prs.slide_width = Inches(13.333)
 prs.slide_height = Inches(7.5)
-# ... build slides with _rect, _rrect, _oval, _text helpers
+# ... build slides
 prs.save('output.pptx')
 ```
 
@@ -328,6 +409,53 @@ prs.save('output.pptx')
 - **Revision phase**: single `build.py`, git commit per change, auto-increment output versions
 - **Delivery**: `.pptx` + `build.py` (client can edit/rebuild)
 - Good for: proposal comparison, pixel-perfect output, designer-quality work, AI-assisted design
+
+### VI Build — 模板驱动模式（有模板）
+
+基于用户模板的 Visual Identity，用模板的视觉语言 Build 新内容。先分析模板，再写脚本。
+
+**启动：** 用户提供 template.pptx 时自动触发，先运行 `python -m ppt_pro_max.analyze_template template.pptx`
+
+```python
+# build_vi.py — VI Build 脚本（基于模板）
+from pptx import Presentation
+from ppt_pro_max.build_helpers import *
+
+C = {'primary': '#2E6504', 'accent': '#7DA92F', 'background': '#FFFFFF', ...}  # 从分析结果填入
+prs = Presentation('template.pptx')  # 保留模板原有页面
+
+s = add_slide(prs)
+rect(s, 0, 0, 13.333, 7.5, 'background', C=C)
+top_bar(s, 'accent', C=C)
+copy_decorations(s, prs.slides[1])                       # 复制模板装饰
+copy_logo(s, prs.slides[1], color_hints=['#2E6504'])    # 复制 logo
+page_header(s, '标题', '副标题', C=C)
+kpi_card(s, 1.0, 1.5, 3.0, 1.35, '12.8亿', '年度产值', '+8.3%', C=C)
+bar_chart(s, 1.65, 3.55, data, C=C)
+
+prs.save('output.pptx')
+```
+
+**与 Build 的关键区别：**
+- Build：`prs = Presentation()` — 空白画布
+- VI Build：`prs = Presentation('template.pptx')` — 继承模板页面，用 `copy_decorations` 复制装饰
+
+**build_helpers 可用函数：**
+
+| 函数 | 用途 | 模式 |
+|------|------|------|
+| `add_slide(prs)` | 添加空白 slide | 通用 |
+| `rect / rrect / oval` | 矩形/圆角矩形/椭圆 | 通用 |
+| `text / multiline` | 单行/多行文字 | 通用 |
+| `top_bar` | 顶部装饰条 | 通用 |
+| `page_header` | 标题+副标题+分隔线 | 通用 |
+| `kpi_card` | KPI 数据卡片 | VI Build |
+| `bar_chart` | 条形图 | VI Build |
+| `comparison_bars` | 两年对比条形图 | VI Build |
+| `donut_chart` | 环形图 | VI Build |
+| `highlight_cards` | 高亮卡片组 | VI Build |
+| `copy_decorations` | 从模板页复制装饰元素 | VI Build 专用 |
+| `copy_logo` | 从模板复制 logo | VI Build 专用 |
 
 ### Python API
 
