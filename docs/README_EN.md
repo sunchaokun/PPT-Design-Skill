@@ -4,7 +4,7 @@
 
 **Generate professional .pptx presentations from a single sentence**
 
-Triple-mode engine · Narrative-driven · Brand-compliant · AI images · **40,000+ Style Combinations** · **28 Design Quality Upgrades** · **Build Script Precision**
+Triple-mode engine · Narrative-driven · AI images · **40,000+ Style Combinations** · **28 Design Quality Upgrades** · **Build Script Precision** · **VI Build Enterprise Compliance**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -58,7 +58,7 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 
 | Feature | Description |
 |---------|-------------|
-| **Triple-Mode Engine** | FreeStyle rapid generation + Enterprise brand compliance + Build Script per-page precision |
+| **Triple-Mode Engine** | FreeStyle rapid generation + Build Script per-page precision + VI Build enterprise template compliance |
 | **Narrative Engine** | 3 strategies (YC Seed Deck / Product Demo / Sales Pitch) + Duarte Sparkline emotion arcs |
 | **40,000+ Style Combos** | 25 palettes × 20 font pairs × 10 decorations × 8 layout variants |
 | **Natural Language Style** | Describe your style: `--style "warm fintech"` / `--style "dark cyberpunk"` |
@@ -66,6 +66,7 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 | **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
 | **Build Script Mode** | 10 page templates + Design Token system + post-build checks, delivery-grade quality |
 | **Brand Visual Design** | Auto-mapped brand colors: backgrounds, accent bars, branded title/body text, logo placement |
+| **VI Build Mode** | `analyze_template.py` extracts template VI → LLM generates build.py → `build_helpers` precise construction, enterprise VI compliance |
 | **Page Revision** | `--pages` CRUD: delete / swap / move / insert with full content preservation |
 | **Version Management** | v1 → v2 → v3 auto-numbering, meta.json tracks per-page goal/title |
 | **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
@@ -110,24 +111,19 @@ ppt-design "investor pitch" --style "dark cyberpunk" \
   --motion 7 --density 6
 ```
 
-### Enterprise — Brand-Compliant + Version Control
+### VI Build — Enterprise Template Compliance
 
 ```bash
-# 1. Create project directory
-mkdir my-pitch && cd my-pitch
+# Step 1: Analyze enterprise template
+python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
 
-# 2. Add brand assets (all optional)
-#    template.pptx / brand.json / content.json / logo.png / images/
+# Step 2: Feed analysis.txt to LLM, generate build.py
 
-# 3. Generate
-ppt-design "AI Platform" --project . --density 6 --motion 5
-
-# 4. Revise pages
-ppt-design "" --project . --pages "-3,2<>5"
-
-# 5. View history
-ppt-design "" --project . --history
+# Step 3: Run generation
+python build.py
 ```
+
+> Preserves framework pages (cover/TOC/back cover) + `build_helpers` precise construction — see [Usage Guide §5](usage-guide.md#5-vi-build-模式--基于模板-vi-的精确生成)
 
 ### Build Script — Per-Page Precision (Delivery-Grade Quality)
 
@@ -152,7 +148,7 @@ run.font.bold = True
 prs.save("output/presentation.pptx")
 ```
 
-> 10 page templates + Design Token system + post-build check script — see [Usage Guide §5](usage-guide.md#5-build-script-模式--精确控制)
+> 10 page templates + Design Token system + post-build check script — see [Usage Guide §4](usage-guide.md#4-build-script-模式--精确控制)
 
 ---
 
@@ -166,43 +162,52 @@ Input → Story Planning → Design Decisions → Content Generation → PPT Ren
 
 Use for: quick exploration, style experiments, personal presentations
 
-### Enterprise Pipeline
-
-```
-Project Dir → Asset Scan → Brand Merge → Content Parse → Visual Design → Render+Animate → Version Mgmt → .pptx
-                 ↓            ↓             ↓              ↓
-            template     brand.json    content.json    accent bar
-            logo.png     colors/fonts  diagram         brand overlay
-            images/      logo config   code/exercise   footer/watermark
-```
-
-Use for: enterprise compliance, team collaboration, multi-version iteration
-
 ### Build Script Mode
 
 ```
 build.py → Design Token → Page Templates → python-pptx → .pptx → check.py validation
-              ↓              ↓              ↓
-          colors/fonts   10 templates   per-element precision
-          one-line theme  x/y/w/h      run-level fonts
+               ↓              ↓              ↓
+           colors/fonts   10 templates   per-element precision
+           one-line theme  x/y/w/h      run-level fonts
 ```
 
-Use for: **final delivery, precise control, quality assurance**
+Use for: **final delivery, precise control without template constraints, quality assurance**
 
-> **Recommended workflow**: FreeStyle prototype → Enterprise content fill → Build Script precision delivery
+### VI Build Mode
+
+```
+template.pptx → analyze_template.py → LLM generates build.py → build_helpers → .pptx
+                      ↓                       ↓                  ↓
+                  Extract VI Token       copy_decorations    kpi_card / bar_chart
+                  colors/fonts/layout   copy_logo           page_header
+```
+
+Use for: **enterprise VI compliance, brand template adherence**
+
+> **Recommended workflow**: FreeStyle prototype → VI Build (with enterprise template) or Build Script (no template) for precision delivery
 
 ### Project Directory Structure
 
+**Build Script Mode:**
+
 ```
 my-project/
-├── template.pptx      # Optional: brand template
-├── brand.json         # Optional: brand specification
-├── content.json       # Optional: real content
-├── logo.png           # Optional: company logo
-├── images/            # Optional: image pool
-└── output/            # Auto-generated
-    ├── v1/presentation.pptx + meta.json
-    └── v2/presentation.pptx + meta.json
+├── build.py            # Core build script
+├── images/             # Local images
+└── output/             # Generated output
+    └── presentation.pptx
+```
+
+**VI Build Mode:**
+
+```
+my-project/
+├── build.py            # LLM-generated build script (using build_helpers)
+├── template.pptx       # Enterprise template (VI source)
+├── analysis.txt        # Template analysis output (LLM input)
+├── images/             # Local images
+└── output/             # Generated output
+    └── presentation.pptx
 ```
 
 ---
@@ -228,7 +233,7 @@ my-project/
 }
 ```
 
-> Full field reference: [Usage Guide §5](usage-guide.md#5-contentjson-内容格式)
+> Full field reference: [Usage Guide §6](usage-guide.md#6-contentjson-内容格式)
 
 ---
 
@@ -253,11 +258,16 @@ my-project/
 }
 ```
 
-> Full field reference: [Usage Guide §6](usage-guide.md#6-brandjson-品牌格式)
+> Full field reference: [Usage Guide §7](usage-guide.md#7-brandjson-品牌格式)
 
 ---
 
 ## ✏️ Page Revision — CRUD Operations
+
+> Page revision requires Enterprise Pipeline (deprecated). For new projects, use Build Script or VI Build mode.
+
+<details>
+<summary>Click to expand deprecated page revision syntax</summary>
 
 ```bash
 # Delete page 3
@@ -266,17 +276,11 @@ ppt-design "" --project . --pages "-3"
 # Swap pages 2 and 5
 ppt-design "" --project . --pages "2<>5"
 
-# Move page 10 to after page 3
-ppt-design "" --project . --pages "10>3"
-
-# Insert blank page after page 6
-ppt-design "" --project . --pages "+6"
-
 # Combined operations
 ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
 ```
 
-> Full syntax: [Usage Guide §7](usage-guide.md#7-页面修订语法)
+</details>
 
 ---
 
@@ -402,8 +406,10 @@ PPT-Design-Skill/
 ├── src/ppt_pro_max/
 │   ├── __init__.py                   # generate_ppt() API
 │   ├── cli.py                        # ppt-design CLI
-│   ├── enterprise/                   # Enterprise Pipeline
-│   │   ├── pipeline.py               # Main orchestrator
+│   ├── analyze_template.py           # Template analysis script (VI Build Step 1)
+│   ├── build_helpers.py              # Build helper library (VI Build Step 3)
+│   ├── enterprise/                   # ~~Enterprise Pipeline~~ (deprecated)
+│   │   ├── pipeline.py               # ~~Main orchestrator~~ (deprecated)
 │   │   ├── precision_renderer.py     # Unified renderer (8 goal layouts + 28 design upgrades)
 │   │   ├── brand_spec.py             # Brand specification
 │   │   ├── content_parser.py         # Content parser (content.json + README.md)

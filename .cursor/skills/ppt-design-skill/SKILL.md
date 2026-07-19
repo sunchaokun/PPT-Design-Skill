@@ -79,7 +79,11 @@ prs.save('proposal-X-style.pptx')
 
 - Write full content per page (see content.json format and Content Rules below)
 - **CRITICAL: Respect ui-ux-pro-max anti-patterns** — e.g., legal: no "AI purple/pink gradients"; healthcare: no "Bright neon colors"
-- **CRITICAL: Prefer component library over bullet lists** for diagrams (see Component Library section)
+- **CRITICAL: ALWAYS use component library for diagram pages** — MANDATORY workflow:
+  1. **Query library first**: `query_component_library(type="group", category="<category>")` to check available templates
+  2. **Set component fields**: Add `component_type` and `component_category` to every page with 3+ bullets that describe a process/hierarchy/SWOT/timeline/infographic
+  3. **Never use plain bullets for diagrams** — hierarchy, process, timeline, SWOT pages MUST use component library
+  4. **Auto-inference fallback**: If you forget to set component fields, the pipeline auto-infers them from bullet keywords, but explicit is better
 - Present to user for review
 
 ### Step 4: Draft Generation & Revision (Build Mode)
@@ -143,7 +147,19 @@ All design decisions flow through ui-ux-pro-max. **Do NOT manually pick colors/f
 
 ## Component Library (5,500+ Professional Chart Templates)
 
-**ALWAYS prefer component library over built-in bullet/card layouts for diagram pages.** These are real professional PPT chart templates, not hand-drawn.
+**MANDATORY: Use component library for ALL diagram pages.** The pipeline auto-infers component fields from bullets, but you should explicitly set them for best results. These are real professional PPT chart templates, not hand-drawn.
+
+### MANDATORY Workflow (before writing content.json)
+
+1. **Query the library** to check available categories and node_counts:
+   ```python
+   from ppt_pro_max import query_component_library
+   catalog = query_component_library()  # See all categories
+   process = query_component_library(type="group", category="process")  # Search specific
+   hierarchy = query_component_library(type="group", category="hierarchy", node_count=5)  # Precise
+   ```
+2. **Set component fields** in content.json for every diagram page
+3. **Pipeline auto-inference** as fallback — but explicit is always better
 
 | Category | Count | Use When |
 |----------|-------|----------|
@@ -178,11 +194,41 @@ All design decisions flow through ui-ux-pro-max. **Do NOT manually pick colors/f
   "title": "项目流程",
   "bullets": ["需求分析", "方案设计", "开发实现", "测试上线"],
   "component_type": "group",
-  "component_category": "process"
+  "component_category": "process",
+  "component_fit": "contain",
+  "component_bounds": [0.9, 1.6, 11.5, 5.0]
 }
 ```
 
+- `component_fit`: `contain` (default, preserve aspect), `width`, `height`, `stretch`
+- `component_bounds`: `[left, top, width, height]` in inches — explicit position/size override
+- Without `component_bounds`: system auto-calculates content area based on title/image presence
+
 Matching: exact node_count → closest node_count → fallback to DiagramEngine/bullets.
+
+### Aspect Ratio & Fit Mode
+
+Components auto-preserve original aspect ratio. Control with `component_fit`:
+
+| fit | Effect | Use when |
+|-----|--------|----------|
+| `contain` (default) | Fit inside area, may have padding | General, safest |
+| `width` | Fill width, height proportional | Horizontal process, timeline |
+| `height` | Fill height, width proportional | Vertical org charts |
+| `stretch` | Ignore aspect, fill entire area | Only when aspect ≈ area |
+
+```json
+{
+  "component_type": "group",
+  "component_category": "process",
+  "component_fit": "width",
+  "bullets": ["Step 1", "Step 2", "Step 3"]
+}
+```
+
+### Coordinate Transform (lossless)
+
+Components store original XML + original bounds EMU. Injection applies uniform scale+translate to ALL xfrm elements (off/ext/chOff/chExt), preserving `ext/chExt` ratio. PowerPoint's mapping `screen = (child - chOff) * (ext/chExt) + off` produces correct positions at any target size.
 
 ### Query Before Writing
 
@@ -310,7 +356,8 @@ print(f"Generated: {result['output_path']}, {result['page_count']} pages")
       "code": {"language": "python", "source": "..."},
       "exercise": {"instructions": "...", "duration": "5 min", "steps": [...]},
       "component_type": "group",
-      "component_category": "process"
+      "component_category": "process",
+      "component_fit": "contain"
     }
   ]
 }

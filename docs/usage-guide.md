@@ -1,6 +1,6 @@
 # PPT-Design-Skill 使用手册
 
-> 版本 v0.8.0 | 完整功能参考
+> 版本 v0.9.0 | 完整功能参考
 
 ---
 
@@ -9,8 +9,8 @@
 1. [三种模式](#1-三种模式)
 2. [快速开始](#2-快速开始)
 3. [FreeStyle 模式](#3-freestyle-模式)
-4. [Enterprise 模式](#4-enterprise-模式)
-5. [Build Script 模式 — 精确控制](#5-build-script-模式--精确控制)
+4. [Build Script 模式 — 精确控制](#4-build-script-模式--精确控制)
+5. [VI Build 模式 — 基于模板 VI 的精确生成](#5-vi-build-模式--基于模板-vi-的精确生成)
 6. [content.json 内容格式](#6-contentjson-内容格式)
 7. [brand.json 品牌格式](#7-brandjson-品牌格式)
 8. [组件库数据库](#8-组件库数据库)
@@ -24,6 +24,7 @@
 16. [Python API](#16-python-api)
 17. [CLI 完整参数](#17-cli-完整参数)
 18. [最佳实践与质量保证](#18-最佳实践与质量保证)
+19. [附录：Enterprise 模式（已弃用）](#附录enterprise-模式已弃用)
 
 ---
 
@@ -31,19 +32,21 @@
 
 PPT-Design-Skill 提供三种生成模式，从快速到精确：
 
-| | FreeStyle | ~~Enterprise~~ | Build Script |
+| | FreeStyle | Build Script | **VI Build** |
 |---|---|---|---|
-| **适用场景** | 快速生成、风格探索 | ~~已弃用~~ | **交付级质量、企业 VI 合规、逐页精确控制** |
-| **触发方式** | 默认（无 `--project`） | ~~`--project <目录>`~~ | 手写 `build.py` 脚本 |
-| **内容来源** | AI 自动生成 | ~~content.json~~ | 代码中硬编码每页内容 |
-| **品牌规范** | 风格原子组合 | ~~brand.json + 模板分析~~ | Design Token 字典 |
-| **布局控制** | 自动匹配母版 | ~~自动匹配母版~~ | **逐元素 x/y/w/h 精确定位** |
-| **字体控制** | 主题级 | ~~主题级~~ | **run-level 逐字设置** |
-| **质量上限** | ★★★ | ~~★★★~~ | ★★★★★ |
+| **适用场景** | 快速生成、风格探索 | **交付级质量、逐页精确控制** | **基于企业模板 VI 的精确生成** |
+| **触发方式** | 默认（无 `--project`） | 手写 `build.py` 脚本 | `analyze_template.py` + `build_helpers.py` |
+| **内容来源** | AI 自动生成 | 代码中硬编码每页内容 | LLM 读取模板分析文本，生成 build.py |
+| **品牌规范** | 风格原子组合 | Design Token 字典 | **从模板提取 VI Token**（色值/字体/布局） |
+| **布局控制** | 自动匹配母版 | **逐元素 x/y/w/h 精确定位** | **保留框架页 + 新增页用 build_helpers** |
+| **字体控制** | 主题级 | **run-level 逐字设置** | **run-level + 模板字体继承** |
+| **模板复用** | 无 | 无 | **框架页原样保留 + 装饰/LOGO 复制** |
+| **质量上限** | ★★★ | ★★★★★ | ★★★★★ |
 
-> **选择建议**：探索阶段用 FreeStyle，**最终交付和企业 VI 合规用 Build Script**。
+> **选择建议**：探索阶段用 FreeStyle，**最终交付用 Build Script 或 VI Build**。
 >
-> Enterprise Pipeline 已弃用（品牌色覆盖、文本槽位丢失等质量问题）。企业 VI 场景请使用 **Build 模式 + LLM 分析企业模板**。
+> - **Build Script**：从空白画布开始，完全自定义，适合无模板约束的场景
+> - **VI Build**：从企业模板 VI 开始，保留框架页（封面/目录/封底），新增页用 `build_helpers` 精确构建，适合必须遵守企业 VI 的场景
 
 ---
 
@@ -71,8 +74,13 @@ npx ui-ux-pro-max-cli init --ai opencode
 # FreeStyle — 自动生成内容和设计
 ppt-design "AI startup investor pitch"
 
-# Build Script — 逐页精确控制（推荐交付模式）
+# VI Build — 基于企业模板精确生成（推荐企业交付模式）
 # 详见第 5 节
+python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+# → 将 analysis.txt 交给 LLM 生成 build.py → python build.py
+
+# Build Script — 从空白画布逐页精确控制
+# 详见第 4 节
 ```
 
 > **必需依赖**：ui-ux-pro-max 提供设计智能（192 色彩方案、84 风格、74 字体、161 反模式），`python install.py` 会自动安装。缺失时运行会报 `UiUxProMaxNotFoundError`。
@@ -138,69 +146,15 @@ ppt-design "ESG报告" --theme nature-calm
 
 ---
 
-## 4. Enterprise 模式（已弃用）
-
-> **弃用通知**：Enterprise Pipeline 已弃用，存在品牌色覆盖异常、文本槽位丢失、坐标变换偏差等质量问题。调用时会触发 `DeprecationWarning`。
->
-> **推荐替代方案**：使用 **Build 模式 + LLM 分析企业模板**：
-> 1. 将企业模板 PPT 交给 LLM（如 Claude/GPT），提取颜色、字体、布局等 Design Token
-> 2. 将 Token 写入 `build.py`，逐页精确控制每个元素
-> 3. Build 模式的原子级编辑能力（x/y/w/h、run-level 字体）可完全保证 VI 一致性和像素级精度
->
-> 如果您需要品牌合规，Build 模式是当前唯一推荐的路径。
-
-### 企业 VI 保持 — Build 模式工作流
-
-```bash
-# 步骤 1：LLM 分析企业模板
-# 将 template.pptx 交给 LLM，提取以下 Design Token：
-#   - 品牌色（primary/accent/foreground/background/muted）
-#   - 字体（heading/body/cjk）
-#   - 布局规律（边距/卡片样式/accent 竖条位置）
-#   - LOGO 位置和大小
-
-# 步骤 2：写入 build.py
-# 将提取的 Token 写入 Design Token 字典，逐页构建
-
-# 步骤 3：生成并验证
-python build.py && python check.py
-```
-
-### 项目目录结构（Build 模式）
-
-```
-my-project/
-├── build.py            # 核心构建脚本（含 Design Token）
-├── brand.json          # 可选：Design Token 参考
-├── content.json        # 可选：内容数据参考
-├── template.pptx       # 可选：企业模板（供 LLM 分析提取 Token）
-├── logo.png            # 可选：公司 LOGO
-├── images/             # 本地图片素材
-└── output/             # 生成输出
-    └── presentation.pptx
-```
-
-### ~~旧 Enterprise 用法~~（已弃用）
-
-<details>
-<summary>点击展开已弃用的 Enterprise 文档</summary>
-
-```bash
-# 以下功能已弃用，不推荐使用
-ppt-design "AI Platform" --project . --density 6 --motion 5
-ppt-design "" --project . --pages "-3,2<>5"
-ppt-design "" --project . --history
-```
-
-</details>
+> **Enterprise Pipeline 已弃用**，存在品牌色覆盖异常、文本槽位丢失、坐标变换偏差等质量问题。企业 VI 场景请使用 **VI Build 模式**（详见第 5 节）。弃用文档见[附录](#附录enterprise-模式已弃用)。
 
 ---
 
-## 5. Build Script 模式 — 精确控制
+## 4. Build Script 模式 — 精确控制
 
 ### 为什么需要 Build Script？
 
-FreeStyle 和 Enterprise 模式通过 pipeline 自动渲染，布局由 LayoutRegistry 的母版模板决定。这种方式适合快速生成，但**无法精确控制每个元素的位置、大小、字体**——而这正是专业 PPT 的核心要求。
+FreeStyle 模式通过 pipeline 自动渲染，布局由 LayoutRegistry 的母版模板决定。这种方式适合快速生成，但**无法精确控制每个元素的位置、大小、字体**——而这正是专业 PPT 的核心要求。
 
 Build Script 模式直接使用 python-pptx API，**逐页、逐元素**控制 PPT 的每一个细节，效果可媲美手动设计。
 
@@ -723,6 +677,223 @@ else:
 
 ---
 
+## 5. VI Build 模式 — 基于模板 VI 的精确生成
+
+### 什么是 VI Build？
+
+VI Build 是从**企业模板 VI**出发的精确生成模式。与 Build Script 从空白画布开始不同，VI Build：
+
+- **保留框架页**：封面、目录、封底等页面原样保留，不重新渲染
+- **提取 VI Token**：通过 `analyze_template.py` 自动提取模板的颜色、字体、布局等视觉 DNA
+- **新增页用 build_helpers**：用 `build_helpers.py` 的工具函数精确构建新增内容页
+- **复制装饰和 LOGO**：`copy_decorations()` / `copy_logo()` 保持 VI 一致性
+
+### 与 Build Script 的区别
+
+| | Build Script | VI Build |
+|---|---|---|
+| **起点** | 空白画布 `Presentation()` | 企业模板 `Presentation(template_path)` |
+| **框架页** | 全部手写 | 原样保留（封面/目录/封底不动） |
+| **VI 来源** | 手写 Design Token | `analyze_template.py` 自动提取 |
+| **装饰/LOGO** | 手写 | `copy_decorations()` / `copy_logo()` 自动复制 |
+| **工具函数** | 自行复制到 build.py | `from ppt_pro_max.build_helpers import *` |
+| **适用场景** | 无模板约束的自由设计 | 必须遵守企业 VI 的交付 |
+
+### 工作流程
+
+```
+Step 1: 分析模板
+  python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+
+Step 2: LLM 读取分析文本，生成 build.py
+  将 analysis.txt 交给 LLM，LLM 输出完整的 build.py 脚本
+
+Step 3: 运行 build.py 生成 PPT
+  python build.py
+```
+
+### Step 1: 分析模板
+
+```bash
+python -m ppt_pro_max.analyze_template template.pptx
+```
+
+输出结构化文本，包含：
+
+- **页面分类**：每页自动分类为 `cover` / `toc` / `transition` / `content` / `back_cover`
+- **Shape 清单**：每个 shape 的类型、几何形状、位置、文本内容、alpha 透明度、渐变信息
+- **色值频率**：所有填充色/线条色/文字色的出现次数和 hex 值
+- **Theme Colors**：模板主题色定义
+- **字体频率**：所有使用的字体名和出现次数
+
+输出示例：
+
+```
+=== TEMPLATE ANALYSIS ===
+Size: 13.333 x 7.500 inches
+Slides: 8
+Layouts: 11
+  Layout 0: Blank
+  Layout 1: Title Slide
+  ...
+
+--- Slide 0 [cover] (12 shapes) ---
+  [1] PICTURE (1.0, 0.0, 11.333, 7.5) alpha=0.15
+  [2] RECTANGLE (0.0, 0.0, 13.333, 7.5) fill=#2E6504 alpha=0.85
+  [3] TEXTBOX (0.65, 2.5, 8.0, 1.5) "乡村振兴战略规划" font=微软雅黑 size=44pt
+  ...
+
+--- Color Frequency ---
+  #2E6504: 8 fills, 3 lines
+  #7DA92F: 5 fills, 1 line
+  ...
+
+--- Theme Colors ---
+  dk1: #000000
+  lt1: #FFFFFF
+  ...
+
+--- Font Frequency ---
+  微软雅黑: 23 occurrences
+  ...
+```
+
+### Step 2: LLM 生成 build.py
+
+将分析文本交给 LLM（Claude/GPT 等），LLM 根据模板 VI 生成 build.py。关键要点：
+
+1. **用模板初始化**：`prs = Presentation('template.pptx')` 而非 `Presentation()`
+2. **框架页不动**：封面（Slide 0）、目录、封底保留原样，只新增内容页
+3. **提取 VI Token**：从分析文本中提取颜色/字体写入 `C` 字典
+4. **用 build_helpers**：`from ppt_pro_max.build_helpers import *`
+5. **复制装饰**：`copy_decorations(slide, template_slide)` 保持视觉一致性
+6. **复制 LOGO**：`copy_logo(slide, template_slide, color_hints=['#2E6504'])`
+
+### Step 3: build_helpers 函数参考
+
+#### 基础形状
+
+| 函数 | 说明 | 参数 |
+|------|------|------|
+| `rect(slide, left, top, width, height, fill, line=None, C=None)` | 矩形 | fill/line 支持角色名或 hex |
+| `rrect(slide, left, top, width, height, fill, line=None, C=None)` | 圆角矩形 | 同上 |
+| `oval(slide, left, top, width, height, fill, line=None, C=None)` | 椭圆 | 同上 |
+
+#### 文本
+
+| 函数 | 说明 | 参数 |
+|------|------|------|
+| `text(slide, left, top, width, height, txt, font_size=12, color='text_body', bold=False, align='left', font_name=None, C=None)` | 单行文本 | color 支持角色名或 hex |
+| `multiline(slide, left, top, width, height, lines, font_size=12, color='text_body', bold=False, align='left', font_name=None, C=None)` | 多行文本 | lines 为字符串列表 |
+
+#### 页面组件
+
+| 函数 | 说明 | 参数 |
+|------|------|------|
+| `add_slide(prs, layout_index=None)` | 添加空白页 | 自动查找 blank 布局 |
+| `top_bar(slide, color, width=13.333, height=0.08, C=None)` | 顶部色条 | 常用于品牌色条 |
+| `page_header(slide, title, subtitle='', C=None, left=0.65, width=None)` | 页面标题+副标题+分割线 | 标准内容页头部 |
+| `kpi_card(slide, left, top, width, height, number, label, trend='', trend_up=True, C=None)` | KPI 指标卡 | 数字+标签+趋势 |
+| `bar_chart(slide, left, top, data, max_width=5.0, bar_height=0.3, C=None)` | 横向条形图 | data: [(label, pct, val), ...] |
+| `comparison_bars(slide, left, top, metrics, max_width=4.0, C=None)` | 对比条形图 | metrics: [(label, v_old, v_new, pct_old, pct_new), ...] |
+| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None)` | 环形图（简化版） | sectors: [(name, pct_str, color), ...] |
+| `highlight_cards(slide, left, top, cards, total_width=12.0, C=None)` | 高亮卡片组 | cards: [(title, desc, accent_color), ...] |
+
+#### 模板复用
+
+| 函数 | 说明 | 参数 |
+|------|------|------|
+| `copy_decorations(slide, template_slide, skip_long_text=True, skip_image=True)` | 复制装饰元素 | 跳过长文本(>50字)和图片，保留短装饰文字如"PART ONE" |
+| `copy_logo(slide, template_slide, color_hints=None)` | 复制 LOGO | 只找 GROUP shape(shape_type==6)；color_hints 按品牌色匹配 |
+
+#### 颜色解析
+
+`_resolve_color(val, C)` 支持两种输入：
+- **hex 值**：`'#2E6504'` → 直接使用
+- **角色名**：`'primary'` → 从 C 字典查找 `C['primary']`
+- **缺失角色**：返回 `'#000000'`（不崩溃）
+
+### VI Token 字典示例
+
+LLM 从分析文本提取后写入 build.py：
+
+```python
+C = {
+    'primary': '#2E6504',
+    'accent': '#7DA92F',
+    'muted': '#81C784',
+    'light': '#C8E6C9',
+    'white': '#FFFFFF',
+    'background': '#FFFFFF',
+    'card_bg': '#F9F9F9',
+    'text_dark': '#1A1A1A',
+    'text_body': '#333333',
+    'text_muted': '#666666',
+    'divider': '#CCCCCC',
+    'font_heading': '微软雅黑',
+    'font_body': '微软雅黑',
+}
+```
+
+### 完整 build.py 示例
+
+```python
+"""build.py — VI Build: 基于企业模板生成 PPT"""
+from pptx import Presentation
+from ppt_pro_max.build_helpers import *
+
+C = {
+    'primary': '#2E6504',
+    'accent': '#7DA92F',
+    'muted': '#81C784',
+    'light': '#C8E6C9',
+    'white': '#FFFFFF',
+    'background': '#FFFFFF',
+    'card_bg': '#F9F9F9',
+    'text_dark': '#1A1A1A',
+    'text_body': '#333333',
+    'text_muted': '#666666',
+    'divider': '#CCCCCC',
+    'font_heading': '微软雅黑',
+    'font_body': '微软雅黑',
+}
+
+template_path = 'template.pptx'
+prs = Presentation(template_path)
+ref = prs.slides[0]
+
+s = add_slide(prs)
+copy_decorations(s, ref)
+copy_logo(s, ref, color_hints=['#2E6504'])
+page_header(s, '核心指标', '2024年度数据', C=C)
+kpi_card(s, 0.65, 1.5, 3.8, 1.35, '12.8亿', '年度产值', '+8.3%', C=C)
+kpi_card(s, 4.8, 1.5, 3.8, 1.35, '326万', '服务人口', '+12.1%', C=C)
+kpi_card(s, 8.95, 1.5, 3.8, 1.35, '98.6%', '满意度', '+2.4%', C=C)
+
+s = add_slide(prs)
+copy_decorations(s, ref)
+copy_logo(s, ref, color_hints=['#2E6504'])
+page_header(s, '产业对比', '新旧动能转换', C=C)
+bar_chart(s, 1.5, 1.8, [
+    ('农业', 0.35, '4.5亿'),
+    ('工业', 0.65, '8.2亿'),
+    ('服务业', 0.85, '10.8亿'),
+], max_width=5.0, C=C)
+
+prs.save('output.pptx')
+```
+
+### 注意事项
+
+- **框架页保留**：封面/目录/封底不删除不修改，只新增内容页
+- **copy_decorations** 会跳过长文本（>50字）和图片，保留短装饰文字如"PART ONE"
+- **copy_logo** 只找 GROUP shape（shape_type==6），普通图片不会被当作 LOGO 复制
+- **donut_chart** 是简化版（重叠圆模拟），非精确扇区
+- **颜色缺失**：`_resolve_color()` 找不到角色名时返回 `#000000`，不会崩溃
+- **字体设置**：`build_helpers` 的 `text()` / `multiline()` 使用 paragraph-level 字体（`p.font`），与 Build Script 铁律一的 run-level 不同。这是简化 API 的权衡——VI Build 场景下模板字体继承通常能保证显示正确；如需 run-level 精确控制，可直接使用 python-pptx API
+
+---
+
 ## 6. content.json 内容格式
 
 ### 完整示例
@@ -862,15 +1033,12 @@ else:
 | `bullets` | list[str] | 要点列表 |
 | `image` | str | 图片路径（相对项目目录或绝对路径） |
 | `cards` | list[dict] | 卡片列表，每张含 `title`/`text`/可选 `image` |
-| `diagram` | dict | 图形定义，含 `type` 和 `data`（见第 8 节） |
+| `diagram` | dict | 图形定义，含 `type` 和 `data`（见第 10 节） |
 | `code` | str 或 dict | 代码块：字符串或 `{"source": "...", "language": "python"}` |
 | `exercise` | dict | `{"instructions": str, "duration": str, "steps": list[str]}` |
 | `notes` | str | 演讲者备注（v0.4.0） |
 | `links` | list[dict] | 超链接（v0.4.0） |
 | `chart` | dict | 数据图表（v0.4.0） |
-| `component_type` | str | 组件类型：`"group"` 或 `"smartart"`，触发组件库匹配注入 |
-| `component_category` | str | 组件类别：`process`/`hierarchy`/`infographic`/`swot`/`timeline`/`chart` |
-| `component_variant` | str | 可选，组件变体名 |
 
 ### 图形数据格式别名
 
@@ -996,9 +1164,12 @@ content.json 支持自然格式，Pipeline 自动转换：
 
 ## 8. 组件库数据库（可选补充）
 
-> **注意**：Build 模式的原子级编辑能力（逐元素 x/y/w/h、run-level 字体、Design Token 系统）已可完全替代组件库，且品牌一致性和精度更高。组件库作为可选补充，适合需要快速复用已有图表模板的场景。对于新项目，推荐直接使用 Build 模式从零构建。
+> **注意**：Build 模式和 VI Build 的原子级编辑能力已可完全替代组件库，且品牌一致性和精度更高。组件库依赖已弃用的 Enterprise Pipeline，仅作为可选补充保留。
 
-组件库是从 PPT 素材中提取的图表模板数据库，支持在生成 PPT 时自动匹配和注入专业图表组件（组织架构图、流程图、时间线、SWOT 等），无需从零绘制。
+组件库是从 PPT 素材中提取的图表模板数据库（5,560 组件，SQLite 索引），支持自动匹配和注入专业图表组件。适合需要快速复用已有图表模板的场景，新项目推荐直接用 Build 模式从零构建。
+
+<details>
+<summary>点击展开组件库详细文档</summary>
 
 ### 数据库概览
 
@@ -1006,326 +1177,44 @@ content.json 支持自然格式，Pipeline 自动转换：
 |------|---|
 | 存储位置 | `component_library/index.db`（SQLite）+ `component_library/storage/`（XML 文件） |
 | 当前规模 | 5,560 组件（5,537 group + 23 smartart） |
-| 素材来源 | DEF 目录 124 个 PPT + ABC 目录 7 个 PPT |
 | 压缩方式 | gzip（6.5× 压缩率） |
-| 去重机制 | MD5 checksum（type+category+variant+node_count+XML 前 4KB） |
-
-### 组件分类
-
-| 类别 | 数量 | 说明 |
-|------|------|------|
-| infographic | 4,101 | 信息图、数据展示 |
-| process | 672 | 流程图、步骤图 |
-| hierarchy | 548 | 组织架构、层级图 |
-| chart | 132 | 数据图表 |
-| timeline | 42 | 时间线、里程碑 |
-| swot | 39 | SWOT 分析矩阵 |
-| features | 2 | 功能特性展示 |
-| comparison | 1 | 对比图 |
+| 去重机制 | MD5 checksum |
 
 ### 构建数据库
 
-从 PPT 素材目录批量提取组件并入库：
-
 ```bash
-# 基本用法
-python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录"
-
-# 指定最低节点数（推荐 3，过滤装饰性碎片）
 python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录" --min-node-count 3
-
-# 多个目录依次导入（去重自动跳过已有组件）
-python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录A"
-python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录B"
 ```
-
-**关键参数**：
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `--materials-dir` | 必填 | PPT 素材目录路径（支持子目录递归扫描） |
 | `--min-node-count` | 3 | 最低节点数阈值，低于此值的 GroupShape 被过滤 |
 
-**构建输出示例**：
-
-```
-[INFO] Found 124 PPT files in E:\素材目录
-[INFO] [10/124] added=308 skip=1045 err=0 time=28.1s total=289
-[INFO] [20/124] added=488 skip=1511 err=0 time=17.8s total=769
-...
-[INFO] === BUILD COMPLETE ===
-[INFO] Components added: 5341
-[INFO] Skipped (dedup/empty): 15149
-[INFO] Errors: 0
-[INFO] Total time: 139.7s (1.1s/file)
-```
-
-### min_node_count 阈值选择
-
-| 阈值 | 效果 | 适用场景 |
-|------|------|---------|
-| 1 | 包含所有组件（含单个标签、图标+文字对） | 需要最大素材量 |
-| 2 | 排除纯装饰单节点，保留标签对 | 需要简单组件 |
-| **3（推荐）** | 只保留 3+ 节点的图表级组件 | **质量优先，日常使用** |
-
-**为什么推荐 3**：node_count < 3 的组件本质上是装饰碎片（单个标签、按钮），PrecisionRenderer 已能用 `add_text()`、`add_card()` 等方法从零生成且自动符合品牌规范。组件库的核心价值是复杂图表模板，简单元素从零构建反而更好（品牌一致性、坐标精确）。
-
-### 数据库操作要领
-
-#### 查看数据库状态
+### 数据库操作
 
 ```python
 from ppt_pro_max.enterprise.component_library import ComponentLibrary
 
 lib = ComponentLibrary("component_library/index.db")
-
-# 总体统计
-print(lib.stats())
-# {'total': 5560, 'group': 5537, 'smartart': 23}
-
-# 分类目录
-catalog = lib.catalog()
-for comp_type, categories in catalog.items():
-    for cat, info in categories.items():
-        print(f"  {comp_type}/{cat}: {info['count']} components, nodes {info['min_nodes']}-{info['max_nodes']}")
-
-# 某类目覆盖度
-print(lib.coverage("process"))
-# {'3': 45, '4': 120, '5': 89, ...}
-
-lib.close()
-```
-
-#### 搜索组件
-
-```python
-lib = ComponentLibrary("component_library/index.db")
-
-# 按类型+类别搜索
+print(lib.stats())                           # {'total': 5560, ...}
 results = lib.search(type="group", category="process", limit=10)
-
-# 指定节点数精确匹配
-results = lib.search(type="group", category="hierarchy", node_count=5, limit=5)
-
-# 带标签过滤
-results = lib.search(type="group", category="infographic", tags=["circular"], limit=10)
-
+matched = lib.match({"type": "group", "category": "process", "node_count": 4})
 lib.close()
-```
-
-#### 智能匹配
-
-```python
-# 根据提取数据自动匹配最合适的组件
-element = {"type": "group", "category": "process", "node_count": 4}
-matched = lib.match(element)
-# 优先精确匹配 node_count，无结果则选最接近的
-```
-
-#### 加载组件 XML
-
-```python
-# 加载组件的 XML 模板（gzip 自动解压）
-xml_parts = lib.load_xml(matched["id"])
-# xml_parts = {"group": b"<p:grpSp>...", "img_rId2": b"\x89PNG..."}
-
-# 加载缩略图
-thumb = lib.load_thumbnail(matched["id"])
-```
-
-#### 删除组件
-
-```python
-# 删除单个组件（同时删除存储文件）
-lib.remove(component_id)
-
-# 清空整个数据库（删除 component_library/ 目录）
-import shutil
-shutil.rmtree("component_library", ignore_errors=True)
-```
-
-#### 重建数据库
-
-当需要从零重建（如坐标归一化逻辑更新后）：
-
-```bash
-# 1. 删除旧数据库
-rmdir /s /q component_library
-
-# 2. 重新构建
-python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录" --min-node-count 3
-```
-
-> **重要**：修改了 `group_extractor.py` 的坐标归一化逻辑后，必须重建数据库。旧数据库中的 XML 是非归一化的，无法正确缩放注入。
-
-### 公开 API 查询
-
-无需直接操作数据库，通过公开 API 查询：
-
-```python
-from ppt_pro_max import query_component_library
-
-# 查看完整目录（无参数）
-catalog = query_component_library()
-# {"group": {"infographic": {"count": 4101, ...}, ...}, ...}
-
-# 搜索组件
-results = query_component_library(type="group", category="process", node_count=4)
-# [{"id": 123, "type": "group", "category": "process", ...}, ...]
-
-# 指定数据库路径
-results = query_component_library(type="group", category="swot", component_library="path/to/index.db")
 ```
 
 ### 在 content.json 中使用组件
 
 在 slides 中指定 `component_type` 和 `component_category`，Pipeline 自动从组件库匹配并注入：
 
-```json
-{
-  "slides": [
-    {
-      "goal": "content",
-      "title": "项目流程",
-      "bullets": ["需求分析", "方案设计", "开发实现", "测试上线"],
-      "component_type": "group",
-      "component_category": "process"
-    },
-    {
-      "goal": "content",
-      "title": "组织架构",
-      "bullets": ["CEO", "CTO", "CFO", "VP Engineering"],
-      "component_type": "group",
-      "component_category": "hierarchy"
-    }
-  ]
-}
-```
-
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `component_type` | str | 组件类型：`"group"` 或 `"smartart"` |
-| `component_category` | str | 组件类别：`process`/`hierarchy`/`infographic`/`swot`/`timeline`/`chart`/`comparison`/`features` |
-| `component_variant` | str | 可选，组件变体名 |
-| `component_fit` | str | 缩放模式：`contain`（默认，保持宽高比）、`width`（填满宽度）、`height`（填满高度）、`stretch`（拉伸填满） |
-| `component_bounds` | list[float] | 显式指定位置和大小：`[left, top, width, height]` 英寸，覆盖自动计算 |
+| `component_category` | str | 组件类别：`process`/`hierarchy`/`infographic`/`swot`/`timeline`/`chart` |
+| `component_fit` | str | 缩放模式：`contain`（默认）/ `width` / `height` / `stretch` |
+| `component_bounds` | list[float] | 显式位置和大小：`[left, top, width, height]` 英寸 |
 
-Pipeline 匹配逻辑：
-1. 精确匹配 `type + category + node_count`（node_count 由 bullets 数量推断）
-2. 无精确匹配时，选同 type+category 中 node_count 最接近的
-3. 匹配失败时，回退到 DiagramEngine 或 bullets 列表渲染
-
-### 组件布局控制
-
-组件在页面中的位置和大小由三层控制：
-
-**第一层：自动计算（默认，无需配置）**
-
-系统根据页面元素自动计算内容区域：
-- 有标题：预留顶部 0.9 英寸
-- 有副标题：额外预留 0.5 英寸
-- 有图片：右侧预留 5.3 英寸，内容区域收窄到 7 英寸宽
-- 无图片：内容区域占满 12 英寸宽
-
-**第二层：fit 模式控制缩放方式**
-
-| component_fit | 效果 | 适用场景 |
-|---------------|------|---------|
-| `contain`（默认） | 保持宽高比，居中放置 | 通用，最安全 |
-| `width` | 填满宽度，高度按比例 | 横向流程图、时间线 |
-| `height` | 填满高度，宽度按比例 | 纵向组织架构图 |
-| `stretch` | 拉伸填满 | 仅当组件比例接近区域比例 |
-
-**第三层：显式指定位置和大小（完全控制）**
-
-通过 `component_bounds` 字段精确控制组件的位置和大小（英寸）：
-
-```json
-{
-  "goal": "content",
-  "title": "组织架构",
-  "component_type": "group",
-  "component_category": "hierarchy",
-  "component_bounds": [0.9, 1.5, 5.5, 5.5],
-  "component_fit": "contain",
-  "bullets": ["CEO", "CTO", "CFO", "VP Engineering"]
-}
-```
-
-`component_bounds` 格式：`[left, top, width, height]`（英寸）
-
-| 场景 | component_bounds | 说明 |
-|------|-----------------|------|
-| 全宽居中 | `[0.9, 1.6, 11.5, 5.0]` | 标题下方全宽 |
-| 左半区域 | `[0.9, 1.6, 5.5, 5.0]` | 右侧留给图片 |
-| 右半区域 | `[7.0, 1.6, 5.5, 5.0]` | 左侧文字说明 |
-| 居中偏小 | `[2.5, 2.0, 8.0, 4.0]` | 大标题+居中小图 |
-| 底部横条 | `[0.9, 4.5, 11.5, 2.5]` | 上方留空给其他内容 |
-
-**优先级**：`component_bounds` > 自动计算。如果不指定 `component_bounds`，系统自动根据页面布局计算。
-
-### 坐标变换原理
-
-组件库存储原始 XML + 原始 bounds EMU，注入时做统一缩放+平移：
-
-**变换公式**（对所有 xfrm 元素的 off/chOff/ext/chExt 统一应用）：
-```
-new_pos = (orig_pos - orig_group_offset) × scale + target_offset
-new_size = orig_size × scale
-```
-
-其中 `scale_x = target_width / orig_width`，`scale_y = target_height / orig_height`。
-
-**宽高比保持**：`compute_component_bounds()` 根据组件原始宽高比自动计算目标 bounds：
-
-```python
-from ppt_pro_max.enterprise.component_renderer import ComponentRenderer
-
-# 可用内容区域 (left, top, width, height) 英寸
-content_area = (0.9, 1.6, 11.5, 5.0)
-
-# 组件原始宽高比 (width / height)
-orig_aspect = 4000000 / 3000000  # 从 orig_bounds_emu 获取
-
-# contain: 保持宽高比，组件完整显示在区域内（可能有留白）
-bounds = ComponentRenderer.compute_component_bounds(content_area, orig_aspect, fit="contain")
-
-# width: 填满宽度，高度按比例计算（可能超出区域）
-bounds = ComponentRenderer.compute_component_bounds(content_area, orig_aspect, fit="width")
-
-# height: 填满高度，宽度按比例计算（可能超出区域）
-bounds = ComponentRenderer.compute_component_bounds(content_area, orig_aspect, fit="height")
-
-# stretch: 忽略宽高比，拉伸填满整个区域
-bounds = ComponentRenderer.compute_component_bounds(content_area, orig_aspect, fit="stretch")
-```
-
-| fit 模式 | 效果 | 适用场景 |
-|----------|------|---------|
-| `contain`（默认） | 保持宽高比，居中放置，可能有留白 | 通用，最安全 |
-| `width` | 填满宽度，高度按比例 | 横向流程图、时间线 |
-| `height` | 填满高度，宽度按比例 | 纵向组织架构图 |
-| `stretch` | 拉伸填满，可能变形 | 仅当组件本身接近区域比例时 |
-
-### 数据库路径查找顺序
-
-Pipeline 按以下顺序查找数据库：
-
-1. 用户指定路径（`component_library` 参数）
-2. 项目目录下 `component_library/index.db`
-3. 包目录及上级目录下 `component_library/index.db`
-
-### Beautify 模式与组件库
-
-Beautify full 模式自动使用组件库：
-
-```bash
-# full 模式：提取内容 → 推断 component_type → 匹配组件库 → 重建
-ppt-design "" --beautify client.pptx --style professional
-
-# light 模式：仅替换颜色/字体/背景，不使用组件库
-ppt-design "" --beautify client.pptx --style professional --beautify-mode light
-```
+</details>
 
 ---
 
@@ -1880,21 +1769,12 @@ from ppt_pro_max import generate_ppt
 # FreeStyle
 result = generate_ppt("AI startup pitch", style="dark cyberpunk", motion=7)
 print(result["output_path"])
-
-# Enterprise（已弃用，触发 DeprecationWarning）
-# result = generate_ppt("Investor Pitch", project="./my-project")
 ```
 
 ### 返回值
 
-**FreeStyle:**
 ```python
 {"output_path": "...", "page_count": 10, "strategy": "...", "theme": "..."}
-```
-
-**Enterprise:**
-```python
-{"pipeline": "enterprise", "project": "...", "output_path": "...", "version": 1, "num_slides": 12}
 ```
 
 ---
@@ -1947,6 +1827,8 @@ ppt-design [query] [options]
   --from-version N       基于指定版本修订（已弃用）
   --pages OPS            页面操作（已弃用）
   --history              查看版本历史（已弃用）
+
+组件选项:
   --component-library PATH  组件库数据库路径（可选补充）
 
 美化选项（已弃用）:
@@ -1963,7 +1845,8 @@ ppt-design [query] [options]
 ```
 需求明确度低 ─────→ FreeStyle（快速探索）
 需求明确度高 ─────→ Build Script（精确控制）
-企业 VI 合规 ─────→ Build Script + LLM 分析企业模板
+企业 VI 合规 ─────→ VI Build（基于模板 VI 生成）
+无模板自由设计 ───→ Build Script（从空白画布开始）
 ```
 
 ### 两阶段交付流程
@@ -1978,14 +1861,25 @@ ppt-design "融资路演" --style "warm fintech" --motion 0
 ppt-design "融资路演" --style "elegant luxury" --motion 0
 ```
 
-**阶段二：Build Script 精细交付**
+**阶段二：VI Build 精细交付**
 
-确定风格后，将企业模板交给 LLM 分析提取 Design Token，改写为 build.py 逐页精确控制：
+确定风格后，使用 VI Build 模式基于企业模板精确生成：
 
 ```bash
-# 1. LLM 分析企业模板 → 提取颜色/字体/布局 Token
-# 2. 写入 build.py
-# 3. 生成并验证
+# 1. 分析企业模板
+python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+
+# 2. 将 analysis.txt 交给 LLM，生成 build.py
+
+# 3. 运行生成
+python build.py
+```
+
+或使用 Build Script 从空白画布开始（无模板约束时）：
+
+```bash
+# 1. 手写 build.py（含 Design Token）
+# 2. 生成并验证
 python build.py && python check.py
 ```
 
@@ -2119,8 +2013,32 @@ A: v0.7.0 起内置 12 种 CJK 字体配对（如 Space Grotesk + Microsoft YaHe
 
 **Q: 企业 VI 合规怎么做？**
 
-A: 推荐使用 **Build 模式 + LLM 分析企业模板**：将企业模板 PPT 交给 LLM，提取品牌色、字体、布局等 Design Token，写入 build.py 逐页构建。Enterprise Pipeline 已弃用，不推荐使用。
+A: 推荐使用 **VI Build 模式**：用 `analyze_template.py` 分析企业模板提取 VI Token，LLM 生成 build.py，保留框架页 + 用 `build_helpers` 精确构建新增页。Enterprise Pipeline 已弃用，不推荐使用。
 
 **Q: 组件库还需要用吗？**
 
 A: Build 模式的原子级编辑能力已可完全替代组件库，且品牌一致性和精度更高。组件库适合需要快速复用已有图表模板的场景，但新项目推荐直接用 Build 模式从零构建。
+
+---
+
+## 附录：Enterprise 模式（已弃用）
+
+> **弃用通知**：Enterprise Pipeline 已弃用，存在品牌色覆盖异常、文本槽位丢失、坐标变换偏差等质量问题。调用时会触发 `DeprecationWarning`。
+>
+> **推荐替代方案**：使用 **VI Build 模式**（详见第 5 节）。
+>
+> 如果您需要品牌合规，VI Build 模式是当前唯一推荐的路径。
+
+### ~~旧 Enterprise 用法~~（已弃用）
+
+<details>
+<summary>点击展开已弃用的 Enterprise 文档</summary>
+
+```bash
+# 以下功能已弃用，不推荐使用
+ppt-design "AI Platform" --project . --density 6 --motion 5
+ppt-design "" --project . --pages "-3,2<>5"
+ppt-design "" --project . --history
+```
+
+</details>

@@ -8,10 +8,10 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
 
-| FreeStyle 傻瓜模式 | ~~Enterprise~~ 已弃用 | Build 设计师模式 |
+| FreeStyle 傻瓜模式 | Build 设计师模式 | VI Build 企业模式 |
 |:---:|:---:|:---:|
-| 一句话出PPT | ~~VI合规 + 版本管理~~ | **像素级控制 + 方案对比** |
-| 30秒快速生成 | ~~brand.json 锁死风格~~ | **python-pptx 精确构建** |
+| 一句话出PPT | **像素级控制 + 方案对比** | **基于企业模板 VI 精确生成** |
+| 30秒快速生成 | **python-pptx 精确构建** | **保留框架页 + build_helpers** |
 
 适配 OpenCode · Claude Code · Codex · Cursor
 
@@ -63,16 +63,16 @@
 
 | 特性 | 说明 |
 |------|------|
-| **三模式引擎** | FreeStyle 快速生成 + ~~Enterprise 已弃用~~ + Build Script 逐页精确控制 |
+| **三模式引擎** | FreeStyle 快速生成 + Build Script 逐页精确控制 + VI Build 基于企业模板生成 |
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
 | **ui-ux-pro-max 设计智能** | 192 色彩方案 · 84 风格 · 74 字体 · 161 反模式 — 必需依赖，自动匹配行业/场景 |
 | **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 + 35 种 mood |
-| **5,560+ 图表组件库** | SQLite 索引 + 5,537 GroupShape + 23 SmartArt（Build 原子级编辑可替代，组件库为可选补充） |
+| **5,560+ 图表组件库** | SQLite 索引 + 5,537 GroupShape + 23 SmartArt（依赖已弃用 Enterprise，可选补充） |
 | **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
 | **28 项设计质量升级** | OKLCH 色彩深度 · 阴影层级 · 渐变叠层 · 进度条 · 圆角系统 · CJK 字体配对 · 噪点纹理 · 双栏要点 · 4 种 Hero 布局 · 章节分隔页 · 徽章系统 · 渐变线 · 图片遮罩 · 装饰渲染器 · 代码块重设计 · 卡片升级 · 自适应边距 · 排版比例尺 |
 | **10 种图形引擎** | 流程图/漏斗/时间线/SWOT/矩阵/循环/表格/层级/金字塔/韦恩 |
 | **Build Script 模式** | 10 种页面模板 + Design Token 系统 + 生成后自动检查，交付级质量 |
-| **品牌视觉设计** | 品牌色自动映射：背景色、accent 竖条、品牌色标题/正文、LOGO 定位 |
+| **VI Build 模式** | `analyze_template.py` 提取模板 VI → LLM 生成 build.py → `build_helpers` 精确构建，企业 VI 合规 |
 | **页面修订** | `--pages` 增删改查：删除/交换/移动/插入，内容完整保留 |
 | **版本管理** | v1 → v2 → v3 自动编号，meta.json 记录每页 goal/title |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
@@ -120,21 +120,19 @@ ppt-design "融资路演" --style "dark cyberpunk" \
   --motion 7 --density 6
 ```
 
-### ~~Enterprise~~ 已弃用
-
-> **注意**：Enterprise Pipeline 已弃用，存在品牌色覆盖、文本槽位丢失等质量问题。推荐使用 **Build 模式 + LLM 分析企业模板** 替代，可保持 VI 一致性和像素级精度。
+### VI Build — 基于企业模板精确生成
 
 ```bash
-# 已弃用 — 不推荐使用
-# ppt-design "AI Platform" --project . --density 6 --motion 5
+# Step 1: 分析企业模板
+python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
 
-# 推荐替代方案：Build 模式
-# 1. 用 LLM 分析企业模板提取 Design Token（颜色/字体/布局）
-# 2. 将 Token 写入 build.py，逐页精确控制
-# 3. 自动保持 VI 合规，精度远超 Enterprise
+# Step 2: 将 analysis.txt 交给 LLM，生成 build.py
+
+# Step 3: 运行生成
+python build.py
 ```
 
-详见 [使用手册 §4](docs/usage-guide.md#4-enterprise-模式已弃用)
+> 保留框架页（封面/目录/封底）+ `build_helpers` 精确构建新增页，详见 [使用手册 §5](docs/usage-guide.md#5-vi-build-模式--基于模板-vi-的精确生成)
 
 ### Build Script — 逐页精确控制（推荐模式）
 
@@ -159,7 +157,7 @@ run.font.bold = True
 prs.save("output/presentation.pptx")
 ```
 
-> 10 种页面模板 + Design Token 系统 + 生成后检查脚本，详见 [使用手册 §5](docs/usage-guide.md#5-build-script-模式--精确控制)
+> 10 种页面模板 + Design Token 系统 + 生成后检查脚本，详见 [使用手册 §4](docs/usage-guide.md#4-build-script-模式--精确控制)
 
 ---
 
@@ -173,11 +171,7 @@ prs.save("output/presentation.pptx")
 
 适用：快速探索、风格实验、个人演示
 
-### ~~Enterprise Pipeline~~ 已弃用
-
-> Enterprise Pipeline 已弃用（品牌色覆盖、文本槽位丢失等质量问题）。企业 VI 合规场景请使用 **Build 模式**：LLM 分析企业模板 → 提取 Design Token → build.py 逐页精确控制。
-
-### Build Script 模式（推荐）
+### Build Script 模式
 
 ```
 build.py → Design Token → 页面模板 → python-pptx → .pptx → check.py 验证
@@ -186,22 +180,43 @@ build.py → Design Token → 页面模板 → python-pptx → .pptx → check.p
            一键切换主题   x/y/w/h     run-level 字体
 ```
 
-适用：**最终交付、企业 VI 合规、精确控制、质量保证**
+适用：**最终交付、无模板约束的精确控制、质量保证**
 
-> **推荐工作流**：FreeStyle 原型 → Build Script 精细交付（用 LLM 分析企业模板保持 VI）
+### VI Build 模式
+
+```
+template.pptx → analyze_template.py → LLM 生成 build.py → build_helpers → .pptx
+                      ↓                       ↓                  ↓
+                  提取 VI Token          copy_decorations    kpi_card / bar_chart
+                  色/字/布局            copy_logo           page_header
+```
+
+适用：**企业 VI 合规、必须遵守品牌模板的交付**
+
+> **推荐工作流**：FreeStyle 原型 → VI Build（有企业模板）或 Build Script（无模板）精细交付
 
 ### 项目目录结构
 
+**Build Script 模式：**
+
 ```
 my-project/
-├── template.pptx      # 可选：品牌模板
-├── brand.json         # 可选：品牌规范
-├── content.json       # 可选：真实内容
-├── logo.png           # 可选：公司 LOGO
-├── images/            # 可选：图片池
-└── output/            # 自动生成
-    ├── v1/presentation.pptx + meta.json
-    └── v2/presentation.pptx + meta.json
+├── build.py            # 核心构建脚本
+├── images/             # 本地图片素材
+└── output/             # 生成输出
+    └── presentation.pptx
+```
+
+**VI Build 模式：**
+
+```
+my-project/
+├── build.py            # LLM 生成的构建脚本（使用 build_helpers）
+├── template.pptx       # 企业模板（VI 来源）
+├── analysis.txt        # 模板分析输出（LLM 输入）
+├── images/             # 本地图片素材
+└── output/             # 生成输出
+    └── presentation.pptx
 ```
 
 ---
@@ -227,7 +242,7 @@ my-project/
 }
 ```
 
-> 完整字段说明见 [使用手册](docs/usage-guide.md#5-contentjson-内容格式)
+> 完整字段说明见 [使用手册](docs/usage-guide.md#6-contentjson-内容格式)
 
 ---
 
@@ -252,11 +267,16 @@ my-project/
 }
 ```
 
-> 完整字段说明见 [使用手册](docs/usage-guide.md#6-brandjson-品牌格式)
+> 完整字段说明见 [使用手册](docs/usage-guide.md#7-brandjson-品牌格式)
 
 ---
 
 ## ✏️ 页面修订 — 增删改查
+
+> 页面修订依赖已弃用的 Enterprise Pipeline。新项目请使用 Build Script 或 VI Build 模式。
+
+<details>
+<summary>点击展开已弃用的页面修订语法</summary>
 
 ```bash
 # 删除第 3 页
@@ -265,17 +285,11 @@ ppt-design "" --project . --pages "-3"
 # 交换第 2 和第 5 页
 ppt-design "" --project . --pages "2<>5"
 
-# 将第 10 页移到第 3 页后
-ppt-design "" --project . --pages "10>3"
-
-# 在第 6 页后插入空白页
-ppt-design "" --project . --pages "+6"
-
 # 组合操作
 ppt-design "" --project . --pages "-3,2<>5,10>3,+6"
 ```
 
-> 完整语法见 [使用手册](docs/usage-guide.md#7-页面修订语法)
+</details>
 
 ---
 
@@ -407,6 +421,8 @@ PPT-Design-Skill/
 ├── src/ppt_pro_max/
 │   ├── __init__.py                   # generate_ppt() API
 │   ├── cli.py                        # ppt-design CLI
+│   ├── analyze_template.py           # 模板分析脚本（VI Build Step 1）
+│   ├── build_helpers.py              # Build 辅助库（VI Build Step 3）
 │   ├── enterprise/                   # ~~Enterprise Pipeline~~（已弃用）
 │   │   ├── pipeline.py               # ~~主编排器~~（已弃用）
 │   │   ├── precision_renderer.py     # 统一渲染器（8 种 goal 布局 + 28 项设计升级）
