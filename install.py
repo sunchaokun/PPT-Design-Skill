@@ -359,8 +359,10 @@ def main():
     # --- Global install (always, unless --no-global) ---
     if not args.no_global:
         global_platforms = detect_global_platforms()
+        if args.platform and args.platform != "all":
+            global_platforms = [p for p in global_platforms if p == args.platform]
         if global_platforms:
-            print(f"Detected global platforms: {', '.join(PLATFORMS[p]['desc'] for p in global_platforms)}")
+            print(f"Installing to global: {', '.join(PLATFORMS[p]['desc'] for p in global_platforms)}")
             print()
             for platform in global_platforms:
                 info = PLATFORMS[platform]
@@ -369,8 +371,7 @@ def main():
                 if result:
                     all_installed.append(result)
         else:
-            print("No global AI platforms detected. Skipping global install.")
-            print("Install a platform first, then re-run install.py.")
+            print("No matching global AI platforms detected. Skipping global install.")
         print()
 
     # --- Project-level install (only if --project specified) ---
