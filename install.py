@@ -4,10 +4,10 @@
 Auto-detects AI coding platform, installs skill files + dependencies.
 
 Usage:
-    python install.py                  # Auto-detect + install to project dir
-    python install.py --global         # Install to global dirs for all platforms
+    python install.py                  # Auto-detect + install to global dirs
+    python install.py --project        # Also install to project-level dirs
+    python install.py --no-global      # Skip global, only --project
     python install.py --platform claude  # Install for specific platform
-    python install.py --platform all    # Install for all platforms
     python install.py --check          # Check current installation status
 """
 
@@ -332,6 +332,8 @@ def main():
     parser.add_argument("--target", "-t", help="Target project directory (default: current)")
     parser.add_argument("--no-global", dest="no_global", action="store_true",
                         help="Skip global installation (global is installed by default)")
+    parser.add_argument("--project", dest="project_install", action="store_true",
+                        help="Also install to project-level .claude/.opencode etc dirs")
     parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing installation")
     parser.add_argument("--check", "-c", action="store_true", help="Check installation status only")
     parser.add_argument("--no-pip", action="store_true", help="Skip pip install")
@@ -371,43 +373,43 @@ def main():
             print("Install a platform first, then re-run install.py.")
         print()
 
-    # --- Project-level install ---
-    if args.platform == "all":
-        platforms_to_install = list(PLATFORMS.keys())
-    elif args.platform:
-        platforms_to_install = [args.platform]
-    else:
-        detected = detect_platforms(target_dir)
-        if detected:
-            platforms_to_install = detected
-            print(f"Auto-detected platforms: {', '.join(PLATFORMS[p]['desc'] for p in detected)}")
+    # --- Project-level install (only if --project specified) ---
+    if args.project_install:
+        if args.platform == "all":
+            platforms_to_install = list(PLATFORMS.keys())
+        elif args.platform:
+            platforms_to_install = [args.platform]
         else:
-            print("No AI coding platforms detected in current directory.")
-            print("Installing for common platforms (claude, opencode, codex, cursor)...")
-            platforms_to_install = ["claude", "opencode", "codex", "cursor"]
+            detected = detect_platforms(target_dir)
+            if detected:
+                platforms_to_install = detected
+                print(f"Auto-detected project platforms: {', '.join(PLATFORMS[p]['desc'] for p in detected)}")
+            else:
+                platforms_to_install = ["claude", "opencode", "codex", "cursor"]
+                print(f"No project platforms detected. Installing for: {', '.join(PLATFORMS[p]['desc'] for p in platforms_to_install)}")
 
-    print(f"\nInstalling for: {', '.join(PLATFORMS.get(p, {}).get('desc', p) for p in platforms_to_install)}")
-    print()
+        print(f"\nInstalling to project: {', '.join(PLATFORMS.get(p, {}).get('desc', p) for p in platforms_to_install)}")
+        print()
 
-    for platform in platforms_to_install:
-        info = PLATFORMS.get(platform)
-        if not info:
-            print(f"  [SKIP] Unknown platform: {platform}")
-            continue
-        dest_dir = target_dir / info["project_dir"] / "skills" / SKILL_NAME
-        result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (project)", force=args.force, project_root=project_root)
-        if result:
-            all_installed.append(result)
+        for platform in platforms_to_install:
+            info = PLATFORMS.get(platform)
+            if not info:
+                print(f"  [SKIP] Unknown platform: {platform}")
+                continue
+            dest_dir = target_dir / info["project_dir"] / "skills" / SKILL_NAME
+            result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (project)", force=args.force, project_root=project_root)
+            if result:
+                all_installed.append(result)
 
-    # Also copy AGENTS.md to project root
-    agents_src = source_skill_dir / "AGENTS.md"
-    if agents_src.exists():
-        root_agents = target_dir / "AGENTS.md"
-        if not root_agents.exists() or args.force:
-            try:
-                shutil.copy2(agents_src, root_agents)
-            except PermissionError:
-                print(f"  [WARN] Cannot overwrite {root_agents} (file locked)")
+        # Also copy AGENTS.md to project root
+        agents_src = source_skill_dir / "AGENTS.md"
+        if agents_src.exists():
+            root_agents = target_dir / "AGENTS.md"
+            if not root_agents.exists() or args.force:
+                try:
+                    shutil.copy2(agents_src, root_agents)
+                except PermissionError:
+                    print(f"  [WARN] Cannot overwrite {root_agents} (file locked)")
 
     # --- pip install ---
     if not args.no_pip:
