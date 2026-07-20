@@ -65,7 +65,8 @@ python install.py
 pip install -e .
 
 # 单独安装 ui-ux-pro-max（必需依赖）
-npx ui-ux-pro-max-cli init --ai opencode
+npm install -g ui-ux-pro-max-cli
+uipro init --ai <your-platform>
 ```
 
 ### 一句话生成

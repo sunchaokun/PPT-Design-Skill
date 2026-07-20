@@ -54,7 +54,8 @@ python -m ruff check src/
 - Python 3.x
 - **ui-ux-pro-max skill** is a **required** dependency (not optional):
   ```bash
-  npx ui-ux-pro-max-cli init --ai opencode
+  npm install -g ui-ux-pro-max-cli
+  uipro init --ai <your-platform>
   ```
   If not found, the system raises `UiUxProMaxNotFoundError` at runtime.
   Install location is auto-detected (see `adapters/ui_ux_adapter.py` search order).

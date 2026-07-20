@@ -324,7 +324,7 @@ results = query_component_library(type="group", category="hierarchy", node_count
 | **Build** | Designers / AI | Pixel-perfect, from scratch | python-pptx script = source of truth |
 | **VI Build** | Designers / AI | Pixel-perfect, based on template VI | analyze_template → build_helpers script |
 
-### FreeStyle — 傻瓜模式
+### FreeStyle — 自由模式
 
 One sentence, one PPT. Simplest, fastest way to create a presentation.
 
@@ -604,7 +604,7 @@ python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材B"
 - Pillow >= 10.0 (required)
 - lxml >= 4.9.0 (required)
 - **ui-ux-pro-max** (required — NO fallback)
-  - Install: `npx ui-ux-pro-max-cli init --ai opencode`
+  - Install: `npm install -g ui-ux-pro-max-cli && uipro init --ai <your-platform>`
   - Or set `UX_PRO_MAX_DIR` env var
   - Missing → `UiUxProMaxNotFoundError`, system will NOT start
   - All design decisions flow through ui-ux-pro-max — auto-selected per industry

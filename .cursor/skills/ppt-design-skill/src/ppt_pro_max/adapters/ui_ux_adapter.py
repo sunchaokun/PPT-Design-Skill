@@ -65,7 +65,10 @@ def _search_skill_root() -> Path | None:
 
     try:
         this_file = Path(__file__).resolve()
-    except IndexError:
+    except Exception:
+        this_file = Path.cwd()
+
+    if not this_file.exists():
         this_file = Path.cwd()
 
     home = Path.home()
@@ -83,7 +86,9 @@ def _search_skill_root() -> Path | None:
 
     for parent in this_file.parents:
         if (parent / "SKILL.md").exists() and (parent / "src").exists():
-            skill_dir_candidates.append(parent.parent / "ui-ux-pro-max")
+            sibling = parent.parent / "ui-ux-pro-max"
+            if sibling != parent:
+                skill_dir_candidates.append(sibling)
             break
 
     skill_dir_candidates.extend([

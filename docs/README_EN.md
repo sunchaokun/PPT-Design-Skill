@@ -83,11 +83,15 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# One-click install — auto-detect AI platform + install skill + pip deps
+# One-click install — auto-detect AI platform + install skill + pip deps + ui-ux-pro-max
 python install.py
 
 # Manual install
 pip install -e .
+
+# Install ui-ux-pro-max separately (required dependency)
+npm install -g ui-ux-pro-max-cli
+uipro init --ai <your-platform>
 ```
 
 ### FreeStyle — Generate from a Sentence
