@@ -176,6 +176,15 @@ def detect_platforms(target_dir: Path) -> list[str]:
     return detected
 
 
+def detect_global_platforms() -> list[str]:
+    detected = []
+    for name, info in PLATFORMS.items():
+        global_base = Path.home() / info["global_path"]
+        if global_base.exists():
+            detected.append(name)
+    return detected
+
+
 def _read_skill_version(skill_dir: Path) -> str:
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
@@ -347,12 +356,19 @@ def main():
 
     # --- Global install (always, unless --no-global) ---
     if not args.no_global:
-        print("Installing to global directories...\n")
-        for platform, info in PLATFORMS.items():
-            dest_dir = Path.home() / info["global_path"] / SKILL_NAME
-            result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (global)", force=args.force, project_root=project_root)
-            if result:
-                all_installed.append(result)
+        global_platforms = detect_global_platforms()
+        if global_platforms:
+            print(f"Detected global platforms: {', '.join(PLATFORMS[p]['desc'] for p in global_platforms)}")
+            print()
+            for platform in global_platforms:
+                info = PLATFORMS[platform]
+                dest_dir = Path.home() / info["global_path"] / SKILL_NAME
+                result = install_to_dir(source_skill_dir, dest_dir, f"{info['desc']} (global)", force=args.force, project_root=project_root)
+                if result:
+                    all_installed.append(result)
+        else:
+            print("No global AI platforms detected. Skipping global install.")
+            print("Install a platform first, then re-run install.py.")
         print()
 
     # --- Project-level install ---
