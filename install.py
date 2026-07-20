@@ -321,8 +321,8 @@ def main():
     )
     parser.add_argument("--platform", "-p", help="Specific platform (claude, opencode, codex, cursor, all)")
     parser.add_argument("--target", "-t", help="Target project directory (default: current)")
-    parser.add_argument("--global", dest="global_install", action="store_true",
-                        help="Install to global home dirs for all platforms")
+    parser.add_argument("--no-global", dest="no_global", action="store_true",
+                        help="Skip global installation (global is installed by default)")
     parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing installation")
     parser.add_argument("--check", "-c", action="store_true", help="Check installation status only")
     parser.add_argument("--no-pip", action="store_true", help="Skip pip install")
@@ -345,8 +345,8 @@ def main():
 
     all_installed = []
 
-    # --- Global install ---
-    if args.global_install:
+    # --- Global install (always, unless --no-global) ---
+    if not args.no_global:
         print("Installing to global directories...\n")
         for platform, info in PLATFORMS.items():
             dest_dir = Path.home() / info["global_path"] / SKILL_NAME
