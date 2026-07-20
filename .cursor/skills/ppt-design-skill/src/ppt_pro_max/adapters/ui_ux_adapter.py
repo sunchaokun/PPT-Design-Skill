@@ -2,7 +2,8 @@
 
 **ui-ux-pro-max is a required dependency.** It must be installed first:
 
-    npx ui-ux-pro-max-cli init --ai opencode
+    npm install -g ui-ux-pro-max-cli
+    uipro init --ai <your-platform>
 
 Search order for locating the skill:
   1. Environment variable UX_PRO_MAX_DIR (explicit override)
@@ -37,7 +38,8 @@ _UX_FOUND_PATH: str | None = None
 _INSTALL_INSTRUCTIONS = (
     "ui-ux-pro-max is required but not found.\n"
     "Install it first:\n"
-    "  npx ui-ux-pro-max-cli init --ai opencode\n"
+    "  npm install -g ui-ux-pro-max-cli\n"
+    "  uipro init --ai <your-platform>\n"
     "Or set the UX_PRO_MAX_DIR environment variable to its location.\n"
     "Searched locations:\n"
     "  - $UX_PRO_MAX_DIR\n"

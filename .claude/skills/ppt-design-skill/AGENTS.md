@@ -35,7 +35,7 @@ python -m ruff check src/
 
 ### Enterprise Pipeline (P1-P8 unified)
 
-- `src/ppt_pro_max/enterprise/pipeline.py` — Orchestration: template-clone path (when visual DNA exists) or PrecisionRenderer (no template); `run_beautify()` for beautify mode; `_run_template_clone()` for clone+expand+DeliveryGate
+- `src/ppt_pro_max/enterprise/pipeline.py` — Orchestration: always uses PrecisionRenderer (no dual-path); `run_beautify()` for beautify mode
 - `src/ppt_pro_max/enterprise/precision_renderer.py` — Unified renderer: `render_slide()` dispatches by goal (hook→hero, content→bullets, features→cards, data→chart, code→code-block, exercise→exercise, overview→sidebar)
 - `src/ppt_pro_max/enterprise/scanner.py` — Scans project dir for template.pptx, brand.json, content.json, README.md, images
 - `src/ppt_pro_max/enterprise/content_parser.py` — Parses content.json AND README.md (P4: H1→pages, H2→bullets, code blocks, tables, images, goal inference with English+Chinese keywords)
@@ -47,8 +47,6 @@ python -m ruff check src/
 - `src/ppt_pro_max/enterprise/ole_extractor.py` — P12: OLE/embedded object metadata extraction
 - `src/ppt_pro_max/enterprise/component_library.py` — P13: SQLite-indexed component library (search/match/add/bulk_import/checksum dedup)
 - `src/ppt_pro_max/enterprise/component_renderer.py` — P14: Component rendering bridge (match→fill data→apply brand colors→inject to slide)
-- `src/ppt_pro_max/enterprise/design_dna_extractor.py` — Template DNA extraction + clone_and_patch + expand_and_patch + plan_pages + content zone rerender
-- `src/ppt_pro_max/enterprise/delivery_gate.py` — Quality check (13 items) + auto-fix + report formatting
 - `src/ppt_pro_max/renderer/theme_composer.py` — 35 moods (P3: added international/cream/frosted/mckinsey/consulting/pastel/retro/government/legal/pharma/realestate/automotive/aviation/energy/telecom/logistics)
 
 ## Prerequisites
@@ -70,13 +68,8 @@ python -m ruff check src/
 - **Cache-first**: All image engines check cache before API call to prevent duplicate charges
 - **Source of truth**: `src/ppt_pro_max/` — never modify ui-ux-pro-max
 - **Windows**: Use `python` not `python3`
-- **Pipeline unified (P2)**: Pipeline renders via PrecisionRenderer.render_slide() when no template; uses clone_and_patch when template has visual DNA
+- **Pipeline unified (P2)**: Pipeline always renders via PrecisionRenderer.render_slide(), never via EnterpriseRenderer dual-path
 - **Content priority**: content.json > README.md > StoryPlanner (P4 integration)
-- **Template-clone path**: When template.pptx has visual DNA → extract DNA → plan_pages → expand_and_patch → DeliveryGate → deliver (never re-render from scratch)
-- **Composite titles**: Multi-textbox titles (e.g., "乡/村/振/兴") — replace first zone, clear rest
-- **Content zone rerender**: Zone mismatch → keep shell (background+decorations+title), clear content area, PrecisionRenderer rerenders with DNA brand_spec
-- **layout field**: bullets/cards/process/hierarchy/timeline/swot/table/code/chart/auto — controls content zone rendering
-- **DeliveryGate**: 13 checks, fatal items must be zero before delivery, auto-fix up to 2 rounds
 - **Image assignment flow**: match_images() → assign_images_by_size() → auto_generate_image_prompts() → ImageFetcher (P5 integration)
 - **Proposal flow**: `generate_ppt(proposal=True)` → 3 preview PPTs → user picks → `generate_ppt(confirmed_proposal="B")` (P6-P7)
 - **Beautify flow**: `generate_ppt(beautify="client.pptx", style="professional")` → SlideExtractor → PrecisionRenderer (P9-P10)
@@ -111,7 +104,6 @@ python -m ruff check src/
 | P14 | ComponentRenderer (match→fill→brand→inject) | Done | 3 in test_p9_p14.py |
 | P15 | Component Library Integration (catalog+API+content fields+renderer+beautify) | Done | 38 in test_component_integration.py |
 | DQ | Design Quality Upgrades (Tier 1+2+3, 28 upgrades) | Done | 95 in test_design_quality.py + 25 in test_design_integration.py |
-| TC | Template Clone Pipeline (expand+plan+delivery+rerender) | Done | 29 in test_template_clone_pipeline.py |
 
 ## End-to-End Evaluation
 
