@@ -27,7 +27,7 @@ for _stream_name in ("stdout", "stderr"):
         except Exception:
             pass
 
-VERSION = "0.7.0"
+VERSION = "0.9.0"
 SKILL_NAME = "ppt-design-skill"
 
 # Source of truth: .opencode/skills/ppt-design-skill/
@@ -155,7 +155,7 @@ def copy_skill(source_dir: Path, dest_dir: Path, force: bool = False) -> bool:
 
 
 def _copy_data_assets(project_root: Path, dest_dir: Path) -> None:
-    for asset_name in ("component_library", "data"):
+    for asset_name in ("data",):
         src = project_root / asset_name
         if not src.exists():
             continue
@@ -192,13 +192,10 @@ def _read_skill_version(skill_dir: Path) -> str:
 def _skill_status(skill_dir: Path) -> str:
     skill_md = skill_dir / "SKILL.md"
     has_src = (skill_dir / "src" / "ppt_pro_max").exists()
-    has_clib = (skill_dir / "component_library" / "index.db").exists()
     has_data = (skill_dir / "data").exists()
     if skill_md.exists() and has_src:
         ver = _read_skill_version(skill_dir)
         parts = []
-        if not has_clib:
-            parts.append("no component_library")
         if not has_data:
             parts.append("no data")
         suffix = f" [{', '.join(parts)}]" if parts else ""
@@ -341,7 +338,7 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"  PPT Design Skill v{VERSION} — Installer")
-    print("  40,000+ style combos · 28 design quality upgrades · 5 image engines")
+    print("  3 modes · 40,000+ style combos · 28 design quality upgrades · 6 image engines")
     print(f"{'='*60}\n")
 
     print(f"  Source: {source_skill_dir}\n")
