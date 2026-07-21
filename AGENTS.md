@@ -11,6 +11,25 @@ AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand 
 python -m ppt_pro_max "AI startup investor pitch" --style "dark cyberpunk" --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY
 ```
 
+### Standalone Image Generation
+```bash
+# AI image generation (no PPT needed)
+python -m ppt_pro_max image "futuristic AI city" --llm-provider seedream --llm-api-key $ARK_API_KEY
+
+# Search stock photos
+python -m ppt_pro_max image "team meeting" --image-mode search --unsplash-key $KEY
+
+# Auto mode: AI generation → fall back to search
+python -m ppt_pro_max image "product launch" --llm-provider seedream -v
+```
+
+Python API:
+```python
+from ppt_pro_max import fetch_image
+result = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream", llm_api_key="...")
+print(result["path"])  # Local file path
+```
+
 ### Run Tests
 ```bash
 python -m pytest tests/ -q
@@ -25,7 +44,7 @@ python -m ruff check src/
 
 4-phase pipeline: StoryPlanner → DesignDecider → ContentGenerator → PPTRenderer
 
-- `src/ppt_pro_max/__init__.py` — `generate_ppt()` API (entry point)
+- `src/ppt_pro_max/__init__.py` — `generate_ppt()` + `fetch_image()` API (entry point)
 - `src/ppt_pro_max/planner/story_planner.py` — Phase 1: narrative planning
 - `src/ppt_pro_max/decider/design_decider.py` — Phase 2: design decisions
 - `src/ppt_pro_max/content/content_generator.py` — Phase 3: content generation

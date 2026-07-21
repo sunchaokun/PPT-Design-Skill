@@ -12,7 +12,7 @@ for _stream_name in ("stdout", "stderr"):
         except Exception:
             pass
 
-from ppt_pro_max import generate_ppt  # noqa: E402
+from ppt_pro_max import generate_ppt, fetch_image  # noqa: E402
 
 
 def _load_dotenv():
@@ -38,8 +38,98 @@ def _load_dotenv():
             return
 
 
+def _add_image_options(parser):
+    img = parser.add_argument_group("image options")
+    img.add_argument(
+        "--image-mode",
+        choices=["placeholder", "search", "generate", "enhance", "auto"],
+        default="auto",
+        help="Image mode: placeholder, search (Unsplash/Pexels), generate (AI), enhance (Kimi+search), auto (generate→search)",
+    )
+    img.add_argument("--fetch-images", action="store_true", help="Shortcut for --image-mode search")
+    img.add_argument("--unsplash-key", help="Unsplash API access key (or set UNSPLASH_ACCESS_KEY)")
+    img.add_argument("--pexels-key", help="Pexels API key (or set PEXELS_API_KEY)")
+    img.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot", "gemini", "google"], help="LLM image provider")
+    img.add_argument("--llm-api-key", help="LLM API key (or set PPT_IMAGE_LLM_API_KEY)")
+    img.add_argument("--llm-base-url", help="LLM API base URL override")
+    img.add_argument("--llm-model", help="LLM model name override")
+    img.add_argument("--no-auto-detect", action="store_true", help="Disable auto-detection of LLM config from host tools")
+
+
+def _build_image_config(args):
+    cfg = {}
+    if getattr(args, "unsplash_key", None):
+        cfg["unsplash_access_key"] = args.unsplash_key
+    if getattr(args, "pexels_key", None):
+        cfg["pexels_api_key"] = args.pexels_key
+    if getattr(args, "llm_provider", None):
+        cfg["llm_provider"] = args.llm_provider
+    if getattr(args, "llm_api_key", None):
+        cfg["llm_api_key"] = args.llm_api_key
+    if getattr(args, "llm_base_url", None):
+        cfg["llm_base_url"] = args.llm_base_url
+    if getattr(args, "llm_model", None):
+        cfg["llm_model"] = args.llm_model
+    if getattr(args, "no_auto_detect", False):
+        cfg["auto_detect"] = False
+    return cfg
+
+
+def _cmd_image(args):
+    mode = args.image_mode
+    if args.fetch_images:
+        mode = "search"
+
+    result = fetch_image(
+        keywords=args.keywords,
+        mode=mode,
+        emotion=args.emotion or "",
+        goal=args.goal or "",
+        width=args.width,
+        height=args.height,
+        llm_provider=args.llm_provider,
+        llm_api_key=args.llm_api_key,
+        llm_base_url=args.llm_base_url,
+        llm_model=args.llm_model,
+        unsplash_access_key=args.unsplash_key,
+        pexels_api_key=args.pexels_key,
+        auto_detect=not args.no_auto_detect,
+    )
+
+    if result["path"]:
+        print(result["path"])
+    else:
+        print("No image found", file=sys.stderr)
+        sys.exit(1)
+
+    if args.verbose:
+        for k, v in result.items():
+            if k != "path":
+                print(f"  {k}: {v}")
+
+
+def _run_image_command(argv):
+    parser = argparse.ArgumentParser(
+        prog="ppt-design image",
+        description="Generate or fetch images independently using Seedream / GPT Image / DALL-E / Gemini / Wanx / Unsplash / Pexels",
+    )
+    parser.add_argument("keywords", help='Image keywords, e.g. "AI startup futuristic city"')
+    parser.add_argument("--emotion", help="Emotion hint: curiosity, hope, confidence, warmth, urgency, ...")
+    parser.add_argument("--goal", help="Slide goal: hook, problem, solution, features, cta, ...")
+    parser.add_argument("--width", type=int, default=1920, help="Image width in pixels (default: 1920)")
+    parser.add_argument("--height", type=int, default=1080, help="Image height in pixels (default: 1080)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print extra info (mode, provider, etc.)")
+    _add_image_options(parser)
+    args = parser.parse_args(argv)
+    _cmd_image(args)
+
+
 def main():
     _load_dotenv()
+
+    if len(sys.argv) > 1 and sys.argv[1] == "image":
+        _run_image_command(sys.argv[2:])
+        return
 
     parser = argparse.ArgumentParser(
         prog="ppt-design",
@@ -71,10 +161,11 @@ def main():
     img_group.add_argument("--fetch-images", action="store_true", help="Shortcut for --image-mode search")
     img_group.add_argument("--unsplash-key", help="Unsplash API access key (or set UNSPLASH_ACCESS_KEY)")
     img_group.add_argument("--pexels-key", help="Pexels API key (or set PEXELS_API_KEY)")
-    img_group.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot"], help="LLM image provider")
+    img_group.add_argument("--llm-provider", choices=["seedream", "doubao", "volcengine", "gpt-image", "dalle", "openai", "wanx", "tongyi", "aliyun", "kimi", "moonshot", "gemini", "google"], help="LLM image provider")
     img_group.add_argument("--llm-api-key", help="LLM API key (or set PPT_IMAGE_LLM_API_KEY)")
     img_group.add_argument("--llm-base-url", help="LLM API base URL override")
     img_group.add_argument("--llm-model", help="LLM model name override")
+    img_group.add_argument("--no-auto-detect", action="store_true", help="Disable auto-detection of LLM config from host tools (opencode/claude-code/codex)")
 
     parser.add_argument("--persist", action="store_true", help="Persist design system as MASTER.md")
     parser.add_argument("--dry-run", action="store_true", help="Output design decisions only")
@@ -107,21 +198,12 @@ def main():
     if args.review_file and not args.review:
         parser.error("--review-file requires --review")
 
-    image_config = {}
-    if args.unsplash_key:
-        image_config["unsplash_access_key"] = args.unsplash_key
-    if args.pexels_key:
-        image_config["pexels_api_key"] = args.pexels_key
-    if args.llm_provider:
-        image_config["llm_provider"] = args.llm_provider
-    if args.llm_api_key:
-        image_config["llm_api_key"] = args.llm_api_key
-    if args.llm_base_url:
-        image_config["llm_base_url"] = args.llm_base_url
-    if args.llm_model:
-        image_config["llm_model"] = args.llm_model
+    image_config = _build_image_config(args)
 
     image_mode = args.image_mode
+
+    if args.fetch_images:
+        image_mode = "search"
 
     if args.component_catalog or args.component_search_type:
         from ppt_pro_max import query_component_library
@@ -183,6 +265,7 @@ def main():
             beautify=args.beautify,
             beautify_mode=args.beautify_mode,
             component_library=args.component_library,
+            auto_detect=not args.no_auto_detect,
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
@@ -235,6 +318,7 @@ def main():
                 from_version=args.from_version,
                 pages=args.pages,
                 history=False,
+                auto_detect=not args.no_auto_detect,
             )
             if result.get("error"):
                 print(f"Error: {result['error']}", file=sys.stderr)

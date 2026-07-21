@@ -1,6 +1,6 @@
 ---
 name: ppt-design-skill
-version: 0.9.0
+version: 0.9.1
 description: "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Build Script (pixel-perfect), VI Build (enterprise template). Requires ui-ux-pro-max for 192 palettes, 84 styles, 74 font pairs, 161 anti-patterns. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style] [--fetch-images] [--build]"
 license: MIT
@@ -460,11 +460,21 @@ prs.save('output.pptx')
 ### Python API
 
 ```python
-from ppt_pro_max import generate_ppt
+from ppt_pro_max import generate_ppt, fetch_image
 
 result = generate_ppt("AI startup pitch", style="dark cyberpunk", fetch_images=True)
 result = generate_ppt("路演", project="./my-project", density=6)
 print(f"Generated: {result['output_path']}, {result['page_count']} pages")
+
+# Standalone image generation (no PPT needed)
+img = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream", llm_api_key="...")
+print(img["path"])  # Local file path
+
+# Search stock photos
+img = fetch_image("team meeting", mode="search", unsplash_access_key="...")
+
+# Auto: try AI generation, fall back to search
+img = fetch_image("product launch", mode="auto", llm_provider="seedream", llm_api_key="...")
 ```
 
 ## content.json Format
@@ -530,6 +540,44 @@ print(f"Generated: {result['output_path']}, {result['page_count']} pages")
 
 Modes: `placeholder` (default), `search` (Unsplash/Pexels), `generate` (AI), `enhance` (Kimi). Cache-first — same image never generated twice.
 
+### Standalone Image Generation (No PPT Required)
+
+Use `fetch_image()` API or `ppt-design image` CLI to generate/fetch images independently.
+
+**CLI:**
+```bash
+# AI image generation
+python -m ppt_pro_max image "futuristic AI city" --llm-provider seedream --llm-api-key $ARK_API_KEY
+
+# Search stock photos
+python -m ppt_pro_max image "team meeting" --image-mode search --unsplash-key $KEY
+
+# Auto mode: AI generation → fall back to search
+python -m ppt_pro_max image "product launch" --llm-provider seedream -v
+
+# Custom size
+python -m ppt_pro_max image "AI robot" --width 2560 --height 1440 --llm-provider seedream
+```
+
+**Python API:**
+```python
+from ppt_pro_max import fetch_image
+
+# Generate AI image
+result = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream", llm_api_key="...")
+print(result["path"])  # Local file path, or None
+
+# Search stock photos
+result = fetch_image("team meeting", mode="search", unsplash_access_key="...")
+
+# Auto: try AI → fall back to search
+result = fetch_image("product launch", mode="auto", llm_provider="seedream", llm_api_key="...")
+```
+
+**Parameters:** `keywords` (required), `mode` (placeholder/search/generate/enhance/auto, default auto), `emotion` (curiosity/hope/confidence/warmth/urgency/fear), `goal` (hook/problem/solution/features/cta), `width` (default 1920), `height` (default 1080), `llm_provider`, `llm_api_key`, `auto_detect` (default True).
+
+**Returns:** `{"path": str|None, "mode": str, "provider": str, "keywords": str, "width": int, "height": int}`
+
 ## Enterprise Project Structure
 
 ```
@@ -563,6 +611,7 @@ my-project/
 
 ```
 ppt-design "query" [options]
+ppt-design image "keywords" [image-options]
 
   --style TEXT          Natural language style
   --palette/--fonts/--decoration/--layout-variant  Atom control
@@ -581,6 +630,23 @@ ppt-design "query" [options]
   --beautify-mode MODE  light|full
   --component-library PATH  DB path (auto-detected)
   -o, --output PATH     Output .pptx path
+
+# Standalone Image (ppt-design image)
+  keywords              Image keywords (required)
+  --image-mode MODE     placeholder|search|generate|enhance|auto
+  --fetch-images        Shortcut for --image-mode search
+  --emotion EMOTION     Emotion hint (curiosity, hope, confidence, warmth, urgency)
+  --goal GOAL           Slide goal (hook, problem, solution, features, cta)
+  --width N             Image width (default: 1920)
+  --height N            Image height (default: 1080)
+  -v, --verbose         Print extra info (mode, provider, etc.)
+  --llm-provider PROV   seedream|gpt-image|dalle|gemini|wanx|kimi
+  --llm-api-key KEY     API key (or .env)
+  --llm-base-url URL    API base URL override
+  --llm-model MODEL     Model name override
+  --unsplash-key KEY    Unsplash API key
+  --pexels-key KEY      Pexels API key
+  --no-auto-detect      Disable auto-detection of LLM config
 ```
 
 ## Page Revision Syntax

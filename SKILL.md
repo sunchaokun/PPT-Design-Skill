@@ -1,6 +1,6 @@
 ---
 name: ppt-design-skill
-version: 0.7.0
+version: 0.9.1
 description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Dual-mode: FreeStyle + Enterprise. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style-description] [--fetch-images] [--project DIR] [--proposal]"
 license: MIT
@@ -130,7 +130,7 @@ python -m ppt_pro_max "培训" --project ./my-project --business-mode education
 ## Python API
 
 ```python
-from ppt_pro_max import generate_ppt
+from ppt_pro_max import generate_ppt, fetch_image
 
 # FreeStyle
 result = generate_ppt("AI startup pitch", style="dark cyberpunk", fetch_images=True)
@@ -145,6 +145,16 @@ result = generate_ppt("", project=".", pages="-3,2<>5")
 result = generate_ppt("", project=".", history=True)
 
 print(f"Generated: {result['output_path']}, {result['page_count']} pages")
+
+# Standalone image generation (no PPT needed)
+img = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream", llm_api_key="...")
+print(img["path"])  # Local file path
+
+# Search stock photos
+img = fetch_image("team meeting", mode="search", unsplash_access_key="...")
+
+# Auto: try AI generation, fall back to search
+img = fetch_image("product launch", mode="auto", llm_provider="seedream", llm_api_key="...")
 ```
 
 ## 4-Phase Pipeline
@@ -193,6 +203,64 @@ Natural language: `--style "warm fintech"` auto-selects matching atoms. Decorati
 Image modes: `placeholder` (default), `search` (Unsplash/Pexels), `generate` (AI), `enhance` (Kimi keyword optimization + search).
 
 All engines use **cache-first** — same image never generated twice.
+
+### Standalone Image Generation (No PPT Required)
+
+The image module can be used independently — no need to generate a full PPT.
+
+**CLI subcommand:**
+```bash
+# AI image generation
+python -m ppt_pro_max image "futuristic AI city" --llm-provider seedream --llm-api-key $ARK_API_KEY
+
+# Search Unsplash/Pexels
+python -m ppt_pro_max image "startup team meeting" --image-mode search --unsplash-key $KEY
+
+# Kimi enhance + search
+python -m ppt_pro_max image "product demo" --image-mode enhance --llm-provider kimi
+
+# Custom size + verbose info
+python -m ppt_pro_max image "AI robot" --llm-provider seedream --width 2560 --height 1440 -v
+```
+
+**Python API:**
+```python
+from ppt_pro_max import fetch_image
+
+# Generate AI image
+result = fetch_image(
+    "futuristic AI city",
+    mode="generate",
+    llm_provider="seedream",
+    llm_api_key="...",
+    width=1920,
+    height=1080,
+)
+print(result["path"])  # Local file path, or None if failed
+print(result["provider"])  # e.g. "seedream"
+
+# Search stock photos
+result = fetch_image("team meeting", mode="search", unsplash_access_key="...")
+
+# Auto mode: try AI generation, fall back to search
+result = fetch_image("product launch", mode="auto", llm_provider="seedream", llm_api_key="...")
+```
+
+**Parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `keywords` | (required) | Image search/generation keywords |
+| `mode` | `"auto"` | `placeholder` / `search` / `generate` / `enhance` / `auto` |
+| `emotion` | `""` | Emotion hint: curiosity, hope, confidence, warmth, urgency, fear |
+| `goal` | `""` | Slide goal: hook, problem, solution, features, cta, product |
+| `width` | `1920` | Image width in pixels |
+| `height` | `1080` | Image height in pixels |
+| `llm_provider` | auto-detect | seedream / gpt-image / dalle / gemini / wanx / kimi |
+| `llm_api_key` | env var | API key (or set env: ARK_API_KEY, OPENAI_API_KEY, etc.) |
+| `auto_detect` | `True` | Auto-detect LLM config from host tools |
+
+**Returns:** `{"path": str|None, "mode": str, "provider": str, "keywords": str, "width": int, "height": int}`
 
 ## Animation System
 
@@ -312,6 +380,7 @@ Search order: CWD/.env → package root/.env → ~/.ppt-pro-max/.env
 
 ```
 ppt-design "query" [options]
+ppt-design image "keywords" [image-options]
 
 # Style
   --style TEXT          Natural language style description
@@ -329,7 +398,7 @@ ppt-design "query" [options]
   --motion 1-10         Animation intensity
   --density 1-10        Content density
 
-# Images
+# Images (PPT mode)
   --image-mode MODE     placeholder|search|generate|enhance
   --fetch-images        Shortcut for --image-mode search
   --llm-provider PROV   seedream|gpt-image|dalle|wanx|kimi
@@ -356,6 +425,23 @@ ppt-design "query" [options]
   --persist             Save design system as MASTER.md
   --dry-run             Output design decisions only
   -o, --output PATH     Output .pptx path
+
+# Standalone Image (ppt-design image)
+  keywords              Image keywords (required)
+  --image-mode MODE     placeholder|search|generate|enhance|auto
+  --fetch-images        Shortcut for --image-mode search
+  --emotion EMOTION     Emotion hint (curiosity, hope, confidence, warmth, urgency)
+  --goal GOAL           Slide goal (hook, problem, solution, features, cta)
+  --width N             Image width (default: 1920)
+  --height N            Image height (default: 1080)
+  -v, --verbose         Print extra info (mode, provider, etc.)
+  --llm-provider PROV   seedream|gpt-image|dalle|gemini|wanx|kimi
+  --llm-api-key KEY     API key (or .env)
+  --llm-base-url URL    API base URL override
+  --llm-model MODEL     Model name override
+  --unsplash-key KEY    Unsplash API key
+  --pexels-key KEY      Pexels API key
+  --no-auto-detect      Disable auto-detection of LLM config
 ```
 
 ## Component Library (Professional Chart Templates)

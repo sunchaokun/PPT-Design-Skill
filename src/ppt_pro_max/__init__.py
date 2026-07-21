@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 
 from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
@@ -37,6 +37,51 @@ def query_component_library(
         return results
     finally:
         lib.close()
+
+
+def fetch_image(
+    keywords: str,
+    *,
+    mode: str = "auto",
+    emotion: str = "",
+    goal: str = "",
+    width: int = 1920,
+    height: int = 1080,
+    llm_provider: str | None = None,
+    llm_api_key: str | None = None,
+    llm_base_url: str | None = None,
+    llm_model: str | None = None,
+    unsplash_access_key: str | None = None,
+    pexels_api_key: str | None = None,
+    image_cache_dir: str | None = None,
+    auto_detect: bool = True,
+) -> dict[str, Any]:
+    """Standalone image generation/fetch API — no PPT required.
+
+    Returns dict with keys: path (str|None), mode, provider, keywords, width, height.
+    """
+    from ppt_pro_max.renderer.image_fetcher import ImageFetcher
+
+    fetcher = ImageFetcher(
+        mode=mode,
+        llm_provider=llm_provider,
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
+        unsplash_access_key=unsplash_access_key,
+        pexels_api_key=pexels_api_key,
+        image_cache_dir=image_cache_dir,
+        auto_detect=auto_detect,
+    )
+    path = fetcher.fetch(keywords, emotion=emotion, goal=goal, width=width, height=height)
+    return {
+        "path": path,
+        "mode": mode,
+        "provider": fetcher.llm_provider or "",
+        "keywords": keywords,
+        "width": width,
+        "height": height,
+    }
 
 
 def extract_design_dna(pptx_path: str) -> dict[str, Any]:
