@@ -9,7 +9,6 @@ from typing import Any
 
 __version__ = "0.9.1"
 
-from ppt_pro_max.renderer.ppt_renderer import PPTRenderer
 from ppt_pro_max.planner.story_planner import StoryPlanner
 from ppt_pro_max.decider.design_decider import DesignDecider
 from ppt_pro_max.content.content_generator import ContentGenerator
@@ -341,20 +340,11 @@ def _generate_ppt_freestyle(
             component_lib = None
 
     try:
-        if component_lib is not None:
-            result = _render_freestyle_with_components(
-                page_designs, page_contents, composed_theme,
-                component_lib, output, fetch_images, effective_image_mode,
-                image_config, decider.design_system, query,
-            )
-        else:
-            renderer = PPTRenderer(image_mode=effective_image_mode, image_config=image_config)
-            result = renderer.render(
-                page_designs, page_contents,
-                output_path=output, fetch_images=fetch_images,
-                theme_name=theme, design_system=decider.design_system,
-                composed_theme=composed_theme,
-            )
+        result = _render_freestyle_with_components(
+            page_designs, page_contents, composed_theme,
+            component_lib, output, fetch_images, effective_image_mode,
+            image_config, decider.design_system, query,
+        )
     finally:
         if component_lib:
             try:
@@ -439,7 +429,7 @@ def _render_freestyle_with_components(
         "output_path": os.path.abspath(output),
         "page_count": len(page_dicts),
         "strategy": "generated",
-        "render_mode": "precision_with_components",
+        "render_mode": "precision",
     }
 
 

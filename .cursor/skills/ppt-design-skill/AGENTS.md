@@ -91,6 +91,7 @@ python -m ruff check src/
 - **Source of truth**: `src/ppt_pro_max/` — never modify ui-ux-pro-max
 - **Windows**: Use `python` not `python3`
 - **Pipeline unified (P2)**: Pipeline always renders via PrecisionRenderer.render_slide(), never via EnterpriseRenderer dual-path
+- **FreeStyle unified**: FreeStyle always uses PrecisionRenderer (component_lib optional) — never falls back to old PPTRenderer
 - **Content priority**: content.json > README.md > StoryPlanner (P4 integration)
 - **Image assignment flow**: match_images() → assign_images_by_size() → auto_generate_image_prompts() → ImageFetcher (P5 integration)
 - **Proposal flow**: `generate_ppt(proposal=True)` → 3 preview PPTs → user picks → `generate_ppt(confirmed_proposal="B")` (P6-P7)
