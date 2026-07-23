@@ -241,15 +241,14 @@ shape.line.width = Pt(2)
 shape.line.fill.background()
 ```
 
-### Dash Styles (9 types)
+### Dash Styles (8 types, python-pptx 1.0.2 actual values)
 ```python
 from pptx.enum.dml import MSO_LINE_DASH_STYLE
 shape.line.dash_style = MSO_LINE_DASH_STYLE.DASH
 shape.line.dash_style = MSO_LINE_DASH_STYLE.DASH_DOT
-shape.line.dash_style = MSO_LINE_DASH_STYLE.DOT
-shape.line.dash_style = MSO_LINE_DASH_STYLE.LARGE_DASH
-shape.line.dash_style = MSO_LINE_DASH_STYLE.LARGE_DASH_DOT
+shape.line.dash_style = MSO_LINE_DASH_STYLE.DASH_DOT_DOT
 shape.line.dash_style = MSO_LINE_DASH_STYLE.LONG_DASH
+shape.line.dash_style = MSO_LINE_DASH_STYLE.LONG_DASH_DOT
 shape.line.dash_style = MSO_LINE_DASH_STYLE.ROUND_DOT
 shape.line.dash_style = MSO_LINE_DASH_STYLE.SOLID
 shape.line.dash_style = MSO_LINE_DASH_STYLE.SQUARE_DOT
@@ -420,7 +419,7 @@ from pptx.enum.chart import XL_CHART_TYPE
 | Line | `LINE`, `LINE_MARKERS`, `LINE_STACKED`, `LINE_STACKED_100`, `LINE_MARKERS_STACKED`, `LINE_MARKERS_STACKED_100`, `LINE_3D` |
 | Area | `AREA`, `AREA_STACKED`, `AREA_STACKED_100`, `AREA_3D`, `AREA_3D_STACKED`, `AREA_3D_STACKED_100` |
 | Pie | `PIE`, `PIE_3D`, `PIE_OF_PIE`, `BAR_OF_PIE`, `DOUGHNUT`, `DOUGHNUT_EXPLODED`, `PIE_EXPLODED`, `PIE_3D_EXPLODED` |
-| Scatter | `XY_SCATTER`, `XY_SCATTER_LINES`, `XY_SCATTER_LINES_NO_MARKERS`, `XY_SCATTER_SMOOTH`, `XY_SCATTER_SMOOTH_NO_MARKERS` |
+| Scatter | `XY_SCATTER`, `XY_SCATTER_LINES`, `XY_SCATTER_LINES_NO_MARKERS`, `XY_SCATTER_SMOOTH`, `XY_SCATTER_SMOOTH_NO_MARKERS` (**NOTE**: python-pptx 1.0.2 has a bug with XY_SCATTER using CategoryChartData — use `XyChartData` or `LINE_MARKERS` as workaround) |
 | Radar | `RADAR`, `RADAR_FILLED`, `RADAR_MARKERS` |
 | Stock | `STOCK_HLC`, `STOCK_OHLC`, `STOCK_VHLC`, `STOCK_VOHLC` |
 | Surface | `SURFACE_3D`, `SURFACE_WIREFRAME_3D`, `SURFACE_CONTOUR`, `SURFACE_CONTOUR_WIREFRAME` |
@@ -531,17 +530,20 @@ for shape in group.shapes:
 ## 10. Freeform Paths
 
 ```python
-# Official API
+# Official API (python-pptx 1.0.2)
 freeform = slide.shapes.build_freeform(Inches(1), Inches(1))
-freeform.line_to(Inches(3), Inches(1))
-freeform.line_to(Inches(2), Inches(3))
-freeform.close()  # Close the path
+freeform.add_line_segments([
+    (Inches(5), Inches(1)),
+    (Inches(5), Inches(5)),
+    (Inches(1), Inches(5)),
+    (Inches(1), Inches(1)),  # Close back to start
+])
 shape = freeform.convert_to_shape()
 
-# Continue open path
+# Move pen without drawing
 freeform = slide.shapes.build_freeform(Inches(0), Inches(0))
-freeform.move_to(Inches(1), Inches(1))  # Move pen without drawing
-freeform.line_to(Inches(5), Inches(3))
+freeform.move_to(Inches(1), Inches(1))
+freeform.add_line_segments([(Inches(5), Inches(3))])
 shape = freeform.convert_to_shape()
 ```
 
