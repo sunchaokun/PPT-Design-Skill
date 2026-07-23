@@ -84,6 +84,7 @@ python -m ruff check src/
 ## Key Constraints
 
 - **python-pptx 1.0.2**: `PP_TRANSITION_TYPE` does NOT exist, must use XML for transitions
+- **python-pptx capabilities**: Full API reference at [`docs/python-pptx-reference.md`](docs/python-pptx-reference.md) — 170+ shape types, 73 chart types, tables, connectors, freeform, hyperlinks, media, effects, 3D, OOXML. **LLM must read this before writing python-pptx code.**
 - **Cover-fit images**: Use `_add_picture_cover()` which Pillow pre-crops — never use `add_picture` with stretch
 - **Cache-first**: All image engines check cache before API call to prevent duplicate charges
 - **Source of truth**: `src/ppt_pro_max/` — never modify ui-ux-pro-max

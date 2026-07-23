@@ -666,7 +666,7 @@ python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材B"
 
 ## Dependencies
 
-- python-pptx >= 1.0.2 (required)
+- python-pptx >= 1.0.2 (required) — **Full API reference at [`docs/python-pptx-reference.md`](docs/python-pptx-reference.md): 170+ shape types, 73 chart types, tables, connectors, freeform, hyperlinks, media, effects, 3D, OOXML. READ THIS BEFORE writing python-pptx code.**
 - Pillow >= 10.0 (required)
 - lxml >= 4.9.0 (required)
 - **ui-ux-pro-max** (required — NO fallback)
