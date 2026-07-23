@@ -609,7 +609,7 @@ All 28 upgrades from `docs/design-quality-upgrade-plan.md` are now implemented (
 ## Key Constraints
 
 - **python-pptx 1.0.2**: No `PP_TRANSITION_TYPE`, must use XML for transitions/animations
-- **python-pptx capabilities**: Full API reference at [`docs/python-pptx-reference.md`](docs/python-pptx-reference.md) — 170+ shape types, 73 chart types, tables, connectors, freeform paths, hyperlinks, media, effects, 3D, and OOXML patterns. **READ THIS BEFORE writing python-pptx code** to avoid reimplementing existing functionality.
+- **python-pptx capabilities**: Full API reference at [`src/ppt_pro_max/docs/python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md) — 170+ shape types, 73 chart types, tables, connectors, freeform paths, hyperlinks, media, effects, 3D, and OOXML patterns. **READ THIS BEFORE writing python-pptx code** to avoid reimplementing existing functionality.
 - **Cover-fit images**: Use `_add_picture_cover()` with Pillow pre-crop — never stretch
 - **Cache-first**: All image engines check cache before API call
 - **Two-pass rebuild**: Page revision uses rebuild (not in-place) to avoid ZIP corruption
