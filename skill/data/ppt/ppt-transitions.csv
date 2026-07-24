@@ -1,0 +1,7 @@
+transition_id,transition_name,emotion_mapping,pptx_type,duration_ms,sound
+fade,Smooth Fade,default;trust;confidence,fade,300,
+push-left,Push Left,frustration;progression,push,500,
+push-right,Push Right,solution;relief,push,500,
+wipe-down,Wipe Down,reveal;hope,wipe,700,
+fade-slow,Ceremonial Fade,urgency;cta;closing,fade,800,
+cut,Hard Cut,brutalism;contrast,cut,0,

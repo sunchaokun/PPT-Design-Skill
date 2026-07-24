@@ -1,0 +1,34 @@
+{
+  "name": "ppt-design-skill",
+  "displayName": "PPT Design Skill",
+  "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
+  "version": "0.10.0",
+  "author": "sunchaokun",
+  "license": "MIT",
+  "homepage": "https://github.com/sunchaokun/PPT-Design-Skill",
+  "repository": "https://github.com/sunchaokun/PPT-Design-Skill",
+  "keywords": [
+    "ppt",
+    "presentation",
+    "design",
+    "ai",
+    "skill",
+    "python-pptx"
+  ],
+  "platforms": [
+    "claude",
+    "opencode",
+    "codex",
+    "cursor",
+    "windsurf",
+    "roocode",
+    "gemini",
+    "trae",
+    "continue",
+    "droid",
+    "kilocode",
+    "augment",
+    "copilot"
+  ],
+  "install": "python installer/install.py --platform {{platform}}"
+}

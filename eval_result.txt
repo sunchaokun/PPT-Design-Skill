@@ -1,0 +1,37 @@
+﻿  Slides: 7
+  Total shapes: 72
+  Avg shapes/slide: 10.3
+  Font size levels: 0
+  Min font: 0pt, Max: 0pt
+  Slides with images: 0
+  File size: 36.6 KB
+
+## 3. Build Mode 鈥?Cyberpunk Style
+
+  Slides: 5
+  Total shapes: 62
+  Font size levels: 0
+  Min font: 0pt, Max: 0pt
+  File size: 33.9 KB
+
+## 4. FreeStyle 鈥?Same Topic, Old vs New CDR Impact
+
+
+  [dark cyberpunk] AI startup investor pitch
+    Slides: 4, Shapes: 19, Font levels: 4, Min font: 12pt, File: 32.8 KB
+
+  [warm fintech] Fintech quarterly review
+    Slides: 4, Shapes: 19, Font levels: 3, Min font: 28pt, File: 33.3 KB
+
+## 5. Summary: New SKILL.md Improvements
+
+  [+] +4 unique goal types (diverse layouts)
+  [+] +Section dividers (visual rhythm)
+  [+] +Code page (tech credibility)
+  [+] +Density variance 2.2 vs 0.0 (natural feel)
+  [+] +Feature cards (gradient bar + elevation)
+
+  content.json slide count: 6 鈫?10 (+4)
+  Build mode: build_helpers API now documented (15 functions, C dict, color resolution)
+  Dial Action Map: V/M/D now maps to LLM decisions (was empty declaration before)
+  Design Constraints: ~180 lines of anti-pattern rules (was 0 before)

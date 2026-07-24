@@ -1,0 +1,18 @@
+{
+  "platform": "kilocode",
+  "displayName": "KiloCode",
+  "folderStructure": {
+    "root": ".kilocode",
+    "skillPath": "skills/ppt-design-skill",
+    "filename": "SKILL.md"
+  },
+  "globalPath": ".kilocode/skills",
+  "projectDir": ".kilocode",
+  "frontmatter": {
+    "name": "ppt-design-skill",
+    "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx"
+  },
+  "sections": {
+    "quickReference": true
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "ppt-design-skill",
+  "id": "ppt-design-skill",
+  "owner": {
+    "name": "sunchaokun"
+  },
+  "metadata": {
+    "description": "AI-powered PPT generation skill for AI coding assistants",
+    "version": "0.10.0"
+  },
+  "plugins": [
+    {
+      "name": "ppt-design-skill",
+      "source": "./",
+      "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
+      "version": "0.10.0",
+      "author": {
+        "name": "sunchaokun"
+      },
+      "keywords": [
+        "ppt",
+        "presentation",
+        "design",
+        "ai"
+      ],
+      "category": "design",
+      "strict": false
+    }
+  ],
+  "version": "0.10.0"
+}

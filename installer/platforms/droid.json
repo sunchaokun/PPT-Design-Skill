@@ -1,0 +1,18 @@
+{
+  "platform": "droid",
+  "displayName": "Droid (Factory)",
+  "folderStructure": {
+    "root": ".factory",
+    "skillPath": "skills/ppt-design-skill",
+    "filename": "SKILL.md"
+  },
+  "globalPath": ".factory/skills",
+  "projectDir": ".factory",
+  "frontmatter": {
+    "name": "ppt-design-skill",
+    "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx"
+  },
+  "sections": {
+    "quickReference": true
+  }
+}

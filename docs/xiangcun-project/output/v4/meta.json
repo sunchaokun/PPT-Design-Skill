@@ -1,0 +1,35 @@
+{
+  "version": 4,
+  "query": "数字乡村建设规划",
+  "business_mode": null,
+  "density": 4,
+  "num_slides": 6,
+  "brand_source": "none",
+  "render_mode": "precision",
+  "slides": [
+    {
+      "goal": "hook",
+      "title": "Hook"
+    },
+    {
+      "goal": "problem",
+      "title": "Problem"
+    },
+    {
+      "goal": "solution",
+      "title": "Solution"
+    },
+    {
+      "goal": "product",
+      "title": "Product"
+    },
+    {
+      "goal": "traction",
+      "title": "Traction"
+    },
+    {
+      "goal": "market",
+      "title": "Market"
+    }
+  ]
+}

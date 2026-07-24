@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ppt-design-skill"
-version = "0.9.1"
+version = "0.10.0"
 description = "AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Build Script (pixel-perfect), VI Build (enterprise template)"
 readme = "README.md"
 license = "MIT"
@@ -56,4 +56,4 @@ python_files = ["test_*.py"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "0.10.0"

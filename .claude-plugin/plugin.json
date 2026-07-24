@@ -1,0 +1,17 @@
+{
+  "name": "ppt-design-skill",
+  "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
+  "version": "0.10.0",
+  "author": {
+    "name": "sunchaokun"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ppt",
+    "presentation",
+    "design",
+    "ai",
+    "skill"
+  ],
+  "skills": "./.claude/skills/"
+}
