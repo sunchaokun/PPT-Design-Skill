@@ -376,11 +376,13 @@ class ComponentRenderer:
                 if matched_val:
                     parent = scheme.getparent()
                     if parent is not None:
-                        srgb = etree.SubElement(parent, f"{{{a_ns}}}srgbClr")
+                        idx = list(parent).index(scheme)
+                        srgb = etree.Element(f"{{{a_ns}}}srgbClr")
                         srgb.set("val", matched_val)
                         for child in scheme:
                             srgb.append(copy.deepcopy(child))
                         parent.remove(scheme)
+                        parent.insert(idx, srgb)
 
             result["colors"] = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
 
@@ -674,49 +676,19 @@ class ComponentRenderer:
                 xml_parts = component_lib.load_xml(component["id"])
                 if xml_parts and "group" in xml_parts:
                     filled = self._fill_group_data(xml_parts, element.get("texts", []))
-                    styled = self._apply_brand_colors(filled, brand_spec)
 
-                    grp_xml = styled.get("group", b"")
-                    if grp_xml and brand_spec:
-                        try:
-                            grp_bytes = grp_xml if isinstance(grp_xml, bytes) else grp_xml.encode("utf-8")
-                            font_brand = brand_spec
-                            if not brand_spec.fonts:
-                                font_brand = BrandSpec(
-                                    colors=brand_spec.colors,
-                                    fonts={"heading": "Microsoft YaHei", "body": "Microsoft YaHei",
-                                           "cjk_heading": "Microsoft YaHei", "cjk_body": "Microsoft YaHei"},
-                                )
-                            grp_bytes = ComponentRenderer._replace_group_fonts(grp_bytes, font_brand)
-                            styled = dict(styled)
-                            styled["group"] = grp_bytes
-                        except Exception:
-                            pass
+                    from ppt_pro_max.enterprise.component_adapter import ComponentAdapter
+                    adapter = ComponentAdapter()
+                    adapted = adapter.adapt(filled, element, brand_spec)
 
-                    orig_aspect = 1.0
-                    group_xml = styled.get("group", b"")
-                    if group_xml:
-                        try:
-                            grp_root = etree.fromstring(group_xml if isinstance(group_xml, bytes) else group_xml.encode("utf-8"))
-                            grpSpPr = grp_root.find(f"{{{_NS['p']}}}grpSpPr")
-                            if grpSpPr is not None:
-                                xfrm = grpSpPr.find(f"{{{_NS['a']}}}xfrm")
-                                if xfrm is not None:
-                                    chExt = xfrm.find(f"{{{_NS['a']}}}chExt")
-                                    if chExt is not None:
-                                        cx = int(chExt.get("cx", "0"))
-                                        cy = int(chExt.get("cy", "0"))
-                                        if cx > 0 and cy > 0:
-                                            orig_aspect = cx / cy
-                        except Exception:
-                            pass
+                    adapted_bounds = adapted.pop("_adapted_bounds", None)
+                    adapted.pop("_fit_strategy", None)
+                    adapted.pop("_validation_issues", None)
 
                     raw_bounds = element.get("bounds", (0.9, 1.6, 11.5, 5.0))
-                    content_area = (raw_bounds[0], raw_bounds[1], raw_bounds[2], raw_bounds[3])
-                    fit = "contain"
-                    bounds = self.compute_component_bounds(content_area, orig_aspect, fit)
+                    bounds = adapted_bounds if adapted_bounds else raw_bounds
 
-                    self._inject_group_to_slide(slide, styled, bounds, brand_spec=brand_spec, stretch=(fit == "stretch"))
+                    self._inject_group_to_slide(slide, adapted, bounds, brand_spec=brand_spec, stretch=False)
                     return True
 
         return self._fallback_group(slide, element, brand_spec)
