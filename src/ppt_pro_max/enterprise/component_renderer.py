@@ -80,7 +80,9 @@ def _is_placeholder(text: str | None) -> bool:
         return True
     if t.endswith(".") and any(w.lower() in _LIPSUM_WORDS for w in words):
         return True
-    if t.lower().startswith("step.") or t.lower().startswith("dummy"):
+    if t.lower().startswith("step.") or t.lower().startswith("step ") or t.lower().startswith("dummy"):
+        return True
+    if words and words[0].upper() == "STEP" and len(words) <= 3:
         return True
     return False
 
@@ -121,6 +123,8 @@ def _shape_primary_slots(root, a_ns: str, p_ns: str) -> list[int]:
         first_idx = t_to_idx.get(id(shape_texts[0]))
         if first_idx is None:
             continue
+        if _is_shape_placeholder(full_text):
+            continue
         if _is_title_text(full_text):
             title_slots.append(first_idx)
         else:
@@ -129,13 +133,30 @@ def _shape_primary_slots(root, a_ns: str, p_ns: str) -> list[int]:
     return title_slots + body_slots
 
 
+def _per_shape_primary_slots(root, a_ns: str, p_ns: str) -> list[int]:
+    """Return one primary slot per shape — the first non-empty <a:t> in each shape."""
+    all_t = [t for t in root.iter(f"{{{a_ns}}}t") if t.text and t.text.strip()]
+    t_to_idx = {id(t): i for i, t in enumerate(all_t)}
+
+    slots = []
+    for sp in root.iter(f"{{{p_ns}}}sp"):
+        shape_texts = [t for t in sp.iter(f"{{{a_ns}}}t") if t.text and t.text.strip()]
+        if not shape_texts:
+            continue
+        first_idx = t_to_idx.get(id(shape_texts[0]))
+        if first_idx is not None:
+            slots.append(first_idx)
+
+    return slots
+
+
 def _is_title_text(text: str) -> bool:
     t = text.strip()
     if len(t) <= 20 and not t.endswith("."):
-        if t.lower().startswith("step"):
-            return True
         if t.lower().startswith("dummy"):
             return True
+        if t.upper().startswith("STEP"):
+            return False
         words = t.split()
         if len(words) <= 3 and not any(w.lower() in _LIPSUM_WORDS for w in words if len(w) > 2):
             return True
@@ -160,22 +181,51 @@ def _clear_unfilled_placeholders(root, a_ns: str, p_ns: str, filled_indices: set
     t_to_idx = {id(t): i for i, t in enumerate(all_t)}
 
     for sp in root.iter(f"{{{p_ns}}}sp"):
-        shape_texts = [t for t in sp.iter(f"{{{a_ns}}}t") if t.text and t.text.strip()]
+        all_runs = [t for t in sp.iter(f"{{{a_ns}}}t")]
+        shape_texts = [t for t in all_runs if t.text and t.text.strip()]
         if not shape_texts:
+            for t in all_runs:
+                if t.text and not t.text.strip():
+                    t.text = ""
             continue
 
         shape_has_filled = any(t_to_idx.get(id(t)) in filled_indices for t in shape_texts)
         if shape_has_filled:
-            for t in shape_texts:
+            for t in all_runs:
                 idx = t_to_idx.get(id(t))
                 if idx is not None and idx not in filled_indices:
+                    t.text = ""
+                elif t.text and not t.text.strip():
                     t.text = ""
             continue
 
         full_text = " ".join(t.text.strip() for t in shape_texts)
         if _is_shape_placeholder(full_text):
-            for t in shape_texts:
+            for t in all_runs:
                 t.text = ""
+        elif _is_lipsum_heavy(full_text):
+            for t in all_runs:
+                t.text = ""
+        else:
+            for t in all_runs:
+                idx = t_to_idx.get(id(t))
+                if idx is not None and idx not in filled_indices:
+                    t.text = ""
+                elif t.text and not t.text.strip():
+                    t.text = ""
+
+
+def _is_lipsum_heavy(text: str) -> bool:
+    t = text.strip()
+    if not t:
+        return False
+    words = t.split()
+    if len(words) < 2:
+        return False
+    lipsum_count = sum(1 for w in words if w.lower().rstrip(".,;:!?") in _LIPSUM_WORDS)
+    if lipsum_count / max(len(words), 1) >= 0.15:
+        return True
+    return False
 
 
 def _is_shape_placeholder(text: str) -> bool:
@@ -187,10 +237,18 @@ def _is_shape_placeholder(text: str) -> bool:
     words = t.split()
     if len(words) >= 3:
         lipsum_count = sum(1 for w in words if w.lower().rstrip(".,;:!?") in _LIPSUM_WORDS)
-        if lipsum_count / max(len(words), 1) > 0.3:
+        if lipsum_count / max(len(words), 1) > 0.25:
             return True
-    if t.lower().startswith("step.") or t.lower().startswith("dummy"):
+    if t.lower().startswith("step.") or t.lower().startswith("step "):
         return True
+    if words and words[0].upper() == "STEP" and len(words) <= 3:
+        return True
+    if t.lower().startswith("dummy"):
+        return True
+    if len(words) >= 4:
+        lipsum_count = sum(1 for w in words if w.lower().rstrip(".,;:!?") in _LIPSUM_WORDS)
+        if lipsum_count >= 2:
+            return True
     return False
 
 
@@ -210,6 +268,30 @@ def _hex_to_hsl(hex_val: str):
     r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
     hue, light, sat = colorsys.rgb_to_hls(r, g, b)
     return hue * 360, sat, light
+
+
+def _derive_shade(hex_val: str, factor: float = 0.7) -> str:
+    import colorsys
+    h = hex_val.lstrip("#")
+    if len(h) < 6:
+        h = h[0]*2 + h[1]*2 + h[2]*2 if len(h) == 3 else h + "0"*(6-len(h))
+    r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
+    hue, light, sat = colorsys.rgb_to_hls(r, g, b)
+    new_light = light * factor
+    r2, g2, b2 = colorsys.hls_to_rgb(hue, new_light, sat)
+    return f"{int(r2*255):02X}{int(g2*255):02X}{int(b2*255):02X}"
+
+
+def _derive_tint(hex_val: str, factor: float = 0.5) -> str:
+    import colorsys
+    h = hex_val.lstrip("#")
+    if len(h) < 6:
+        h = h[0]*2 + h[1]*2 + h[2]*2 if len(h) == 3 else h + "0"*(6-len(h))
+    r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
+    hue, light, sat = colorsys.rgb_to_hls(r, g, b)
+    new_light = light + (1.0 - light) * factor
+    r2, g2, b2 = colorsys.hls_to_rgb(hue, new_light, sat)
+    return f"{int(r2*255):02X}{int(g2*255):02X}{int(b2*255):02X}"
 
 
 def _generate_data_palette(primary_hex: str, count: int = 6, brand_spec: "BrandSpec | None" = None) -> list[str]:
@@ -401,7 +483,10 @@ class ComponentRenderer:
         brand_colors = {}
         if brand_spec.colors:
             for role, hex_val in brand_spec.colors.items():
-                brand_colors[role] = hex_val.lstrip("#").upper()
+                brand_colors[role.upper()] = hex_val.lstrip("#").upper()
+                semantic_key = _SCHEME_TO_SEMANTIC.get(role, role)
+                if semantic_key.upper() != role.upper():
+                    brand_colors[semantic_key.upper()] = hex_val.lstrip("#").upper()
 
         all_colors = {}
         for srgb in root.iter(f"{{{a_ns}}}srgbClr"):
@@ -446,18 +531,22 @@ class ComponentRenderer:
             if distinct_hues >= 3:
                 is_data_heavy = True
 
-        structural_dna = sorted([
-            ("secondary", brand_colors.get("SECONDARY", "2E6504")),
-            ("primary", brand_colors.get("PRIMARY", "466740")),
-            ("muted-foreground", brand_colors.get("MUTED-FOREGROUND", "6B7D5A")),
-            ("accent", brand_colors.get("ACCENT", "7EAB77")),
-            ("tertiary", brand_colors.get("TERTIARY", "7DA92F")),
-            ("quaternary", brand_colors.get("QUATERNARY", "D4E3AC")),
-            ("muted", brand_colors.get("MUTED", "F2F8D6")),
-            ("background", brand_colors.get("BACKGROUND", "FFFEF9")),
-        ], key=lambda x: _color_brightness(x[1]))
-
         primary_hex = brand_colors.get("PRIMARY", "466740")
+        accent_hex = brand_colors.get("ACCENT", "7EAB77")
+        muted_hex = brand_colors.get("MUTED", "F2F8D6")
+
+        brand_slots = [primary_hex, accent_hex, muted_hex]
+        if brand_colors.get("SECONDARY"):
+            brand_slots.append(brand_colors["SECONDARY"])
+        if brand_colors.get("TERTIARY"):
+            brand_slots.append(brand_colors["TERTIARY"])
+        if brand_colors.get("QUATERNARY"):
+            brand_slots.append(brand_colors["QUATERNARY"])
+        if brand_colors.get("MUTED-FOREGROUND"):
+            brand_slots.append(brand_colors["MUTED-FOREGROUND"])
+        if brand_colors.get("BACKGROUND"):
+            brand_slots.append(brand_colors["BACKGROUND"])
+
         data_palette = _generate_data_palette(primary_hex, max(len(shape_fills), 6), brand_spec)
 
         color_map = {}
@@ -485,22 +574,26 @@ class ComponentRenderer:
                 else:
                     structural_fills.append(c)
 
-            sorted_structural = sorted(structural_fills, key=_color_brightness)
+            sorted_structural = sorted(structural_fills, key=lambda c: _color_brightness(c))
             for i, src_color in enumerate(sorted_structural):
-                dna_idx = int(i / max(len(sorted_structural) - 1, 1) * (len(structural_dna) - 1))
-                _, dna_hex = structural_dna[dna_idx]
-                color_map[src_color] = dna_hex
+                if i < len(brand_slots):
+                    color_map[src_color] = brand_slots[i]
+                else:
+                    shade = _derive_shade(brand_slots[i % len(brand_slots)], 0.7 + 0.1 * (i // len(brand_slots)))
+                    color_map[src_color] = shade
 
             sorted_data = sorted(data_fills, key=_color_brightness)
             for i, src_color in enumerate(sorted_data):
                 data_idx = i % len(data_palette)
                 color_map[src_color] = data_palette[data_idx]
         else:
-            sorted_colors = sorted(non_neutral, key=_color_brightness)
+            sorted_colors = sorted(non_neutral, key=lambda c: all_colors[c]["count"], reverse=True)
             for i, src_color in enumerate(sorted_colors):
-                dna_idx = int(i / max(len(sorted_colors) - 1, 1) * (len(structural_dna) - 1))
-                _, dna_hex = structural_dna[dna_idx]
-                color_map[src_color] = dna_hex
+                if i < len(brand_slots):
+                    color_map[src_color] = brand_slots[i]
+                else:
+                    shade = _derive_shade(brand_slots[i % len(brand_slots)], 0.7 + 0.1 * (i // len(brand_slots)))
+                    color_map[src_color] = shade
 
         foreground = brand_colors.get("FOREGROUND", "0D4609")
         for srgb in root.iter(f"{{{a_ns}}}srgbClr"):
@@ -560,9 +653,6 @@ class ComponentRenderer:
 
     def _inject_to_slide(self, slide, xml_parts: dict, bounds: tuple) -> None:
         self._inject_via_python_pptx(slide, xml_parts, bounds)
-
-    def _inject_via_zip(self, pptx_path: str, slide, xml_parts: dict, bounds: tuple) -> None:
-        pass
 
     def _inject_via_python_pptx(self, slide, xml_parts: dict, bounds: tuple) -> None:
         try:
@@ -677,18 +767,31 @@ class ComponentRenderer:
                 if xml_parts and "group" in xml_parts:
                     filled = self._fill_group_data(xml_parts, element.get("texts", []))
 
-                    from ppt_pro_max.enterprise.component_adapter import ComponentAdapter
-                    adapter = ComponentAdapter()
-                    adapted = adapter.adapt(filled, element, brand_spec)
+                    try:
+                        from ppt_pro_max.enterprise.component_adapter import ComponentAdapter
+                        adapter = ComponentAdapter()
+                        adapted = adapter.adapt(filled, element, brand_spec)
 
-                    adapted_bounds = adapted.pop("_adapted_bounds", None)
-                    adapted.pop("_fit_strategy", None)
-                    adapted.pop("_validation_issues", None)
+                        adapted.pop("_adapted_bounds", None)
+                        adapted.pop("_fit_strategy", None)
+                        adapted.pop("_validation_issues", None)
 
+                        # XML is already slide-ready (coordinates are absolute EMU,
+                        # virtual canvas normalized). skip_denorm prevents double transform.
+                        self._inject_group_to_slide(
+                            slide, adapted, bounds=(0, 0, 13.33, 7.5),
+                            brand_spec=brand_spec, stretch=False, skip_denorm=True,
+                        )
+                        return True
+                    except ImportError:
+                        pass
+
+                    # Fallback: old logic without ComponentAdapter
+                    styled = self._apply_brand_colors(filled, brand_spec)
+                    if brand_spec and brand_spec.fonts:
+                        styled["group"] = self._replace_group_fonts(styled["group"], brand_spec)
                     raw_bounds = element.get("bounds", (0.9, 1.6, 11.5, 5.0))
-                    bounds = adapted_bounds if adapted_bounds else raw_bounds
-
-                    self._inject_group_to_slide(slide, adapted, bounds, brand_spec=brand_spec, stretch=False)
+                    self._inject_group_to_slide(slide, styled, raw_bounds, brand_spec=brand_spec)
                     return True
 
         return self._fallback_group(slide, element, brand_spec)
@@ -703,6 +806,7 @@ class ComponentRenderer:
         p_ns = _NS["p"]
 
         all_t = [t for t in root.iter(f"{{{a_ns}}}t") if t.text and t.text.strip()]
+        t_to_idx = {id(t): i for i, t in enumerate(all_t)}
         if not all_t:
             result = dict(xml_parts)
             result["group"] = etree.tostring(root, xml_declaration=False, encoding="UTF-8")
@@ -720,16 +824,32 @@ class ComponentRenderer:
         else:
             shape_primary = _shape_primary_slots(root, a_ns, p_ns)
 
-            if len(shape_primary) > 0:
+            if len(shape_primary) >= n_texts:
                 filled_indices = set()
                 used_slots = set()
+                # Sort slots by font size descending — put user text into
+                # larger-font slots first (titles), then smaller (body)
+                slot_sizes = []
+                for s in shape_primary:
+                    t_elem = all_t[s]
+                    rpr = t_elem.getprevious()
+                    sz = 0
+                    if rpr is not None and rpr.tag == f"{{{a_ns}}}rPr":
+                        try:
+                            sz = int(rpr.get("sz", "0"))
+                        except (ValueError, TypeError):
+                            pass
+                    slot_sizes.append((s, sz))
+                slot_sizes.sort(key=lambda x: -x[1])
+
                 for i, new_text in enumerate(new_texts):
-                    idx = i * len(shape_primary) // n_texts
-                    idx = min(idx, len(shape_primary) - 1)
-                    while idx in used_slots and idx < len(shape_primary) - 1:
-                        idx += 1
-                    used_slots.add(idx)
-                    slot = shape_primary[idx]
+                    if i < len(slot_sizes):
+                        slot = slot_sizes[i][0]
+                    else:
+                        slot = shape_primary[i % len(shape_primary)]
+                    while slot in used_slots and slot < len(all_t) - 1:
+                        slot += 1
+                    used_slots.add(slot)
                     if isinstance(new_text, dict):
                         new_text = new_text.get("text", "")
                     all_t[slot].text = str(new_text)
@@ -737,19 +857,69 @@ class ComponentRenderer:
 
                 _clear_unfilled_placeholders(root, a_ns, p_ns, filled_indices, all_t)
             else:
-                step = n_slots / n_texts if n_texts > 0 else 1
-                for i, new_text in enumerate(new_texts):
-                    idx = min(int(i * step), n_slots - 1)
-                    if isinstance(new_text, dict):
-                        new_text = new_text.get("text", "")
-                    all_t[idx].text = str(new_text)
+                per_shape = _per_shape_primary_slots(root, a_ns, p_ns)
+                if len(per_shape) >= n_texts:
+                    filled_indices = set()
+                    # Sort slots by font size descending — put user text into
+                    # larger-font slots first (titles), then smaller (body)
+                    slot_sizes = []
+                    for s in per_shape:
+                        t_elem = all_t[s]
+                        rpr = t_elem.getprevious()
+                        sz = 0
+                        if rpr is not None and rpr.tag == f"{{{a_ns}}}rPr":
+                            try:
+                                sz = int(rpr.get("sz", "0"))
+                            except (ValueError, TypeError):
+                                pass
+                        slot_sizes.append((s, sz))
+                    slot_sizes.sort(key=lambda x: -x[1])
+
+                    for i, new_text in enumerate(new_texts):
+                        if i < len(slot_sizes):
+                            slot = slot_sizes[i][0]
+                        else:
+                            slot = per_shape[i % len(per_shape)]
+                        if isinstance(new_text, dict):
+                            new_text = new_text.get("text", "")
+                        all_t[slot].text = str(new_text)
+                        filled_indices.add(slot)
+                    _clear_unfilled_placeholders(root, a_ns, p_ns, filled_indices, all_t)
+                else:
+                    filled_indices = set()
+                    all_slot_sizes = []
+                    for i, t_elem in enumerate(all_t):
+                        rpr = t_elem.getprevious()
+                        sz = 0
+                        if rpr is not None and rpr.tag == f"{{{a_ns}}}rPr":
+                            try:
+                                sz = int(rpr.get("sz", "0"))
+                            except (ValueError, TypeError):
+                                pass
+                        all_slot_sizes.append((i, sz))
+                    all_slot_sizes.sort(key=lambda x: -x[1])
+
+                    for i, new_text in enumerate(new_texts):
+                        if i < len(all_slot_sizes):
+                            slot = all_slot_sizes[i][0]
+                        else:
+                            slot = all_t[min(i, n_slots - 1)]
+                            if isinstance(slot, int):
+                                pass
+                            else:
+                                slot = i % n_slots
+                        if isinstance(new_text, dict):
+                            new_text = new_text.get("text", "")
+                        all_t[slot].text = str(new_text)
+                        filled_indices.add(slot)
+                    _clear_unfilled_placeholders(root, a_ns, p_ns, filled_indices, all_t)
 
         result = dict(xml_parts)
         result["group"] = etree.tostring(root, xml_declaration=False, encoding="UTF-8")
         return result
 
     def _inject_group_to_slide(self, slide, xml_parts: dict, bounds: tuple, brand_spec: BrandSpec | None = None,
-                               stretch: bool = False) -> None:
+                               stretch: bool = False, skip_denorm: bool = False) -> None:
         if "group" not in xml_parts:
             return
 
@@ -794,7 +964,8 @@ class ComponentRenderer:
             self._remove_unresolvable_references(grp_elem)
             self._ensure_shape_fills(grp_elem, brand_spec=brand_spec)
 
-            self._denormalize_coordinates(grp_elem, target_left, target_top, target_w, target_h, stretch=stretch)
+            if not skip_denorm:
+                self._denormalize_coordinates(grp_elem, target_left, target_top, target_w, target_h, stretch=stretch)
 
             image_keys = [k for k in xml_parts if k.startswith("img_")]
             if image_keys:
@@ -1026,8 +1197,8 @@ class ComponentRenderer:
                         sub_chExt_cx = int(sub_chExt.get("cx", "0"))
                         sub_chExt_cy = int(sub_chExt.get("cy", "0"))
 
-                        new_chOff_x = int(sub_chOff_x * scale_x)
-                        new_chOff_y = int(sub_chOff_y * scale_y)
+                        new_chOff_x = 0
+                        new_chOff_y = 0
                         new_chExt_cx = int(sub_chExt_cx * scale_x)
                         new_chExt_cy = int(sub_chExt_cy * scale_y)
 
@@ -1039,7 +1210,7 @@ class ComponentRenderer:
                         sub_scale_x = new_cx / new_chExt_cx if new_chExt_cx > 0 else 1.0
                         sub_scale_y = new_cy / new_chExt_cy if new_chExt_cy > 0 else 1.0
 
-                        self._transform_child_elements(child, new_chOff_x, new_chOff_y, sub_scale_x, sub_scale_y)
+                        self._transform_child_elements(child, sub_chOff_x, sub_chOff_y, sub_scale_x, sub_scale_y)
                     except (ValueError, TypeError):
                         pass
                 else:
