@@ -20,6 +20,31 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 
+from ppt_pro_max.renderer.text_effects import (
+    apply_text_gradient, apply_text_gradient_preset, set_vertical_text,
+    set_text_rotation, apply_text_outline,
+)
+from ppt_pro_max.renderer.blip_fill import (
+    add_circle_image as _add_circle_image,
+    add_image_in_shape as _add_image_in_shape,
+    apply_blip_duotone, apply_blip_artistic,
+)
+from ppt_pro_max.renderer.visual_effects import apply_soft_edge
+from ppt_pro_max.renderer.visual_effects import (
+    apply_3d, apply_bevel, apply_pattern_fill, apply_frosted_glass,
+)
+from ppt_pro_max.renderer.decoration_library import (
+    add_brush_divider as _add_brush_divider,
+    add_neon_border as _add_neon_border,
+    add_glass_panel as _add_glass_panel,
+    add_grid_background as _add_grid_background,
+    add_ink_splash as _add_ink_splash,
+)
+from ppt_pro_max.renderer.animation import (
+    add_slide_transition, add_entrance_animation,
+    add_exit_animation, add_emphasis_animation,
+)
+
 
 def _resolve_color(val, C):
     if val is None:
@@ -31,6 +56,15 @@ def _resolve_color(val, C):
 
 def _rgb(hex_str):
     return RGBColor.from_string(hex_str.lstrip('#'))
+
+
+def _lighten(hex_color, amount=30):
+    h = hex_color.lstrip('#')
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    r = min(255, r + amount)
+    g = min(255, g + amount)
+    b = min(255, b + amount)
+    return f'{r:02X}{g:02X}{b:02X}'
 
 
 class Typography:
@@ -833,6 +867,183 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
              font_size=t.h1 + 12, color=C.get('white', '#FFFFFF'), bold=True,
              font_name=C.get('font_heading'), C=C)
         if subtitle:
-            text(slide, 1.2, 4.0, 10.0, 0.5, subtitle,
-                 font_size=t.h3, color=C.get('light', '#C8E6C9'),
-                 font_name=C.get('font_body'), C=C)
+         text(slide, 1.2, 4.0, 10.0, 0.5, subtitle,
+              font_size=t.h3, color=C.get('light', '#C8E6C9'),
+              font_name=C.get('font_body'), C=C)
+
+
+def gradient_text(slide, left, top, width, height, txt, preset='gold-shine',
+                  stops=None, font_size=44, bold=False, font_name=None,
+                  align='left'):
+    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                     Inches(width), Inches(height))
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                   'right': PP_ALIGN.RIGHT}[align]
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    if stops:
+        apply_text_gradient(run, stops)
+    else:
+        apply_text_gradient_preset(run, preset)
+    return txBox
+
+
+def vertical_text(slide, left, top, width, height, txt, direction='ea',
+                  font_name='STKaiti', font_size=24, color='#000000',
+                  bold=False, align='center'):
+    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                     Inches(width), Inches(height))
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    set_vertical_text(tf, direction)
+    p = tf.paragraphs[0]
+    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                   'right': PP_ALIGN.RIGHT}[align]
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.color.rgb = _rgb(_resolve_color(color, None))
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    return txBox
+
+
+def seal_stamp(slide, left, top, size, txt, fill_hex='#C41E3A',
+               font_name='STZhongsong', rotation=-15, style='zhu',
+               border_width_pt=4.0):
+    from ppt_pro_max.renderer.decoration_library import add_seal_stamp as _add_seal_stamp
+    _add_seal_stamp(slide, left, top, size, txt,
+                    fill_hex=fill_hex, font_name=font_name,
+                    rotation=rotation, style=style,
+                    border_width_pt=border_width_pt)
+    sh = slide.shapes[-1]
+    return sh
+
+
+def circle_image(slide, cx, cy, radius, image_path, border_color=None):
+    return _add_circle_image(slide, cx, cy, radius, image_path,
+                             border_hex=border_color)
+
+
+def soft_edge_image(slide, left, top, width, height, image_path,
+                    soft_radius=10):
+    import os as _os
+    if not _os.path.isfile(image_path):
+        return None
+    shape = slide.shapes.add_picture(image_path, Inches(left), Inches(top),
+                                     Inches(width), Inches(height))
+    apply_soft_edge(shape, radius_pt=soft_radius)
+    return shape
+
+
+def duotone_image(slide, left, top, width, height, image_path,
+                  color1='#0000FF', color2='#FF0000'):
+    shape = _add_image_in_shape(slide, MSO_SHAPE.RECTANGLE,
+                                left, top, width, height, image_path)
+    apply_blip_duotone(shape, color1, color2)
+    return shape
+
+
+def artistic_image(slide, left, top, width, height, image_path,
+                   effect='watercolor_sponge', params=None):
+    shape = _add_image_in_shape(slide, MSO_SHAPE.RECTANGLE,
+                                left, top, width, height, image_path)
+    apply_blip_artistic(shape, effect, params)
+    return shape
+
+
+def shape_3d(slide, left, top, width, height, depth=10.0, material='powder',
+             extrusion_color='#000000', shape_type=MSO_SHAPE.RECTANGLE):
+    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
+                                Inches(width), Inches(height))
+    apply_3d(sh, depth_pt=depth, material=material,
+             extrusion_color=extrusion_color)
+    return sh
+
+
+def bevel_shape(slide, left, top, width, height, top_w=4.0, top_h=2.0,
+                material='powder', shape_type=MSO_SHAPE.RECTANGLE):
+    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
+                                Inches(width), Inches(height))
+    apply_bevel(sh, top_w=top_w, top_h=top_h, material=material)
+    return sh
+
+
+def pattern_fill(slide, left, top, width, height, pattern_type, fg_color,
+                 bg_color, fg_alpha=None,
+                 shape_type=MSO_SHAPE.RECTANGLE):
+    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
+                                Inches(width), Inches(height))
+    apply_pattern_fill(sh, pattern_type, fg_color, bg_color,
+                       fg_alpha=fg_alpha)
+    return sh
+
+
+def frosted_panel(slide, left, top, width, height, tint='#FFFFFF',
+                  alpha=15, soft_edge=8):
+    sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left), Inches(top),
+                                Inches(width), Inches(height))
+    apply_frosted_glass(sh, tint_color=tint, tint_alpha=alpha,
+                        soft_edge=soft_edge)
+    return sh
+
+
+def brush_divider(slide, left, top, width, color='#2C2C2C', thickness=0.08):
+    return _add_brush_divider(slide, left, top, width, color=color,
+                              thickness=thickness)
+
+
+def neon_border(slide, left, top, width, height, color='#8B5CF6', radius=0.1):
+    return _add_neon_border(slide, left, top, width, height, color=color,
+                            radius=radius)
+
+
+def glass_panel(slide, left, top, width, height, tint='#FFFFFF', alpha=15,
+                soft_edge=8):
+    return _add_glass_panel(slide, left, top, width, height, tint=tint,
+                            alpha=alpha, soft_edge=soft_edge)
+
+
+def grid_background(slide, spacing=1.0, color='#E0E0E0', alpha=15):
+    return _add_grid_background(slide, spacing=spacing, color=color,
+                                alpha=alpha)
+
+
+def ink_splash(slide, left, top, size, color='#2C2C2C', alpha=100):
+    return _add_ink_splash(slide, left, top, size, color=color, alpha=alpha)
+
+
+def slide_transition(slide, transition_type='fade', speed='medium',
+                     advance_on_click=True, advance_after_ms=None):
+    add_slide_transition(slide, transition_type=transition_type, speed=speed,
+                         advance_on_click=advance_on_click,
+                         advance_after_ms=advance_after_ms)
+
+
+def entrance_animation(slide, shape_id, effect='fade_in', delay_ms=0,
+                       duration_ms=500, click_triggered=True):
+    add_entrance_animation(slide, shape_id, effect=effect, delay_ms=delay_ms,
+                           duration_ms=duration_ms,
+                           click_triggered=click_triggered)
+
+
+def exit_animation(slide, shape_id, effect='fade_out', delay_ms=0,
+                   duration_ms=500, click_triggered=True):
+    add_exit_animation(slide, shape_id, effect=effect, delay_ms=delay_ms,
+                       duration_ms=duration_ms,
+                       click_triggered=click_triggered)
+
+
+def emphasis_animation(slide, shape_id, effect='pulse', delay_ms=0,
+                       duration_ms=500, click_triggered=True):
+    add_emphasis_animation(slide, shape_id, effect=effect, delay_ms=delay_ms,
+                           duration_ms=duration_ms,
+                           click_triggered=click_triggered)

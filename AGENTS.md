@@ -70,6 +70,16 @@ python -m ruff check src/
 - `src/ppt_pro_max/enterprise/component_renderer.py` — P14: Component rendering bridge (match→fill data→apply brand colors→inject to slide)
 - `src/ppt_pro_max/renderer/theme_composer.py` — 35 moods (P3: added international/cream/frosted/mckinsey/consulting/pastel/retro/government/legal/pharma/realestate/automotive/aviation/energy/telecom/logistics)
 
+### Advanced Design Effects (AD-P1~P7)
+
+- `src/ppt_pro_max/renderer/text_effects.py` — Text-level effects: gradient fill, outline, shadow, glow, 3D, alpha, vertical text, rotation, letter spacing (operates on `a:rPr`)
+- `src/ppt_pro_max/renderer/blip_fill.py` — Image-in-shape via `a:blipFill`: circle/hexagon/diamond image, 22 artistic effects, duotone, grayscale, brightness/contrast, saturation
+- `src/ppt_pro_max/renderer/image_processor.py` — 7 Pillow filters (grayscale, sepia, duotone, ink_wash, blur, vignette, edge_fade) with caching
+- `src/ppt_pro_max/renderer/visual_effects.py` — Shape-level effects + Phase 4: `Shape3D` dataclass, `apply_3d()`, `apply_bevel()`, `PATTERN_TYPES` (31 patterns), `apply_pattern_fill()`, `apply_frosted_glass()`
+- `src/ppt_pro_max/renderer/animation.py` — Phase 5: `EXIT_PRESETS` (8), `EMPHASIS_PRESETS` (8), `add_exit_animation()`, `add_emphasis_animation()`, morph transition
+- `src/ppt_pro_max/renderer/decoration_library.py` — Phase 6: brush divider, seal stamp, scroll frame, neon border, grid background, glass panel, ink splash
+- `src/ppt_pro_max/renderer/theme_composer.py` — Phase 7: `_MOOD_TEXT_EFFECT_MAP`, `_MOOD_IMAGE_EFFECT_MAP`; `compose()` returns `text_effect_preset` + `image_effect`
+
 ### Installer & Skill Source
 
 - `skill/` — **唯一 skill 源目录**（SKILL.md, AGENTS.md, .env.example, scripts/, data/, src/ junction）
@@ -137,10 +147,17 @@ python -m ruff check src/
 | P14 | ComponentRenderer (match→fill→brand→inject) | Done | 3 in test_p9_p14.py |
 | P15 | Component Library Integration (catalog+API+content fields+renderer+beautify) | Done | 38 in test_component_integration.py |
 | DQ | Design Quality Upgrades (Tier 1+2+3, 28 upgrades) | Done | 95 in test_design_quality.py + 25 in test_design_integration.py |
+| AD-P1 | Text effects (gradient, outline, shadow, glow, 3D, vertical, rotation, alpha, spacing) | Done | 23+40+5 = 68 in test_text_effects/api/spc |
+| AD-P2 | Image effects & fill (blipFill, circle/hex/diamond image, 22 artistic, 7 Pillow filters) | Done | 15+27+13 = 55 in test_blip_fill/image_effects/api |
+| AD-P3 | Style system expansion (5 palettes, 5 fonts, 5 decorations, 4 layouts, 5 moods, 5 CJK) | Done | 108 in test_style_expansion |
+| AD-P4 | 3D shapes & pattern fill (Shape3D, bevel, 31 patterns, frosted glass) | Done | 38 in test_3d_pattern_frosted |
+| AD-P5 | Animation & transition expansion (morph, 8 exit presets, 8 emphasis presets) | Done | 33 in test_animation_expansion |
+| AD-P6 | Decoration library (brush divider, seal stamp, scroll, neon, grid, glass, ink splash) | Done | 45 in test_decoration_library |
+| AD-P7 | Mode integration (mood→text_effect_preset, mood→image_effect, compose() API) | Done | 33 in test_mode_integration |
 
 ## End-to-End Evaluation
 
-**824 tests passed, 5 skipped, 0 failures. Lint clean on all modified files.**
+**1,204 tests passed, 5 skipped, 0 failures. Lint clean on all modified files.**
 
 ### Test Scenarios & Results
 

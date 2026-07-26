@@ -186,6 +186,36 @@ COLOR_PALETTES: dict[str, dict[str, str]] = {
         "muted": "#E0F2FE", "muted-foreground": "#0EA5E9", "border": "#BAE6FD",
         "destructive": "#EF4444",
     },
+    "ink-wash": {
+        "primary": "#2C2C2C", "on-primary": "#F5F0E8", "secondary": "#8B7355",
+        "accent": "#C41E3A", "background": "#F5F0E8", "foreground": "#1A1A1A",
+        "muted": "#EDE6D6", "muted-foreground": "#8B7355", "border": "#D4C5A0",
+        "destructive": "#C41E3A",
+    },
+    "ink-wash-dark": {
+        "primary": "#F5F0E8", "on-primary": "#2C2C2C", "secondary": "#8B7355",
+        "accent": "#C41E3A", "background": "#1A1A1A", "foreground": "#F5F0E8",
+        "muted": "#2D2D2D", "muted-foreground": "#8B7355", "border": "#3D3D3D",
+        "destructive": "#C41E3A",
+    },
+    "cyber-neon-pro": {
+        "primary": "#8B5CF6", "on-primary": "#FFFFFF", "secondary": "#64748B",
+        "accent": "#22D3EE", "background": "#0A0A1A", "foreground": "#F8FAFC",
+        "muted": "#1A1A3A", "muted-foreground": "#6366F1", "border": "#2A2A5A",
+        "destructive": "#FF0080",
+    },
+    "sci-paper": {
+        "primary": "#1E3A5F", "on-primary": "#FFFFFF", "secondary": "#64748B",
+        "accent": "#E8A838", "background": "#FFFFFF", "foreground": "#1A1A1A",
+        "muted": "#F0F4F8", "muted-foreground": "#6B7B8D", "border": "#DEE5EF",
+        "destructive": "#DC2626",
+    },
+    "zen-minimal": {
+        "primary": "#5B7553", "on-primary": "#FFFFFF", "secondary": "#8B9E84",
+        "accent": "#C99A4E", "background": "#FAFAF5", "foreground": "#2D3B28",
+        "muted": "#E5EDE2", "muted-foreground": "#8B9E84", "border": "#D0DCCE",
+        "destructive": "#DC2626",
+    },
 }
 
 # ============================================================
@@ -213,6 +243,11 @@ FONT_PAIRS: dict[str, dict[str, str]] = {
     "startup-mix": {"heading": "Poppins", "body": "Segoe UI"},
     "minimal-mix": {"heading": "Inter", "body": "Calibri"},
     "editorial-mix": {"heading": "Georgia", "body": "Segoe UI"},
+    "ink-wash-serif": {"heading": "STKaiti", "body": "FangSong"},
+    "chinese-calligraphy": {"heading": "STXingkai", "body": "SimSun"},
+    "chinese-classical": {"heading": "LiSu", "body": "FangSong"},
+    "sci-serif": {"heading": "Georgia", "body": "Times New Roman"},
+    "tech-display": {"heading": "Orbitron", "body": "JetBrains Mono"},
 }
 
 # ============================================================
@@ -278,6 +313,36 @@ DECORATION_STYLES: dict[str, dict[str, Any]] = {
         "dark_overlay": True,
         "description": "Full-bleed image with dark overlay",
     },
+    "brush-stroke": {
+        "name": "Brush Stroke",
+        "left_accent": True, "title_underline": True,
+        "brush_divider": True,
+        "description": "Ink brush stroke decorative elements",
+    },
+    "seal-stamp": {
+        "name": "Seal Stamp",
+        "left_accent": False, "title_underline": False,
+        "seal_decoration": True,
+        "description": "Traditional Chinese seal stamp accents",
+    },
+    "neon-glow": {
+        "name": "Neon Glow",
+        "left_accent": True, "title_underline": True, "card_top_bar": True,
+        "bottom_line": True, "neon_accent": True,
+        "description": "Glowing neon accent lines and borders",
+    },
+    "sci-grid": {
+        "name": "Science Grid",
+        "left_accent": True, "title_underline": True,
+        "grid_background": True,
+        "description": "Subtle grid background for scientific presentations",
+    },
+    "glass-panel": {
+        "name": "Glass Panel",
+        "left_accent": False, "title_underline": False,
+        "glass_card": True,
+        "description": "Frosted glass card-style panels",
+    },
 }
 
 # ============================================================
@@ -337,6 +402,32 @@ LAYOUT_VARIANTS: dict[str, dict[str, Any]] = {
         "title_alignment": "left", "card_style": "flat",
         "description": "Full-width edge-to-edge layout",
     },
+    "scroll": {
+        "name": "Scroll",
+        "content_margin_left": 2.5, "content_margin_right": 2.5,
+        "title_alignment": "center", "card_style": "scroll",
+        "description": "Central scroll/panel layout with wide margins",
+    },
+    "ink-wash": {
+        "name": "Ink Wash",
+        "content_margin_left": 1.5, "content_margin_right": 3.5,
+        "title_alignment": "left", "card_style": "minimal",
+        "vertical_text_area": True,
+        "description": "Left content + right vertical text column",
+    },
+    "sci-dense": {
+        "name": "Science Dense",
+        "content_margin_left": 0.6, "content_margin_right": 0.6,
+        "title_alignment": "left", "card_style": "flat",
+        "dense_mode": True,
+        "description": "High-density layout for scientific papers",
+    },
+    "hero-image": {
+        "name": "Hero Image",
+        "content_margin_left": 0.0, "content_margin_right": 0.0,
+        "title_alignment": "center", "card_style": "overlay",
+        "description": "Full-bleed hero image with text overlay",
+    },
 }
 
 # ============================================================
@@ -380,6 +471,11 @@ _MOOD_PALETTE_MAP: dict[str, list[str]] = {
     "energy": ["forest-green", "copper-industrial", "charcoal-bold", "sunset-warm"],
     "telecom": ["cyber-neon", "ocean-blue", "midnight-navy", "neon-gradient"],
     "logistics": ["copper-industrial", "charcoal-bold", "slate-minimal", "monochrome"],
+    "ink-wash": ["ink-wash", "ink-wash-dark", "zen-minimal"],
+    "chinese-traditional": ["ink-wash", "ink-wash-dark", "zen-minimal"],
+    "zen": ["zen-minimal", "ink-wash", "sage-calm"],
+    "sci": ["sci-paper", "ocean-blue", "midnight-navy"],
+    "neon": ["cyber-neon-pro", "cyber-neon", "neon-gradient"],
 }
 
 _MOOD_FONT_MAP: dict[str, list[str]] = {
@@ -419,6 +515,11 @@ _MOOD_FONT_MAP: dict[str, list[str]] = {
     "energy": ["clean-corporate", "modern-sans", "tech-contrast"],
     "telecom": ["tech-mono", "modern-sans", "geometric-sans"],
     "logistics": ["modern-sans", "clean-corporate", "mono-clean"],
+    "ink-wash": ["ink-wash-serif", "chinese-calligraphy", "chinese-classical"],
+    "chinese-traditional": ["ink-wash-serif", "chinese-classical", "literary-serif"],
+    "zen": ["ink-wash-serif", "literary-serif", "humanist-sans"],
+    "sci": ["sci-serif", "clean-corporate", "modern-sans"],
+    "neon": ["tech-display", "tech-mono", "geometric-sans"],
 }
 
 _MOOD_DECORATION_MAP: dict[str, list[str]] = {
@@ -458,6 +559,11 @@ _MOOD_DECORATION_MAP: dict[str, list[str]] = {
     "energy": ["accent-bar", "sidebar-nav", "gradient-bar"],
     "telecom": ["neon-lines", "gradient-bar", "accent-bar"],
     "logistics": ["accent-bar", "sidebar-nav", "no-decoration"],
+    "ink-wash": ["brush-stroke", "seal-stamp", "no-decoration"],
+    "chinese-traditional": ["brush-stroke", "seal-stamp", "gold-trim"],
+    "zen": ["no-decoration", "minimal-dots", "brush-stroke"],
+    "sci": ["sci-grid", "accent-bar", "no-decoration"],
+    "neon": ["neon-glow", "neon-lines", "no-decoration"],
 }
 
 _MOOD_LAYOUT_MAP: dict[str, list[str]] = {
@@ -497,6 +603,99 @@ _MOOD_LAYOUT_MAP: dict[str, list[str]] = {
     "energy": ["sidebar-left", "grid-2x2", "standard"],
     "telecom": ["wide-cards", "standard", "grid-2x2"],
     "logistics": ["sidebar-left", "standard", "grid-2x2"],
+    "ink-wash": ["ink-wash", "scroll", "centered"],
+    "chinese-traditional": ["ink-wash", "scroll", "centered"],
+    "zen": ["centered", "standard", "ink-wash"],
+    "sci": ["sci-dense", "sidebar-left", "grid-2x2"],
+    "neon": ["wide-cards", "full-width", "hero-image"],
+}
+
+_MOOD_TEXT_EFFECT_MAP: dict[str, list[str | None]] = {
+    "professional": [None, "steel"],
+    "corporate": [None, "steel"],
+    "tech": ["cyber-cyan", "blue-deep"],
+    "dark": ["purple-neon", "cyber-cyan"],
+    "warm": ["gold-shine", "sunset"],
+    "elegant": ["rose-gold", "gold-shine"],
+    "luxury": ["gold-shine", "rose-gold"],
+    "vibrant": ["sunset", "emerald"],
+    "startup": ["blue-deep", "cyber-cyan"],
+    "nature": ["emerald", None],
+    "calm": [None, "emerald"],
+    "minimal": [None],
+    "bold": ["sunset", "seal-red"],
+    "fresh": ["emerald", "cyber-cyan"],
+    "industrial": ["steel", None],
+    "fintech": ["blue-deep", "steel"],
+    "health": ["emerald", None],
+    "education": ["blue-deep", None],
+    "creative": ["purple-neon", "sunset"],
+    "sustainability": ["emerald", None],
+    "international": ["blue-deep", None],
+    "cream": ["gold-shine", "rose-gold"],
+    "frosted": ["steel", None],
+    "mckinsey": ["blue-deep", None],
+    "consulting": ["blue-deep", None],
+    "pastel": ["rose-gold", None],
+    "retro": ["gold-shine", "ink-wash"],
+    "government": ["steel", None],
+    "legal": ["steel", None],
+    "pharma": ["emerald", None],
+    "realestate": ["gold-shine", None],
+    "automotive": ["steel", "cyber-cyan"],
+    "aviation": ["blue-deep", None],
+    "energy": ["emerald", "sunset"],
+    "telecom": ["cyber-cyan", "purple-neon"],
+    "logistics": ["steel", None],
+    "ink-wash": ["ink-wash", None],
+    "chinese-traditional": ["ink-wash", "seal-red"],
+    "zen": [None],
+    "sci": ["blue-deep", None],
+    "neon": ["purple-neon", "cyber-cyan"],
+}
+
+_MOOD_IMAGE_EFFECT_MAP: dict[str, list[str | None]] = {
+    "professional": [None, "soft_edge"],
+    "corporate": [None, "soft_edge"],
+    "tech": ["duotone", None],
+    "dark": ["duotone", None],
+    "warm": ["sepia", "soft_edge"],
+    "elegant": ["soft_edge", None],
+    "luxury": ["soft_edge", None],
+    "vibrant": [None],
+    "startup": [None],
+    "nature": ["soft_edge", None],
+    "calm": ["soft_edge", None],
+    "minimal": [None],
+    "bold": [None],
+    "fresh": [None],
+    "industrial": [None],
+    "fintech": [None],
+    "health": [None],
+    "education": [None],
+    "creative": [None],
+    "sustainability": ["soft_edge", None],
+    "international": [None],
+    "cream": ["sepia", None],
+    "frosted": ["soft_edge", None],
+    "mckinsey": [None],
+    "consulting": [None],
+    "pastel": [None],
+    "retro": ["sepia", "grayscale"],
+    "government": [None],
+    "legal": [None],
+    "pharma": [None],
+    "realestate": [None],
+    "automotive": [None],
+    "aviation": [None],
+    "energy": [None],
+    "telecom": ["duotone", None],
+    "logistics": [None],
+    "ink-wash": ["ink_wash", "grayscale"],
+    "chinese-traditional": ["ink_wash", "grayscale"],
+    "zen": ["soft_edge", None],
+    "sci": [None],
+    "neon": ["duotone", None],
 }
 
 # Preset theme → atom mapping (backward compatible)
@@ -506,6 +705,11 @@ _PRESET_ATOM_MAP: dict[str, dict[str, str]] = {
     "warm-elegant": {"palette": "golden-luxury", "fonts": "serif-editorial", "decoration": "gold-trim", "layout": "centered"},
     "vibrant-startup": {"palette": "neon-gradient", "fonts": "bold-sans", "decoration": "gradient-bar", "layout": "grid-2x2"},
     "nature-calm": {"palette": "forest-green", "fonts": "humanist-sans", "decoration": "circle-accent", "layout": "sidebar-left"},
+    "ink-wash": {"palette": "ink-wash", "fonts": "ink-wash-serif", "decoration": "brush-stroke", "layout": "ink-wash"},
+    "chinese-traditional": {"palette": "ink-wash", "fonts": "chinese-calligraphy", "decoration": "seal-stamp", "layout": "ink-wash"},
+    "zen": {"palette": "zen-minimal", "fonts": "ink-wash-serif", "decoration": "no-decoration", "layout": "centered"},
+    "sci": {"palette": "sci-paper", "fonts": "sci-serif", "decoration": "sci-grid", "layout": "sci-dense"},
+    "neon": {"palette": "cyber-neon-pro", "fonts": "tech-display", "decoration": "neon-glow", "layout": "wide-cards"},
 }
 
 
@@ -527,6 +731,8 @@ class ThemeComposer:
         mood: str | None = None,
         seed: int | None = None,
         query: str | None = None,
+        text_effect_preset: str | None = None,
+        image_effect: str | None = None,
     ) -> dict[str, Any]:
         if style and style in _PRESET_ATOM_MAP:
             atoms = _PRESET_ATOM_MAP[style]
@@ -578,6 +784,9 @@ class ThemeComposer:
         deco = dict(DECORATION_STYLES.get(d, DECORATION_STYLES["accent-bar"]))
         lay = dict(LAYOUT_VARIANTS.get(lay_atom, LAYOUT_VARIANTS["standard"]))
 
+        te = text_effect_preset or self._pick_effect_from_mood(detected_moods, _MOOD_TEXT_EFFECT_MAP, rng)
+        ie = image_effect or self._pick_effect_from_mood(detected_moods, _MOOD_IMAGE_EFFECT_MAP, rng)
+
         dark_mode = self._is_dark(colors)
 
         result = {
@@ -587,6 +796,8 @@ class ThemeComposer:
             "dark_mode": dark_mode,
             "decoration": deco,
             "layout_variant": lay,
+            "text_effect_preset": te,
+            "image_effect": ie,
             "atoms": {"palette": palette or "ux-dynamic", "fonts": fonts or "ux-dynamic", "decoration": d, "layout": lay_atom, "moods": detected_moods},
         }
 
@@ -714,6 +925,11 @@ class ThemeComposer:
             "energy": ["energy", "oil", "gas", "petroleum", "renewable", "solar", "wind", "power-generation"],
             "telecom": ["telecom", "telecommunication", "5g", "broadband", "wireless", "carrier"],
             "logistics": ["logistics", "supply-chain", "shipping", "freight", "warehouse", "fulfillment"],
+            "ink-wash": ["ink-wash", "ink wash", "水墨", "国风", "古典", "毛笔", "山水", "写意", "宣纸"],
+            "chinese-traditional": ["chinese-traditional", "chinese traditional", "国风", "古典", "传统", "中式", "古风"],
+            "zen": ["zen", "wabi-sabi", "禅意", "侘寂", "极简东方", "和风"],
+            "sci": ["sci", "science", "scientific", "科研", "学术", "论文", "期刊"],
+            "neon": ["neon", "霓虹", "赛博", "cyberpunk", "发光"],
         }
         for mood, words in mood_words.items():
             if any(f" {w} " in text_lower for w in words):
@@ -728,6 +944,10 @@ class ThemeComposer:
             "pharma": "pharma", "biotech": "pharma",
             "regul": "legal", "compliance": "legal",
             "supply chain": "logistics", "shipping": "logistics",
+            "水墨": "ink-wash", "国风": "ink-wash", "古典": "ink-wash",
+            "禅意": "zen", "侘寂": "zen",
+            "科研": "sci", "学术": "sci", "论文": "sci",
+            "霓虹": "neon", "赛博": "neon",
         }
         for hint, mood in industry_hints.items():
             if hint in text_lower and mood not in moods:
@@ -747,6 +967,14 @@ class ThemeComposer:
         if mood_map:
             return list(mood_map.keys())[0]
         return "standard"
+
+    def _pick_effect_from_mood(self, moods: list[str], mood_map: dict, rng: random.Random) -> str | None:
+        for mood in moods:
+            options = mood_map.get(mood, [])
+            non_none = [o for o in options if o is not None]
+            if non_none:
+                return rng.choice(non_none)
+        return None
 
     def _is_dark(self, colors: dict[str, str]) -> bool:
         bg = colors.get("background", "#FFFFFF")

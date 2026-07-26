@@ -408,17 +408,171 @@ def apply_glow(shape, radius_pt: float = 8.0, color: str = "#2563EB", alpha_pct:
     glow.apply(shape)
 
 
+PATTERN_TYPES: dict[str, str] = {
+    "cross": "cross",
+    "dark_downward_diagonal": "dkDnDiag",
+    "dark_upward_diagonal": "dkUpDiag",
+    "dark_horizontal": "dkHorz",
+    "dark_vertical": "dkVert",
+    "small_checker": "smCheck",
+    "trellis": "trellis",
+    "light_horizontal": "ltHorz",
+    "light_vertical": "ltVert",
+    "light_downward_diagonal": "ltDnDiag",
+    "light_upward_diagonal": "ltUpDiag",
+    "diagonal_cross": "diagCross",
+    "dotted_grid": "dotGrid",
+    "dotted_diamond": "dotDmnd",
+    "weave": "weave",
+    "plaid": "plaid",
+    "solid_diamond": "solidDmnd",
+    "horizontal_brick": "horzBrick",
+    "diagonal_brick": "diagBrick",
+    "zigzag": "zigZag",
+    "wave": "wave",
+    "shingle": "shingle",
+    "large_checker": "lgCheck",
+    "large_grid": "lgGrid",
+    "small_grid": "smGrid",
+    "small_confetti": "smConfetti",
+    "large_confetti": "lgConfetti",
+    "narrow_horizontal": "narHorz",
+    "narrow_vertical": "narVert",
+    "outlined_diamond": "openDmnd",
+    "sphere": "sphere",
+}
+
+
+@dataclass
+class Shape3D:
+    depth_pt: float = 10.0
+    bevel_top_w: float = 4.0
+    bevel_top_h: float = 2.0
+    bevel_bottom_w: float = 4.0
+    bevel_bottom_h: float = 2.0
+    material: str = "powder"
+    extrusion_color: str = "#000000"
+    extrusion_alpha: int = 40
+    contour_color: str | None = None
+    contour_width_pt: float = 0.5
+    light_rig: str = "threePt"
+    light_dir: str = "t"
+    camera: str = "perspectiveFront"
+
+    def apply(self, shape) -> None:
+        spPr = shape._element.find(qn("p:spPr"))
+        if spPr is None:
+            return
+        for tag in ("a:sp3d", "a:scene3d"):
+            el = spPr.find(qn(tag))
+            if el is not None:
+                spPr.remove(el)
+
+        sp3d = etree.SubElement(spPr, qn("a:sp3d"))
+        sp3d.set("z", str(int(self.depth_pt * 12700)))
+
+        bevelT = etree.SubElement(sp3d, qn("a:bevelT"))
+        bevelT.set("w", str(int(self.bevel_top_w * 12700)))
+        bevelT.set("h", str(int(self.bevel_top_h * 12700)))
+
+        bevelB = etree.SubElement(sp3d, qn("a:bevelB"))
+        bevelB.set("w", str(int(self.bevel_bottom_w * 12700)))
+        bevelB.set("h", str(int(self.bevel_bottom_h * 12700)))
+
+        prstMat = etree.SubElement(sp3d, qn("a:prstMaterial"))
+        prstMat.set("val", self.material)
+
+        extrusionClr = etree.SubElement(sp3d, qn("a:extrusionClr"))
+        srgb = etree.SubElement(extrusionClr, qn("a:srgbClr"))
+        srgb.set("val", self.extrusion_color.lstrip("#"))
+        alpha_el = etree.SubElement(srgb, qn("a:alpha"))
+        alpha_el.set("val", str(self.extrusion_alpha * 1000))
+
+        if self.contour_color is not None:
+            sp3d.set("contourW", str(int(self.contour_width_pt * 12700)))
+            contourClr = etree.SubElement(sp3d, qn("a:contourClr"))
+            csrgb = etree.SubElement(contourClr, qn("a:srgbClr"))
+            csrgb.set("val", self.contour_color.lstrip("#"))
+
+        scene3d = etree.SubElement(spPr, qn("a:scene3d"))
+        camera = etree.SubElement(scene3d, qn("a:camera"))
+        camera.set("prst", self.camera)
+        lightRig = etree.SubElement(scene3d, qn("a:lightRig"))
+        lightRig.set("rig", self.light_rig)
+        lightRig.set("dir", self.light_dir)
+
+
+def apply_3d(shape, depth_pt: float = 10.0, material: str = "powder",
+             extrusion_color: str = "#000000") -> None:
+    Shape3D(depth_pt=depth_pt, material=material,
+            extrusion_color=extrusion_color).apply(shape)
+
+
+def apply_bevel(shape, top_w: float = 4.0, top_h: float = 2.0,
+                material: str = "powder") -> None:
+    Shape3D(depth_pt=0, bevel_top_w=top_w, bevel_top_h=top_h,
+            bevel_bottom_w=top_w, bevel_bottom_h=top_h,
+            material=material).apply(shape)
+
+
+def apply_pattern_fill(shape, pattern_type: str, fg_color: str, bg_color: str,
+                       fg_alpha: int | None = None) -> None:
+    if pattern_type not in PATTERN_TYPES:
+        raise KeyError(f"Unknown pattern type: {pattern_type!r}. "
+                       f"Available: {list(PATTERN_TYPES.keys())}")
+    spPr = shape._element.find(qn("p:spPr"))
+    if spPr is None:
+        return
+    _remove_existing_fill(spPr)
+    pattFill = etree.SubElement(spPr, qn("a:pattFill"))
+    pattFill.set("prst", PATTERN_TYPES[pattern_type])
+    fgClr = etree.SubElement(pattFill, qn("a:fgClr"))
+    fg_srgb = etree.SubElement(fgClr, qn("a:srgbClr"))
+    fg_srgb.set("val", fg_color.lstrip("#"))
+    if fg_alpha is not None:
+        fg_alpha_el = etree.SubElement(fg_srgb, qn("a:alpha"))
+        fg_alpha_el.set("val", str(fg_alpha * 1000))
+    bgClr = etree.SubElement(pattFill, qn("a:bgClr"))
+    bg_srgb = etree.SubElement(bgClr, qn("a:srgbClr"))
+    bg_srgb.set("val", bg_color.lstrip("#"))
+
+
+def apply_frosted_glass(shape, tint_color: str = "#FFFFFF", tint_alpha: int = 15,
+                        soft_edge: float = 8) -> None:
+    spPr = shape._element.find(qn("p:spPr"))
+    if spPr is None:
+        return
+    _remove_existing_fill(spPr)
+    solidFill = etree.SubElement(spPr, qn("a:solidFill"))
+    srgb = etree.SubElement(solidFill, qn("a:srgbClr"))
+    srgb.set("val", tint_color.lstrip("#"))
+    alpha_el = etree.SubElement(srgb, qn("a:alpha"))
+    alpha_el.set("val", str(tint_alpha * 1000))
+    if soft_edge > 0:
+        effectLst = spPr.find(qn("a:effectLst"))
+        if effectLst is None:
+            effectLst = etree.SubElement(spPr, qn("a:effectLst"))
+        existing = effectLst.find(qn("a:softEdge"))
+        if existing is not None:
+            effectLst.remove(existing)
+        softEdge = etree.SubElement(effectLst, qn("a:softEdge"))
+        softEdge.set("rad", str(int(soft_edge * 12700)))
+
+
 def apply_letter_spacing(run, tracking_em: float, font_size_pt: int) -> None:
-    """Set letter spacing on a run via OOXML a:spc element.
+    """Set letter spacing on a run via OOXML a:rPr spc attribute.
 
     tracking_em: EM ratio, e.g. -0.02 (tight), +0.08 (wide for ALL CAPS)
     font_size_pt: font size in points (OOXML spc val is font-size-dependent)
     val = tracking_em * font_size_pt * 100 (hundredths of a point)
+
+    Note: spc is an ATTRIBUTE of a:rPr (not a child element).
+    The previous child element form <a:spc val="..."/> was not rendered by PowerPoint.
     """
     if tracking_em == 0.0:
+        rPr = run._r.find(qn("a:rPr"))
+        if rPr is not None and rPr.get("spc") is not None:
+            rPr.attrib.pop("spc", None)
         return
     rPr = run._r.get_or_add_rPr()
-    spc = rPr.find(qn("a:spc"))
-    if spc is None:
-        spc = etree.SubElement(rPr, qn("a:spc"))
-    spc.set("val", str(int(tracking_em * font_size_pt * 100)))
+    rPr.set("spc", str(int(tracking_em * font_size_pt * 100)))

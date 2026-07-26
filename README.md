@@ -66,8 +66,8 @@
 | **三模式引擎** | FreeStyle 快速生成 + Build Script 逐页精确控制 + VI Build 基于企业模板生成 |
 | **叙事引擎** | 3 种策略（YC Seed Deck / Product Demo / Sales Pitch）+ Duarte Sparkline 情绪弧线 |
 | **ui-ux-pro-max 设计智能** | 192 色彩方案 · 84 风格 · 74 字体 · 161 反模式 — 必需依赖，自动匹配行业/场景 |
-| **40,000+ 风格组合** | 25 色彩方案 × 20 字体搭配 × 10 装饰风格 × 8 布局变体 + 35 种 mood |
-| **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "dark cyberpunk"` |
+| **40,000+ 风格组合** | 30 色彩方案 × 25 字体搭配 × 15 装饰风格 × 12 布局变体 + 41 种 mood |
+| **自然语言风格** | 描述风格即生成：`--style "warm fintech"` / `--style "水墨国风"` |
 | **28 项设计质量升级** | OKLCH 色彩深度 · 阴影层级 · 渐变叠层 · 进度条 · 圆角系统 · CJK 字体配对 · 噪点纹理 · 双栏要点 · 4 种 Hero 布局 · 章节分隔页 · 徽章系统 · 渐变线 · 图片遮罩 · 装饰渲染器 · 代码块重设计 · 卡片升级 · 自适应边距 · 排版比例尺 |
 | **10 种图形引擎** | 流程图/漏斗/时间线/SWOT/矩阵/循环/表格/层级/金字塔/韦恩 |
 | **Build Script 模式** | 10 种页面模板 + Design Token 系统 + 生成后自动检查，交付级质量 |
@@ -75,7 +75,8 @@
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
 | **12 母版布局** | 13.333"×7.5" 16:9 精确坐标 |
 | **AI 智能配图** | Seedream / GPT Image / DALL-E / Gemini / Wanx — 5 种生成引擎 + Kimi 增强 |
-| **动画系统** | 12 种切换 + 10 种入场动画，motion 1-10 智能映射 |
+| **动画系统** | 12 种切换 + 10 种入场动画 + 8 种退场 + 8 种强调 + Morph 切换，motion 1-10 智能映射 |
+| **高级设计效果** | 文字渐变/发光/3D · 图片异形裁切/双色调/22 种艺术效果 · 3D 形状/图案填充/毛玻璃 · 7 种装饰元素 · mood 自动触发效果 |
 | **代码块/练习** | 深色代码块 + 语言徽章 + 练习徽章 + 步骤列表 — 教育场景标配 |
 | **CJK 字体** | 12 种 CJK 配对自动回退（Microsoft YaHei / STSong / SimHei 等） |
 
@@ -247,12 +248,12 @@ my-project/
 
 | 设计原子 | 数量 | 示例 |
 |----------|------|------|
-| 🎨 色彩方案 | 25（+ 192 ui-ux-pro-max） | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, monochrome-dark... |
-| ✏️ 字体搭配 | 20（+ 74 ui-ux-pro-max） | modern-sans, serif-editorial, tech-mono, elegant-serif, contrast-mix... |
-| 🖌️ 装饰风格 | 10 | accent-bar, neon-lines, gold-trim, gradient-bar, circle-accent, sidebar-nav... |
-| 📐 布局变体 | 8 | standard, centered, sidebar-left, grid-2x2, wide-cards, full-width... |
+| 🎨 色彩方案 | 30（+ 192 ui-ux-pro-max） | ocean-blue, cyber-neon, golden-luxury, ink-wash, zen-minimal, sci-paper... |
+| ✏️ 字体搭配 | 25（+ 74 ui-ux-pro-max） | modern-sans, serif-editorial, tech-mono, ink-wash-serif, sci-serif, tech-display... |
+| 🖌️ 装饰风格 | 15 | accent-bar, neon-lines, gold-trim, brush-stroke, seal-stamp, neon-glow, sci-grid, glass-panel... |
+| 📐 布局变体 | 12 | standard, centered, sidebar-left, grid-2x2, scroll, ink-wash, sci-dense, hero-image... |
 
-**25 × 20 × 10 × 8 = 40,000 种组合**（叠加 ui-ux-pro-max 可达 200,000+）
+**30 × 25 × 15 × 12 = 135,000 种组合**（叠加 ui-ux-pro-max 可达 200,000+）
 
 ### 自然语言风格
 
@@ -266,9 +267,11 @@ ppt-design "创业路演" --style "bold startup vibrant"   # → royal-purple + 
 
 ### 35 种 mood 关键词
 
-除 5 种预置主题外，支持 35 种 mood 关键词自动匹配：
+除 5 种预置主题外，支持 41 种 mood 关键词自动匹配（含中文）：
 
-professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, international, cream, frosted, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics
+professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, international, cream, frosted, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics, **ink-wash**, **chinese-traditional**, **zen**, **sci**, **neon**
+
+中文"水墨"/"国风"→ ink-wash，"霓虹"/"赛博"→ neon，"科研"/"学术"→ sci，"禅意"/"侘寂"→ zen
 
 ### 预置主题
 
@@ -315,6 +318,62 @@ v0.9.0 引入 VI Build 模式 + 28 项设计质量升级：
 | 3.5 | **图片遮罩** | `add_masked_image()` — 圆角矩形框 + 0.15" 内边距 |
 | 3.6 | **双栏要点** | 6+ 条要点自动分两栏 + 垂直分隔线 |
 | 3.7 | **Hero 4 变体** | gradient / split-left / bottom-fade / asymmetric 4 种封面布局 |
+
+---
+
+## 🌟 高级设计效果 — 7 大模块（AD-P1~P7）
+
+在形状级效果（渐变/阴影/发光）基础上，新增**文字级效果**、**图片异形裁切**、**3D 形状**、**装饰元素库**等能力，使系统可产出与专业设计师作品媲美的 PPT。
+
+### 模块总览
+
+| 模块 | 能力 | API |
+|------|------|-----|
+| **AD-P1 文字效果** | 文字渐变(10 预设) · 描边 · 阴影 · 发光 · 3D 文字 · 透明度 · 竖排 · 旋转 · 字间距 | `gradient_text()` / `vertical_text()` / `seal_stamp()` |
+| **AD-P2 图片效果** | 异形裁切(圆形/六边形/菱形) · 双色调 · 灰度 · 22 种艺术效果 · 7 种 Pillow 滤镜 · 亮度/对比度/饱和度 | `circle_image()` / `duotone_image()` / `artistic_image()` |
+| **AD-P3 风格扩展** | +5 调色板(ink-wash/zen-minimal/sci-paper/cyber-neon-pro) · +5 字体(楷书/仿宋/Orbitron) · +5 装饰 · +4 布局 · +5 mood | `--style "水墨"` / `--style "霓虹"` |
+| **AD-P4 3D & 图案** | 3D 形状(extrusion+bevel+material) · 31 种图案填充 · 半透明面板(softEdge) | `shape_3d()` / `pattern_fill()` / `frosted_panel()` |
+| **AD-P5 动画扩展** | Morph 切换(Office 365+) · 8 种退场动画 · 8 种强调动画 | `exit_animation()` / `emphasis_animation()` |
+| **AD-P6 装饰库** | 毛笔分割线 · 印章 · 卷轴框 · 霓虹边框 · 网格背景 · 半透明面板 · 墨点飞溅 | `brush_divider()` / `neon_border()` / `ink_splash()` |
+| **AD-P7 模式集成** | mood → 文字效果预设自动映射 · mood → 图片效果自动映射 · `compose()` 返回效果字段 | `--style "水墨"` 自动触发 ink-wash 渐变 + 灰度图片 |
+
+### 代码示例
+
+```python
+from ppt_pro_max.build_helpers import *
+
+prs = Presentation()
+s = add_slide(prs)
+
+# 文字渐变 — 10 种预设
+gradient_text(s, 1.0, 1.0, 8.0, 1.5, "标题", preset='gold-shine', font_size=44)
+
+# 圆形裁切图片
+circle_image(s, 6.5, 3.0, 1.0, "photo.jpg")
+
+# 3D 形状
+shape_3d(s, 1.0, 3.5, 3.0, 2.0, depth=15.0, material='metal')
+
+# 毛玻璃面板
+frosted_panel(s, 5.0, 3.0, 6.0, 3.0, tint='#1A1A3A', alpha=20)
+
+# 毛笔分割线 + 印章
+brush_divider(s, 1.0, 5.0, 6.0, color='#2C2C2C')
+seal_stamp(s, 11.0, 5.5, 0.8, "印", rotation=-15)
+
+# Morph 切换
+slide_transition(s, 'morph')
+
+prs.save("output.pptx")
+```
+
+### Mood 自动触发
+
+```bash
+ppt-design "山水诗词" --style "水墨"     # → ink-wash 调色板 + 楷书字体 + 笔触装饰 + ink-wash 渐变 + 灰度图片
+ppt-design "AI发布" --style "霓虹"       # → cyber-neon 调色板 + Orbitron 字体 + 霓虹边框 + 紫色渐变 + 双色调图片
+ppt-design "论文答辩" --style "科研学术"  # → sci-paper 调色板 + Georgia 字体 + 网格背景 + 蓝色渐变
+```
 
 ---
 

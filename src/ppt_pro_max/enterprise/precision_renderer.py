@@ -31,6 +31,19 @@ from ppt_pro_max.renderer.layout_registry import SLIDE_WIDTH, SLIDE_HEIGHT
 from ppt_pro_max.renderer.visual_effects import (
     apply_gradient, apply_shadow, apply_glow, GradientFill, GradientStop,
 )
+from ppt_pro_max.renderer.text_effects import (
+    apply_text_gradient, apply_text_gradient_preset, set_vertical_text,
+    set_text_rotation, apply_text_outline,
+)
+from ppt_pro_max.renderer.blip_fill import (
+    add_circle_image as _add_circle_image,
+    add_image_in_shape as _add_image_in_shape,
+    apply_blip_duotone, apply_blip_artistic,
+)
+from ppt_pro_max.renderer.visual_effects import apply_soft_edge
+from ppt_pro_max.renderer.visual_effects import (
+    apply_3d, apply_bevel, apply_pattern_fill, apply_frosted_glass,
+)
 from ppt_pro_max.renderer.shape_factory import ShapeFactory
 
 CORNER_RADIUS_SCALE = {
@@ -174,6 +187,165 @@ class PrecisionRenderer:
             self._set_font_with_cjk(run, font, cjk)
             p.space_after = Pt(spacing)
         return tb
+
+    # ── Text effects helpers (Phase 1) ──
+
+    def add_text_with_gradient(self, slide, x: float, y: float, w: float, h: float,
+                               text: str, gradient_preset: str = "gold-shine",
+                               gradient_stops: list[tuple[str, int]] | None = None,
+                               font_size: int = 44, bold: bool = False,
+                               font: str | None = None,
+                               align: str = "left") -> object:
+        font = font or self._font_h()
+        tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.alignment = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT}[align]
+        run = p.add_run()
+        run.text = text
+        run.font.name = font
+        run.font.size = Pt(font_size)
+        run.font.bold = bold
+        from ppt_pro_max.renderer.theme_mapper import get_cjk_companion
+        cjk = get_cjk_companion(font, "heading" if font_size >= 20 else "body")
+        self._set_font_with_cjk(run, font, cjk)
+        if gradient_stops:
+            apply_text_gradient(run, gradient_stops)
+        else:
+            apply_text_gradient_preset(run, gradient_preset)
+        return tb
+
+    def add_vertical_text(self, slide, x: float, y: float, w: float, h: float,
+                          text: str, direction: str = "ea",
+                          font_name: str = "STKaiti", font_size: int = 24,
+                          color_role: str = "foreground",
+                          color_hex: str | None = None,
+                          bold: bool = False) -> object:
+        color = color_hex or self._c(color_role)
+        tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        set_vertical_text(tf, direction)
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        run = p.add_run()
+        run.text = text
+        run.font.name = font_name
+        run.font.size = Pt(font_size)
+        run.font.color.rgb = self._rgb(color)
+        run.font.bold = bold
+        from ppt_pro_max.renderer.theme_mapper import get_cjk_companion
+        cjk = get_cjk_companion(font_name, "heading" if font_size >= 20 else "body")
+        self._set_font_with_cjk(run, font_name, cjk)
+        return tb
+
+    def add_seal_stamp(self, slide, x: float, y: float, size: float,
+                       text: str, fill_hex: str = "#C41E3A",
+                       font_name: str = "SimSun", rotation: float = -15) -> object:
+        sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+                                    Inches(x), Inches(y), Inches(size), Inches(size))
+        sh.fill.solid()
+        sh.fill.fore_color.rgb = self._rgb(fill_hex)
+        border_hex = self._lighten(fill_hex.lstrip("#"), 40)
+        sh.line.color.rgb = self._rgb(border_hex)
+        sh.line.width = Pt(2)
+        tf = sh.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        run = p.add_run()
+        run.text = text
+        run.font.name = font_name
+        run.font.size = Pt(max(11, int(size * 18)))
+        run.font.color.rgb = self._rgb("#FFFFFF")
+        run.font.bold = True
+        apply_text_outline(run, fill_hex.lstrip("#"), 1.5)
+        if rotation != 0:
+            set_text_rotation(sh, rotation)
+        return sh
+
+    # ── Image effects helpers (Phase 2) ──
+
+    def add_circle_image(self, slide, cx: float, cy: float, radius: float,
+                         image_path: str, border_hex: str | None = None) -> object:
+        if not image_path or not os.path.isfile(image_path):
+            return None
+        border = border_hex or self._c("border", None)
+        return _add_circle_image(slide, cx, cy, radius, image_path,
+                                 border_hex=border)
+
+    def add_image_with_soft_edge(self, slide, image_path: str,
+                                 x: float, y: float, w: float, h: float,
+                                 radius_pt: float = 10) -> object:
+        if not image_path or not os.path.isfile(image_path):
+            return None
+        shape = slide.shapes.add_picture(image_path, Inches(x), Inches(y),
+                                         Inches(w), Inches(h))
+        apply_soft_edge(shape, radius_pt=radius_pt)
+        return shape
+
+    def add_image_with_duotone(self, slide, image_path: str,
+                               x: float, y: float, w: float, h: float,
+                               color1: str = "#0000FF",
+                               color2: str = "#FF0000") -> object:
+        if not image_path or not os.path.isfile(image_path):
+            return None
+        shape = _add_image_in_shape(slide, MSO_SHAPE.RECTANGLE, x, y, w, h,
+                                    image_path)
+        apply_blip_duotone(shape, color1, color2)
+        return shape
+
+    def add_image_with_artistic(self, slide, image_path: str,
+                                x: float, y: float, w: float, h: float,
+                                effect: str = "watercolor_sponge",
+                                params: dict | None = None) -> object:
+        if not image_path or not os.path.isfile(image_path):
+            return None
+        shape = _add_image_in_shape(slide, MSO_SHAPE.RECTANGLE, x, y, w, h,
+                                    image_path)
+        apply_blip_artistic(shape, effect, params)
+        return shape
+
+    # ── 3D / Pattern / Frosted helpers (Phase 4) ──
+
+    def add_3d_shape(self, slide, x: float, y: float, w: float, h: float,
+                     depth_pt: float = 10.0, material: str = "powder",
+                     extrusion_color: str = "#000000",
+                     shape_type: MSO_SHAPE = MSO_SHAPE.RECTANGLE) -> object:
+        sh = slide.shapes.add_shape(shape_type, Inches(x), Inches(y),
+                                    Inches(w), Inches(h))
+        apply_3d(sh, depth_pt=depth_pt, material=material,
+                 extrusion_color=extrusion_color)
+        return sh
+
+    def add_bevel_shape(self, slide, x: float, y: float, w: float, h: float,
+                        top_w: float = 4.0, top_h: float = 2.0,
+                        material: str = "powder",
+                        shape_type: MSO_SHAPE = MSO_SHAPE.RECTANGLE) -> object:
+        sh = slide.shapes.add_shape(shape_type, Inches(x), Inches(y),
+                                    Inches(w), Inches(h))
+        apply_bevel(sh, top_w=top_w, top_h=top_h, material=material)
+        return sh
+
+    def add_pattern_fill_shape(self, slide, x: float, y: float, w: float, h: float,
+                               pattern_type: str, fg_color: str, bg_color: str,
+                               fg_alpha: int | None = None,
+                               shape_type: MSO_SHAPE = MSO_SHAPE.RECTANGLE) -> object:
+        sh = slide.shapes.add_shape(shape_type, Inches(x), Inches(y),
+                                    Inches(w), Inches(h))
+        apply_pattern_fill(sh, pattern_type, fg_color, bg_color,
+                           fg_alpha=fg_alpha)
+        return sh
+
+    def add_frosted_panel(self, slide, x: float, y: float, w: float, h: float,
+                          tint_color: str = "#FFFFFF", tint_alpha: int = 15,
+                          soft_edge: float = 8) -> object:
+        sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y),
+                                    Inches(w), Inches(h))
+        apply_frosted_glass(sh, tint_color=tint_color, tint_alpha=tint_alpha,
+                            soft_edge=soft_edge)
+        return sh
 
     # ── Image helpers (Pillow pre-crop) ──
 

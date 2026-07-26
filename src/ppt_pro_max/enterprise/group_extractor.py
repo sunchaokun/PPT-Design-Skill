@@ -72,6 +72,7 @@ class GroupExtractor:
         orig_bounds = self._get_bounds_emu(grp_elem)
         theme_colors = self._resolve_theme_colors(group_shape)
         resolved_elem = self._resolve_scheme_colors(grp_elem, theme_colors)
+        self._normalize_coordinates(resolved_elem)
         grp_xml = etree.tostring(resolved_elem, xml_declaration=False, encoding="unicode")
 
         aspect = orig_bounds[2] / orig_bounds[3] if orig_bounds[3] > 0 else 1.0
@@ -173,6 +174,7 @@ class GroupExtractor:
         orig_bounds = self._get_bounds_emu_from_xml(grp_elem)
         theme_colors = self._resolve_theme_colors_from_zip(grp_elem, z, slide_rels, slide_path)
         resolved_elem = self._resolve_scheme_colors(grp_elem, theme_colors)
+        self._normalize_coordinates(resolved_elem)
         grp_xml = etree.tostring(resolved_elem, xml_declaration=False, encoding="unicode")
 
         aspect = orig_bounds[2] / orig_bounds[3] if orig_bounds[3] > 0 else 1.0
@@ -443,6 +445,123 @@ class GroupExtractor:
             return color_map
         except Exception:
             return {}
+
+    def _normalize_coordinates(self, grp_elem):
+        """Normalize grpSp coordinates: chOff -> (0,0), adjust child positions.
+
+        This ensures stored XML has a consistent virtual canvas origin,
+        so ComponentAdapter._transform_layout can correctly scale and position
+        the component regardless of where it was on the original slide.
+        """
+        a_ns = _NS["a"]
+        p_ns = _NS["p"]
+
+        grpSpPr = grp_elem.find(f"{{{p_ns}}}grpSpPr")
+        if grpSpPr is None:
+            return
+        xfrm = grpSpPr.find(f"{{{a_ns}}}xfrm")
+        if xfrm is None:
+            return
+
+        chOff = xfrm.find(f"{{{a_ns}}}chOff")
+        if chOff is None:
+            return
+
+        orig_chOff_x = int(chOff.get("x", "0"))
+        orig_chOff_y = int(chOff.get("y", "0"))
+        if orig_chOff_x == 0 and orig_chOff_y == 0:
+            return
+
+        chExt = xfrm.find(f"{{{a_ns}}}chExt")
+        ext = xfrm.find(f"{{{a_ns}}}ext")
+        if chExt is None or ext is None:
+            return
+
+        orig_chExt_cx = int(chExt.get("cx", "0"))
+        orig_chExt_cy = int(chExt.get("cy", "0"))
+        ext_cx = int(ext.get("cx", "0"))
+        ext_cy = int(ext.get("cy", "0"))
+
+        if orig_chExt_cx <= 0 or orig_chExt_cy <= 0:
+            return
+
+        scale_x = ext_cx / orig_chExt_cx
+        scale_y = ext_cy / orig_chExt_cy
+
+        self._transform_child_coords(grp_elem, orig_chOff_x, orig_chOff_y, scale_x, scale_y, a_ns, p_ns)
+
+        chOff.set("x", "0")
+        chOff.set("y", "0")
+        chExt.set("cx", str(ext_cx))
+        chExt.set("cy", str(ext_cy))
+
+    def _transform_child_coords(self, parent, chOff_x, chOff_y, scale_x, scale_y, a_ns, p_ns):
+        """Recursively transform child coordinates: (orig - chOff) * scale."""
+        for child in parent:
+            tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+
+            if tag in ("sp", "pic", "cxnSp", "graphicFrame"):
+                spPr = child.find(f"{{{p_ns}}}spPr")
+                if spPr is None:
+                    continue
+                xfrm = spPr.find(f"{{{a_ns}}}xfrm")
+                if xfrm is None:
+                    continue
+                off = xfrm.find(f"{{{a_ns}}}off")
+                ext_elem = xfrm.find(f"{{{a_ns}}}ext")
+                if off is not None:
+                    ox = int(off.get("x", "0"))
+                    oy = int(off.get("y", "0"))
+                    off.set("x", str(int((ox - chOff_x) * scale_x)))
+                    off.set("y", str(int((oy - chOff_y) * scale_y)))
+                if ext_elem is not None:
+                    ecx = int(ext_elem.get("cx", "0"))
+                    ecy = int(ext_elem.get("cy", "0"))
+                    ext_elem.set("cx", str(int(ecx * scale_x)))
+                    ext_elem.set("cy", str(int(ecy * scale_y)))
+
+            elif tag == "grpSp":
+                grpSpPr = child.find(f"{{{p_ns}}}grpSpPr")
+                if grpSpPr is None:
+                    continue
+                xfrm = grpSpPr.find(f"{{{a_ns}}}xfrm")
+                if xfrm is None:
+                    continue
+                off = xfrm.find(f"{{{a_ns}}}off")
+                ext_elem = xfrm.find(f"{{{a_ns}}}ext")
+                child_chOff = xfrm.find(f"{{{a_ns}}}chOff")
+                child_chExt = xfrm.find(f"{{{a_ns}}}chExt")
+
+                if off is not None:
+                    ox = int(off.get("x", "0"))
+                    oy = int(off.get("y", "0"))
+                    new_ox = int((ox - chOff_x) * scale_x)
+                    new_oy = int((oy - chOff_y) * scale_y)
+                    off.set("x", str(new_ox))
+                    off.set("y", str(new_oy))
+                if ext_elem is not None:
+                    ecx = int(ext_elem.get("cx", "0"))
+                    ecy = int(ext_elem.get("cy", "0"))
+                    ext_elem.set("cx", str(int(ecx * scale_x)))
+                    ext_elem.set("cy", str(int(ecy * scale_y)))
+
+                if child_chOff is not None and child_chExt is not None:
+                    sub_chOff_x = int(child_chOff.get("x", "0"))
+                    sub_chOff_y = int(child_chOff.get("y", "0"))
+                    sub_chExt_cx = int(child_chExt.get("cx", "0"))
+                    sub_chExt_cy = int(child_chExt.get("cy", "0"))
+                    new_ext_cx = int(ext_elem.get("cx", "0")) if ext_elem is not None else 0
+                    new_ext_cy = int(ext_elem.get("cy", "0")) if ext_elem is not None else 0
+
+                    if sub_chExt_cx > 0 and sub_chExt_cy > 0:
+                        sub_scale_x = new_ext_cx / sub_chExt_cx
+                        sub_scale_y = new_ext_cy / sub_chExt_cy
+                        self._transform_child_coords(child, sub_chOff_x, sub_chOff_y, sub_scale_x, sub_scale_y, a_ns, p_ns)
+
+                    child_chOff.set("x", "0")
+                    child_chOff.set("y", "0")
+                    child_chExt.set("cx", str(new_ext_cx))
+                    child_chExt.set("cy", str(new_ext_cy))
 
     def _resolve_scheme_colors(self, grp_elem, theme_colors: dict[str, str]):
         if not theme_colors:

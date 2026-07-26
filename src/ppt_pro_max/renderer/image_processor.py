@@ -6,10 +6,14 @@ import tempfile
 from pathlib import Path
 
 from PIL import Image as PILImage
+from PIL import ImageFilter, ImageDraw
 
 
 _CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".cache", "graded")
 _CACHE_DIR = os.path.normpath(_CACHE_DIR)
+
+_EFFECTS_CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", ".cache", "effects")
+_EFFECTS_CACHE_DIR = os.path.normpath(_EFFECTS_CACHE_DIR)
 
 
 def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -64,3 +68,185 @@ def generate_noise_tile(size: int = 200, opacity: float = 0.02,
             img.putpixel((x, y), (val, val, val, alpha_val))
     img.save(cache_path, "PNG")
     return cache_path
+
+
+def _effects_cache_path(image_path: str, effect_name: str, **kwargs) -> Path:
+    out_dir = Path(_EFFECTS_CACHE_DIR)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    src = Path(image_path)
+    parts = [str(src.stat().st_mtime), effect_name]
+    for v in kwargs.values():
+        parts.append(str(v))
+    key = hashlib.md5("_".join(parts).encode()).hexdigest()
+    ext = src.suffix.lower()
+    if ext in (".jpg", ".jpeg"):
+        return out_dir / f"{key}.jpg"
+    return out_dir / f"{key}.png"
+
+
+def _save_with_format(img: PILImage.Image, out_path: Path, src_path: str) -> str:
+    ext = Path(src_path).suffix.lower()
+    if ext in (".jpg", ".jpeg"):
+        rgb = img.convert("RGB")
+        rgb.save(str(out_path), "JPEG", quality=92)
+    else:
+        img.save(str(out_path), "PNG")
+    return str(out_path)
+
+
+def apply_grayscale(image_path: str) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    out_path = _effects_cache_path(image_path, "grayscale")
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("L")
+    return _save_with_format(img, out_path, image_path)
+
+
+def apply_sepia(image_path: str, intensity: float = 0.5) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    if intensity <= 0.0:
+        return image_path
+    out_path = _effects_cache_path(image_path, "sepia", intensity=intensity)
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("RGB")
+    pixels = img.load()
+    w, h = img.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b = pixels[x, y]
+            tr = int(min(255, 0.393 * r + 0.769 * g + 0.189 * b))
+            tg = int(min(255, 0.349 * r + 0.686 * g + 0.168 * b))
+            tb = int(min(255, 0.272 * r + 0.534 * g + 0.131 * b))
+            nr = int(r + (tr - r) * intensity)
+            ng = int(g + (tg - g) * intensity)
+            nb = int(b + (tb - b) * intensity)
+            pixels[x, y] = (nr, ng, nb)
+    return _save_with_format(img, out_path, image_path)
+
+
+def apply_duotone(image_path: str, color1: str, color2: str) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    out_path = _effects_cache_path(image_path, "duotone", c1=color1, c2=color2)
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("L")
+    c1 = _hex_to_rgb(color1)
+    c2 = _hex_to_rgb(color2)
+    result = PILImage.new("RGB", img.size)
+    pixels = result.load()
+    gray_pixels = img.load()
+    w, h = img.size
+    for y in range(h):
+        for x in range(w):
+            t = gray_pixels[x, y] / 255.0
+            r = int(c2[0] + (c1[0] - c2[0]) * t)
+            g = int(c2[1] + (c1[1] - c2[1]) * t)
+            b = int(c2[2] + (c1[2] - c2[2]) * t)
+            pixels[x, y] = (r, g, b)
+    return _save_with_format(result, out_path, image_path)
+
+
+def apply_ink_wash(image_path: str, contrast: float = 1.5,
+                   brightness: float = 0.0) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    out_path = _effects_cache_path(image_path, "ink_wash",
+                                   contrast=contrast, brightness=brightness)
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("L")
+    from PIL import ImageEnhance
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(contrast)
+    if brightness != 0.0:
+        enhancer = ImageEnhance.Brightness(img)
+        img = enhancer.enhance(1.0 + brightness)
+    tint = PILImage.new("RGB", img.size, (245, 240, 232))
+    img_rgb = img.convert("RGB")
+    result = PILImage.blend(img_rgb, tint, 0.15)
+    return _save_with_format(result, out_path, image_path)
+
+
+def apply_blur(image_path: str, radius: int = 5) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    if radius <= 0:
+        return image_path
+    out_path = _effects_cache_path(image_path, "blur", radius=radius)
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src))
+    result = img.filter(ImageFilter.GaussianBlur(radius=radius))
+    return _save_with_format(result, out_path, image_path)
+
+
+def apply_vignette(image_path: str, intensity: float = 0.5) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    if intensity <= 0.0:
+        return image_path
+    out_path = _effects_cache_path(image_path, "vignette", intensity=intensity)
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("RGBA")
+    w, h = img.size
+    mask = PILImage.new("L", (w, h), 255)
+    draw = ImageDraw.Draw(mask)
+    cx, cy = w // 2, h // 2
+    max_radius = int(math.sqrt(cx * cx + cy * cy))
+    steps = 20
+    for i in range(steps):
+        ratio = 1.0 - (i / steps) * 0.5
+        r = int(max_radius * ratio)
+        alpha = int(255 * (1.0 - intensity * (1.0 - i / steps)))
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=alpha)
+    img.putalpha(mask)
+    return _save_with_format(img, out_path, image_path)
+
+
+def apply_edge_fade(image_path: str, margin_pct: float = 0.1,
+                    bg_color: str | None = None) -> str:
+    src = Path(image_path)
+    if not src.exists():
+        return image_path
+    out_path = _effects_cache_path(image_path, "edge_fade",
+                                   margin=margin_pct, bg=bg_color or "none")
+    if out_path.exists():
+        return str(out_path)
+    img = PILImage.open(str(src)).convert("RGBA")
+    w, h = img.size
+    margin_x = int(w * margin_pct)
+    margin_y = int(h * margin_pct)
+    alpha = PILImage.new("L", (w, h), 255)
+    pixels = alpha.load()
+    for y in range(h):
+        for x in range(w):
+            fx = 1.0
+            if x < margin_x:
+                fx = x / max(margin_x, 1)
+            elif x > w - margin_x:
+                fx = (w - x) / max(margin_x, 1)
+            fy = 1.0
+            if y < margin_y:
+                fy = y / max(margin_y, 1)
+            elif y > h - margin_y:
+                fy = (h - y) / max(margin_y, 1)
+            pixels[x, y] = int(min(fx, fy) * 255)
+    img.putalpha(alpha)
+    if bg_color:
+        bg = PILImage.new("RGB", (w, h), _hex_to_rgb(bg_color))
+        bg_rgba = bg.convert("RGBA")
+        result = PILImage.alpha_composite(bg_rgba, img)
+        return _save_with_format(result, out_path, image_path)
+    return _save_with_format(img, out_path, image_path)

@@ -962,3 +962,269 @@ lin = etree.SubElement(gradFill, qn("a:lin"))
 lin.set("ang", "5400000")  # 90° (top to bottom)
 lin.set("scaled", "1")
 ```
+
+---
+
+## 18. Text-Level Effects (a:rPr)
+
+Text effects operate on run properties (`a:rPr`), separate from shape properties (`p:spPr`).
+
+### Text Gradient Fill
+
+```xml
+<a:rPr lang="en-US" sz="4400" dirty="0">
+  <a:gradFill>
+    <a:gsLst>
+      <a:gs pos="0"><a:srgbClr val="F5AF19"/></a:gs>
+      <a:gs pos="50000"><a:srgbClr val="FFA300"/></a:gs>
+      <a:gs pos="100000"><a:srgbClr val="FF6B00"/></a:gs>
+    </a:gsLst>
+    <a:lin ang="5400000" scaled="1"/>
+  </a:gradFill>
+</a:rPr>
+```
+
+### Text Outline
+
+```xml
+<a:rPr lang="en-US" sz="4400">
+  <a:ln w="25400">
+    <a:solidFill><a:srgbClr val="6366F1"/></a:solidFill>
+  </a:ln>
+</a:rPr>
+```
+
+### Text Shadow
+
+```xml
+<a:rPr lang="en-US" sz="4400">
+  <a:effectLst>
+    <a:outerShdw blurRad="76200" dist="38100" dir="5400000" algn="tl" rotWithShape="0">
+      <a:srgbClr val="000000"><a:alpha val="25000"/></a:srgbClr>
+    </a:outerShdw>
+  </a:effectLst>
+</a:rPr>
+```
+
+### Text Glow
+
+```xml
+<a:rPr lang="en-US" sz="4400">
+  <a:effectLst>
+    <a:glow rad="101600">
+      <a:srgbClr val="8B5CF6"><a:alpha val="40000"/></a:srgbClr>
+    </a:glow>
+  </a:effectLst>
+</a:rPr>
+```
+
+### Text Alpha (Transparency)
+
+```xml
+<a:rPr lang="en-US" sz="4400">
+  <a:solidFill>
+    <a:srgbClr val="000000"><a:alpha val="50000"/></a:srgbClr>
+  </a:solidFill>
+</a:rPr>
+```
+
+### Vertical Text
+
+```xml
+<p:txBody>
+  <a:bodyPr vert="eaVert" anchor="ctr"/>
+  <a:p>...</a:p>
+</p:txBody>
+```
+
+Values: `eaVert` (East Asian vertical), `mongolianVert`, `vert270`
+
+### Letter Spacing
+
+**CRITICAL**: `spc` is an **attribute** of `a:rPr`, NOT a child element. Child element form is NOT rendered by PowerPoint.
+
+```xml
+<!-- CORRECT: attribute form -->
+<a:rPr lang="en-US" sz="4400" spc="1400"/>
+
+<!-- WRONG: child element form (PowerPoint ignores this) -->
+<a:rPr lang="en-US" sz="4400"><a:spc val="1400"/></a:rPr>
+```
+
+---
+
+## 19. Image Fill in Shapes (a:blipFill)
+
+### Fill Shape with Image
+
+```xml
+<p:sp>
+  <p:nvSpPr>...</p:nvSpPr>
+  <p:spPr>
+    <a:xfrm>...</a:xfrm>
+    <a:prstGeom prst="oval"/>  <!-- circle crop -->
+    <a:blipFill>
+      <a:blip r:embed="rId3"/>
+      <a:srcRect/>
+      <a:stretch><a:fillRect/></a:stretch>
+    </a:blipFill>
+    <a:ln><a:noFill/></a:ln>
+  </p:spPr>
+</p:sp>
+```
+
+Key: Register image to slide part first via `slide.part.get_or_add_image_part(path)` to get `rId`.
+
+### Duotone Effect
+
+```xml
+<a:blip r:embed="rId3">
+  <a:duotone>
+    <a:srgbClr val="0000FF"/>
+    <a:srgbClr val="FF0000"/>
+  </a:duotone>
+</a:blip>
+```
+
+### Grayscale Effect
+
+```xml
+<a:blip r:embed="rId3">
+  <a:grayscl/>
+</a:blip>
+```
+
+### Brightness & Contrast
+
+```xml
+<a:blip r:embed="rId3">
+  <a:lum bright="20000" contrast="30000"/>  <!-- both are a:lum attributes -->
+</a:blip>
+```
+
+**NOTE**: `a:contrast` does NOT exist as a separate element. Both `bright` and `contrast` are attributes of `a:lum`.
+
+### Saturation
+
+```xml
+<a:blip r:embed="rId3">
+  <a:sat val="150000"/>
+</a:blip>
+```
+
+### Artistic Effects (22 types)
+
+```xml
+<a:blip r:embed="rId3">
+  <a:artisticWatercolorSponge brushSize="2" smoothing="3"/>
+</a:blip>
+```
+
+Available: `artisticWatercolorSponge`, `artisticPencilGrayscale`, `artisticPencilColored`, `artisticMosaicBubbles`, `artisticFilmGrain`, `artisticGlowDiffused`, `artisticBlur`, `artisticCutout`, `artisticMarker`, `artisticPaintStrokes`, `artisticTexturizer`, `artisticLightScreen`, `artisticLineDrawing`, `artisticEtching`, `artisticPlastic`, `artisticGlass`, `artisticCement`, `artisticChalkSmokey`, `artisticCrayon`, `artisticHalftone`, `artisticPhotocopy`, `artisticStamp`
+
+---
+
+## 20. 3D Shapes & Pattern Fill
+
+### 3D Extrusion
+
+```xml
+<p:spPr>
+  <a:sp3d z="127000" contourW="6350">
+    <a:bevelT w="50800" h="25400"/>
+    <a:bevelB w="50800" h="25400"/>
+    <a:prstMaterial val="powder"/>
+    <a:extrusionClr>
+      <a:srgbClr val="000000"><a:alpha val="40000"/></a:srgbClr>
+    </a:extrusionClr>
+    <a:contourClr>
+      <a:srgbClr val="333333"/>
+    </a:contourClr>
+  </a:sp3d>
+  <a:scene3d>
+    <a:camera prst="perspectiveFront"/>
+    <a:lightRig rig="threePt" dir="t"/>
+  </a:scene3d>
+</p:spPr>
+```
+
+Material values: `matte`, `powder`, `metal`, `plastic`, `clear`
+Camera presets: `orthoFront`, `perspectiveFront`, `isometricOffAxis1Top`
+Light rigs: `threePt`, `balanced`, `soft`, `harsh`, `flood`, `contrasting`
+Light dirs: `t`, `tr`, `r`, `br`, `b`, `bl`, `l`, `tl`
+
+### Pattern Fill
+
+```xml
+<p:spPr>
+  <a:pattFill prst="dotGrid">
+    <a:fgClr><a:srgbClr val="333333"/></a:fgClr>
+    <a:bgClr><a:srgbClr val="FFFFFF"/></a:bgClr>
+  </a:pattFill>
+</p:spPr>
+```
+
+Pattern abbreviations (OOXML uses these, NOT full names): `cross`, `dkDnDiag`, `dkUpDiag`, `dkHorz`, `dkVert`, `smCheck`, `trellis`, `ltHorz`, `ltVert`, `ltDnDiag`, `ltUpDiag`, `diagCross`, `dotGrid`, `dotDmnd`, `weave`, `plaid`, `solidDmnd`, `horzBrick`, `diagBrick`, `zigZag`, `wave`, `shingle`
+
+### Frosted Glass (Simulated)
+
+OOXML has no backdrop-blur. Approximate with semi-transparent fill + softEdge:
+
+```xml
+<p:spPr>
+  <a:solidFill>
+    <a:srgbClr val="FFFFFF"><a:alpha val="15000"/></a:srgbClr>
+  </a:solidFill>
+  <a:effectLst>
+    <a:softEdge rad="101600"/>
+  </a:effectLst>
+</p:spPr>
+```
+
+---
+
+## 21. Animation Expansion
+
+### Exit Animation
+
+Same structure as entrance but `presetClass="exit"` and visibility set to `"hidden"`:
+
+```python
+from ppt_pro_max.renderer.animation import add_exit_animation, EXIT_PRESETS
+
+# EXIT_PRESETS: fade_out, fly_out_left, fly_out_right, fly_out_top,
+# fly_out_bottom, zoom_out, shrink, spin_out
+add_exit_animation(slide, shape_id, effect="fade_out", duration_ms=500)
+```
+
+### Emphasis Animation
+
+`presetClass="emph"`, no visibility change:
+
+```python
+from ppt_pro_max.renderer.animation import add_emphasis_animation, EMPHASIS_PRESETS
+
+# EMPHASIS_PRESETS: grow, shrink, spin, pulse, color_change,
+# transparency, bold_flash, wave
+add_emphasis_animation(slide, shape_id, effect="pulse", duration_ms=500)
+```
+
+### Morph Transition (Office 365+ only)
+
+```xml
+<p:transition spd="med">
+  <p:morph option="byObject"/>
+</p:transition>
+```
+
+**WARNING**: Morph only works in Office 365/PowerPoint 2019+. Older versions will not play this transition. Use as opt-in only.
+
+---
+
+## 22. bodyPr vert Values
+
+| Value | Direction | Use Case |
+|-------|-----------|----------|
+| `eaVert` | Top-to-bottom (East Asian) | Chinese/Japanese vertical poetry |
+| `mongolianVert` | Left-to-right (Mongolian) | Mongolian text |
+| `vert270` | Rotated 270° | Western vertical labels |

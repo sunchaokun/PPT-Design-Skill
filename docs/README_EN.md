@@ -4,7 +4,7 @@
 
 **Generate professional .pptx presentations from a single sentence**
 
-Triple-mode engine · Narrative-driven · AI images · **40,000+ Style Combinations** · **28 Design Quality Upgrades** · **Build Script Precision** · **VI Build Enterprise Compliance**
+Triple-mode engine · Narrative-driven · AI images · **135,000+ Style Combinations** · **Advanced Design Effects (7 modules)** · **28 Design Quality Upgrades** · **Build Script Precision** · **VI Build Enterprise Compliance**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -60,8 +60,8 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 |---------|-------------|
 | **Triple-Mode Engine** | FreeStyle rapid generation + Build Script per-page precision + VI Build enterprise template compliance |
 | **Narrative Engine** | 3 strategies (YC Seed Deck / Product Demo / Sales Pitch) + Duarte Sparkline emotion arcs |
-| **40,000+ Style Combos** | 25 palettes × 20 font pairs × 10 decorations × 8 layout variants |
-| **Natural Language Style** | Describe your style: `--style "warm fintech"` / `--style "dark cyberpunk"` |
+| **40,000+ Style Combos** | 30 palettes × 25 font pairs × 15 decorations × 12 layout variants |
+| **Natural Language Style** | Describe your style: `--style "warm fintech"` / `--style "水墨 ink-wash"` |
 | **28 Design Quality Upgrades** | OKLCH color depth · Shadow elevation · Gradient overlay · Progress bar · Corner radius · CJK font pairing · Noise texture · Two-column bullets · 4 Hero patterns · Section dividers · Badge system · Gradient lines · Image masking · Decoration renderer · Code block redesign · Card upgrade · Adaptive margins · Typography scale |
 | **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
 | **Build Script Mode** | 10 page templates + Design Token system + post-build checks, delivery-grade quality |
@@ -69,7 +69,8 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 | **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
 | **12 Master Layouts** | 13.333"×7.5" 16:9 precise coordinates |
 | **AI Image Engines** | Seedream / GPT Image / DALL-E / Wanx — 4 generation engines + Kimi enhancement |
-| **Animation System** | 12 transition types + 10 entrance effects, motion 1-10 smart mapping |
+| **Animation System** | 12 transitions + 10 entrance + 8 exit + 8 emphasis effects + Morph transition |
+| **Advanced Design Effects** | Text gradient/glow/3D · Image crop/duotone/22 artistic effects · 3D shapes/pattern fill/frosted glass · 7 decoration elements · Mood-triggered effects |
 | **Code/Exercise Blocks** | Dark code blocks + language badges + exercise badges + step lists — education-ready |
 | **CJK Fonts** | 12 CJK font pairings with auto-fallback (Microsoft YaHei / STSong / SimHei etc.) |
 
@@ -236,16 +237,16 @@ All AI engines include **cache-first** — same image never generated twice.
 
 ---
 
-## 🎨 Design System — 40,000+ Style Combinations
+## 🎨 Design System — 135,000+ Style Combinations
 
 | Atom | Count | Examples |
 |------|-------|----------|
-| 🎨 Color Palettes | 25 | ocean-blue, cyber-neon, golden-luxury, wine-burgundy, monochrome-dark... |
-| ✏️ Font Pairs | 20 | modern-sans, serif-editorial, tech-mono, elegant-serif, contrast-mix... |
-| 🖌️ Decorations | 10 | accent-bar, neon-lines, gold-trim, gradient-bar, circle-accent, sidebar-nav... |
-| 📐 Layout Variants | 8 | standard, centered, sidebar-left, grid-2x2, wide-cards, full-width... |
+| 🎨 Color Palettes | 30 | ocean-blue, cyber-neon, golden-luxury, ink-wash, zen-minimal, sci-paper... |
+| ✏️ Font Pairs | 25 | modern-sans, serif-editorial, tech-mono, ink-wash-serif, sci-serif, tech-display... |
+| 🖌️ Decorations | 15 | accent-bar, neon-lines, gold-trim, brush-stroke, seal-stamp, neon-glow, sci-grid, glass-panel... |
+| 📐 Layout Variants | 12 | standard, centered, sidebar-left, grid-2x2, scroll, ink-wash, sci-dense, hero-image... |
 
-**25 × 20 × 10 × 8 = 40,000 combinations**
+**30 × 25 × 15 × 12 = 135,000 combinations**
 
 ### Natural Language Style
 
@@ -310,6 +311,62 @@ v0.7.0 introduces 28 design quality upgrades across three tiers:
 | 3.5 | **Image Masking** | `add_masked_image()` — rounded-rect frame with 0.15" padding |
 | 3.6 | **Two-Column Bullets** | 6+ bullets auto-split into 2 columns + vertical separator |
 | 3.7 | **4 Hero Patterns** | gradient / split-left / bottom-fade / asymmetric cover layouts |
+
+---
+
+## 🌟 Advanced Design Effects — 7 Modules (AD-P1~P7)
+
+Beyond shape-level effects (gradient/shadow/glow), the system now includes **text-level effects**, **image cropping into shapes**, **3D shapes**, **decoration library**, and **mood-driven auto-effects** for professional-grade output.
+
+### Module Overview
+
+| Module | Capabilities | API |
+|--------|-------------|-----|
+| **AD-P1 Text Effects** | Text gradient (10 presets) · outline · shadow · glow · 3D text · alpha · vertical text · rotation · letter spacing | `gradient_text()` / `vertical_text()` / `seal_stamp()` |
+| **AD-P2 Image Effects** | Shape-cropped images (circle/hexagon/diamond) · duotone · grayscale · 22 artistic effects · 7 Pillow filters · brightness/contrast/saturation | `circle_image()` / `duotone_image()` / `artistic_image()` |
+| **AD-P3 Style Expansion** | +5 palettes (ink-wash/zen-minimal/sci-paper/cyber-neon-pro) · +5 fonts (KaiTi/FangSong/Orbitron) · +5 decorations · +4 layouts · +5 moods | `--style "水墨"` / `--style "霓虹"` |
+| **AD-P4 3D & Patterns** | 3D shapes (extrusion+bevel+material) · 31 pattern fills · semi-transparent panel (softEdge) | `shape_3d()` / `pattern_fill()` / `frosted_panel()` |
+| **AD-P5 Animation** | Morph transition (Office 365+) · 8 exit animations · 8 emphasis animations | `exit_animation()` / `emphasis_animation()` |
+| **AD-P6 Decorations** | Brush divider · seal stamp · scroll frame · neon border · grid background · glass panel · ink splash | `brush_divider()` / `neon_border()` / `ink_splash()` |
+| **AD-P7 Mode Integration** | mood → text effect preset auto-mapping · mood → image effect auto-mapping · `compose()` returns effect fields | `--style "水墨"` auto-triggers ink-wash gradient + grayscale images |
+
+### Code Example
+
+```python
+from ppt_pro_max.build_helpers import *
+
+prs = Presentation()
+s = add_slide(prs)
+
+# Text gradient — 10 presets
+gradient_text(s, 1.0, 1.0, 8.0, 1.5, "Title", preset='gold-shine', font_size=44)
+
+# Circle-cropped image
+circle_image(s, 6.5, 3.0, 1.0, "photo.jpg")
+
+# 3D shape
+shape_3d(s, 1.0, 3.5, 3.0, 2.0, depth=15.0, material='metal')
+
+# Frosted glass panel
+frosted_panel(s, 5.0, 3.0, 6.0, 3.0, tint='#1A1A3A', alpha=20)
+
+# Brush divider + seal stamp
+brush_divider(s, 1.0, 5.0, 6.0, color='#2C2C2C')
+seal_stamp(s, 11.0, 5.5, 0.8, "印", rotation=-15)
+
+# Morph transition
+slide_transition(s, 'morph')
+
+prs.save("output.pptx")
+```
+
+### Mood Auto-Trigger
+
+```bash
+ppt-design "山水诗" --style "水墨"        # → ink-wash palette + KaiTi font + brush decoration + ink-wash gradient + grayscale images
+ppt-design "AI launch" --style "霓虹"      # → cyber-neon palette + Orbitron font + neon border + purple gradient + duotone images
+ppt-design "thesis" --style "科研学术"      # → sci-paper palette + Georgia font + grid background + blue gradient
+```
 
 ---
 

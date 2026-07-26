@@ -7,14 +7,9 @@ Tests cover:
 - Secondary: schemeClr mapping, font replacement, font scaling
 """
 
-import os
-import tempfile
-
-import pytest
 from lxml import etree
 from pptx import Presentation
-from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
+from pptx.util import Inches
 
 
 _A = "http://schemas.openxmlformats.org/drawingml/2006/main"
@@ -140,22 +135,10 @@ class TestBrandSpecColorKeyMismatch:
         result = renderer._apply_brand_colors({"group": group_xml}, brand_spec_ooxml)
         result_colors = _extract_srgb_colors(result["group"])
 
-        assert "2563EB" in result_colors, "Should fall back to default primary #2563EB"
-        assert "F97316" in result_colors, "Should fall back to default accent #F97316"
-        assert "6096E6" not in result_colors, "Should NOT use brand accent1 #6096E6 (wrong key)"
+        assert "6096E6" in result_colors, "accent1 should map to accent via _SCHEME_TO_SEMANTIC"
 
     def test_try_component_render_constructs_wrong_brand_spec_keys(self):
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor, PagePlan
         from ppt_pro_max.enterprise.brand_spec import BrandSpec
-
-        extractor = DesignDNAExtractor()
-        plan = PagePlan(
-            page_type="content",
-            title="Test",
-            bullets=["A", "B", "C"],
-            component_type="group",
-            component_category="process",
-        )
 
         accent_color = "#6096E6"
         body_color = "#1A1A2E"
@@ -219,13 +202,6 @@ class TestHardcodedBounds:
     """
 
     def test_denormalize_with_hardcoded_bounds_mismatches_content_area(self):
-        from ppt_pro_max.enterprise.component_renderer import ComponentRenderer
-
-        renderer = ComponentRenderer()
-
-        group_xml = _make_group_xml_with_colors(["#3D485D"])
-        grp_elem = etree.fromstring(group_xml)
-
         hardcoded_bounds = (1.5, 2.0, 8.0, 4.5)
         typical_content_bounds = (0.9, 1.6, 7.0, 4.8)
 
@@ -321,7 +297,7 @@ class TestLayoutOverrideByAutoLayout:
         assert layout == "process"
 
     def test_plan_pages_layout_overridden_by_auto_layout(self):
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor, PagePlan
+        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
 
         extractor = DesignDNAExtractor()
 
@@ -461,7 +437,6 @@ class TestSmartArtSchemeClrMapping:
 
         root = etree.fromstring(result["colors"])
         srgb_vals = [s.get("val", "") for s in root.iter(f"{{{_A}}}srgbClr")]
-        remaining_schemes = [s.get("val", "") for s in root.iter(f"{{{_A}}}schemeClr")]
 
         assert "6096E6" in srgb_vals, "accent1 should now be replaced via scheme→semantic mapping"
         assert "1A1A2E" in srgb_vals, "dk1 should now be replaced via scheme→semantic mapping"

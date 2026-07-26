@@ -52,6 +52,11 @@ CJK_COMPANIONS = {
     "Lora": {"heading": "Noto Serif CJK SC", "body": "Microsoft YaHei"},
     "Times New Roman": {"heading": "SimSun", "body": "SimSun"},
     "Consolas": {"heading": "Microsoft YaHei", "body": "Microsoft YaHei"},
+    "STKaiti": {"heading": "STKaiti", "body": "FangSong"},
+    "STXingkai": {"heading": "STXingkai", "body": "SimSun"},
+    "LiSu": {"heading": "LiSu", "body": "FangSong"},
+    "Orbitron": {"heading": "Microsoft YaHei", "body": "Microsoft YaHei"},
+    "JetBrains Mono": {"heading": "Microsoft YaHei", "body": "Microsoft YaHei"},
 }
 
 

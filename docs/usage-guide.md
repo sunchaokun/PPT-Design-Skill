@@ -1,6 +1,6 @@
 # PPT-Design-Skill 使用手册
 
-> 版本 v0.9.0 | 完整功能参考
+> 版本 v1.0.0 | 完整功能参考
 
 ---
 
@@ -16,15 +16,16 @@
 8. [组件库数据库](#8-组件库数据库)
 9. [页面修订语法](#9-页面修订语法)
 10. [10 种图形类型](#10-10-种图形类型)
-11. [设计系统 — 40,000+ 风格组合](#11-设计系统--40000-风格组合)
+11. [设计系统 — 135,000+ 风格组合](#11-设计系统--135000-风格组合)
 12. [设计质量升级 — 28 项专业级提升](#12-设计质量升级--28-项专业级提升)
-13. [动画系统](#13-动画系统)
-14. [密度控制](#14-密度控制)
-15. [图片引擎](#15-图片引擎)
-16. [Python API](#16-python-api)
-17. [CLI 完整参数](#17-cli-完整参数)
-18. [最佳实践与质量保证](#18-最佳实践与质量保证)
-19. [附录：Enterprise 模式（已弃用）](#附录enterprise-模式已弃用)
+13. [高级设计效果 — 7 大模块](#13-高级设计效果--7-大模块)
+14. [动画系统](#14-动画系统)
+15. [密度控制](#15-密度控制)
+16. [图片引擎](#16-图片引擎)
+17. [Python API](#17-python-api)
+18. [CLI 完整参数](#18-cli-完整参数)
+19. [最佳实践与质量保证](#19-最佳实践与质量保证)
+20. [附录：Enterprise 模式（已弃用）](#附录enterprise-模式已弃用)
 
 ---
 
@@ -2031,6 +2032,174 @@ A: Build 模式的原子级编辑能力已可完全替代组件库，且品牌�
 > 如果您需要品牌合规，VI Build 模式是当前唯一推荐的路径。
 
 ### ~~旧 Enterprise 用法~~（已弃用）
+
+---
+
+## 13. 高级设计效果 — 7 大模块
+
+v1.0.0 新增 7 大高级设计效果模块（AD-P1~P7），在形状级效果基础上新增文字级效果、图片异形裁切、3D 形状、装饰元素库，以及 mood 自动触发。
+
+### 13.1 文字效果（AD-P1）
+
+通过 `build_helpers` 在 Build Script 中使用：
+
+```python
+from ppt_pro_max.build_helpers import *
+
+# 文字渐变 — 10 种预设
+gradient_text(slide, 1.0, 1.0, 8.0, 1.5, "标题", preset='gold-shine', font_size=44)
+gradient_text(slide, 1.0, 1.0, 8.0, 1.5, "标题", preset='purple-neon')
+gradient_text(slide, 1.0, 1.0, 8.0, 1.5, "标题", preset='ink-wash')
+
+# 预设列表: gold-shine, blue-deep, purple-neon, ink-wash, cyber-cyan,
+#            sunset, emerald, rose-gold, seal-red, steel
+
+# 竖排文字（国风/诗词）
+vertical_text(slide, 10.0, 1.0, 1.5, 5.0, "远上寒山石径斜", 
+              font_name='STKaiti', font_size=24)
+
+# 印章（红方印+白字+旋转）
+seal_stamp(slide, 11.0, 5.5, 0.8, "印", rotation=-15)
+```
+
+通过 PrecisionRenderer 使用：
+
+```python
+from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
+pr = PrecisionRenderer(brand_spec=brand)
+prs = pr.create_presentation()
+slide = pr.add_slide(prs)
+
+pr.add_text_with_gradient(slide, 1.0, 1.0, 8.0, 1.5, "标题",
+                           gradient_preset="gold-shine", font_size=44)
+pr.add_vertical_text(slide, 10.0, 1.0, 1.5, 5.0, "远上寒山石径斜",
+                      font_name="STKaiti")
+pr.add_seal_stamp(slide, 11.0, 5.5, 0.8, "印", rotation=-15)
+```
+
+底层 API（text_effects.py）直接操作 `a:rPr`：
+
+```python
+from ppt_pro_max.renderer.text_effects import *
+
+run = paragraph.add_run()
+run.text = "标题"
+apply_text_gradient_preset(run, "gold-shine")   # 渐变
+apply_text_outline(run, "#6366F1", 1.5)          # 描边
+apply_text_shadow(run, blur=6, dist=3, alpha=25)  # 阴影
+apply_text_glow(run, radius=8, color="#8B5CF6")   # 发光
+apply_text_alpha(run, 50)                          # 50% 透明度
+apply_letter_spacing(run, 1.4, 44)                # 字间距（属性形式）
+```
+
+### 13.2 图片效果（AD-P2）
+
+```python
+# 圆形裁切头像
+circle_image(slide, 6.5, 3.0, 1.0, "avatar.jpg")
+
+# 柔边图片（融入背景）
+soft_edge_image(slide, 1.0, 2.0, 5.0, 3.0, "photo.jpg", soft_radius=10)
+
+# 双色调图片
+duotone_image(slide, 1.0, 2.0, 5.0, 3.0, "photo.jpg",
+              color1='#8B5CF6', color2='#22D3EE')
+
+# 艺术效果（22 种）
+artistic_image(slide, 1.0, 2.0, 5.0, 3.0, "photo.jpg",
+               effect='watercolor_sponge')
+```
+
+Pillow 滤镜（跨平台兼容）：
+
+```python
+from ppt_pro_max.renderer.image_processor import apply_ink_wash, apply_grayscale
+
+apply_grayscale("photo.jpg")        # 灰度
+apply_ink_wash("photo.jpg")         # 水墨效果
+apply_sepia("photo.jpg", 0.8)       # 棕褐色
+apply_blur("photo.jpg", 3)          # 高斯模糊
+apply_vignette("photo.jpg", 0.5)    # 暗角
+```
+
+### 13.3 3D 形状 & 图案填充（AD-P4）
+
+```python
+# 3D 形状
+shape_3d(slide, 1.0, 3.0, 3.0, 2.0, depth=15.0, material='metal')
+
+# 斜面形状（微妙 3D）
+bevel_shape(slide, 1.0, 3.0, 3.0, 2.0, top_w=6.0, top_h=3.0)
+
+# 图案填充（31 种图案）
+pattern_fill(slide, 1.0, 1.0, 5.0, 5.0, 'dotGrid', '#333333', '#FFFFFF')
+
+# 毛玻璃面板（半透明 + 柔边）
+frosted_panel(slide, 5.0, 3.0, 6.0, 3.0, tint='#FFFFFF', alpha=15, soft_edge=8)
+```
+
+### 13.4 装饰元素库（AD-P6）
+
+```python
+# 毛笔分割线
+brush_divider(slide, 1.0, 3.5, 8.0, color='#2C2C2C')
+
+# 卷轴边框
+from ppt_pro_max.renderer.decoration_library import add_scroll_frame
+add_scroll_frame(slide, 2.0, 1.0, 6.0, 5.0, style='xuan')
+
+# 霓虹边框
+neon_border(slide, 1.0, 1.0, 4.0, 3.0, color='#8B5CF6')
+
+# 网格背景
+grid_background(slide, spacing=1.0, color='#E0E0E0', alpha=15)
+
+# 墨点飞溅
+ink_splash(slide, 5.0, 3.0, 1.0, color='#2C2C2C', alpha=30)
+```
+
+### 13.5 动画扩展（AD-P5）
+
+```python
+# Morph 切换（Office 365+）
+slide_transition(slide, 'morph')
+
+# 退场动画
+exit_animation(slide, shape_id, effect='fade_out', duration_ms=500)
+
+# 强调动画
+emphasis_animation(slide, shape_id, effect='pulse', duration_ms=500)
+```
+
+退场预设: `fade_out`, `fly_out_left`, `fly_out_right`, `fly_out_top`, `fly_out_bottom`, `zoom_out`, `shrink`, `spin_out`
+
+强调预设: `grow`, `shrink`, `spin`, `pulse`, `color_change`, `transparency`, `bold_flash`, `wave`
+
+### 13.6 Mood 自动触发（AD-P7）
+
+FreeStyle 模式下，`--style` 参数会自动选择文字效果和图片效果：
+
+| Mood | 文字效果 | 图片效果 |
+|------|----------|----------|
+| ink-wash / 水墨 | ink-wash 渐变 | 灰度/水墨滤镜 |
+| neon / 霓虹 | purple-neon/cyber-cyan 渐变 | 双色调 |
+| sci / 科研 | blue-deep 渐变 | 无（保持清晰） |
+| zen / 禅意 | 无（素净） | 柔边 |
+| professional | 钢铁渐变或无 | 柔边或无 |
+
+也可在 Build Script 中显式覆盖：
+
+```python
+from ppt_pro_max.renderer.theme_composer import ThemeComposer
+tc = ThemeComposer()
+result = tc.compose(style="水墨", text_effect_preset="gold-shine", image_effect="sepia")
+# result["text_effect_preset"] → "gold-shine"（覆盖 mood 默认）
+# result["image_effect"] → "sepia"（覆盖 mood 默认）
+```
+
+---
+
+## 附录：Enterprise 模式（已弃用）
 
 <details>
 <summary>点击展开已弃用的 Enterprise 文档</summary>

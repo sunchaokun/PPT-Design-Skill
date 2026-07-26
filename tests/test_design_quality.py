@@ -202,7 +202,11 @@ class TestTypeScale:
 
 
 class TestLetterSpacing:
-    """Verify apply_letter_spacing sets OOXML a:spc correctly."""
+    """Verify apply_letter_spacing sets OOXML spc attribute correctly.
+
+    spc is an ATTRIBUTE of a:rPr (not a child element).
+    The previous child element form was not rendered by PowerPoint.
+    """
 
     def test_positive_tracking(self):
         from ppt_pro_max.renderer.visual_effects import apply_letter_spacing
@@ -216,12 +220,10 @@ class TestLetterSpacing:
         run.font.size = Pt(14)
         apply_letter_spacing(run, 0.02, 14)
         from pptx.oxml.ns import qn
-        from lxml import etree
         rPr = run._r.find(qn("a:rPr"))
-        spc = rPr.find(qn("a:spc"))
-        assert spc is not None
-        expected_val = int(0.02 * 14 * 100)
-        assert spc.get("val") == str(expected_val)
+        assert rPr.get("spc") is not None
+        expected_val = str(int(0.02 * 14 * 100))
+        assert rPr.get("spc") == expected_val
 
     def test_negative_tracking(self):
         from ppt_pro_max.renderer.visual_effects import apply_letter_spacing
@@ -236,10 +238,9 @@ class TestLetterSpacing:
         apply_letter_spacing(run, -0.01, 28)
         from pptx.oxml.ns import qn
         rPr = run._r.find(qn("a:rPr"))
-        spc = rPr.find(qn("a:spc"))
-        assert spc is not None
-        expected_val = int(-0.01 * 28 * 100)
-        assert spc.get("val") == str(expected_val)
+        assert rPr.get("spc") is not None
+        expected_val = str(int(-0.01 * 28 * 100))
+        assert rPr.get("spc") == expected_val
 
     def test_zero_tracking_no_spc(self):
         from ppt_pro_max.renderer.visual_effects import apply_letter_spacing
@@ -254,8 +255,7 @@ class TestLetterSpacing:
         apply_letter_spacing(run, 0.0, 14)
         from pptx.oxml.ns import qn
         rPr = run._r.find(qn("a:rPr"))
-        spc = rPr.find(qn("a:spc"))
-        assert spc is None
+        assert rPr is None or rPr.get("spc") is None
 
 
 # ── §1.3 Color depth system ──────────────────────────────────────
