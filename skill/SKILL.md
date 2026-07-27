@@ -1,6 +1,6 @@
 ---
 name: ppt-design-skill
-version: 0.11.0
+version: 0.11.1
 description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: FreeStyle + Build + VI Build. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style-description] [--fetch-images] [--proposal]"
 license: MIT
@@ -637,4 +637,4 @@ python -m ppt_pro_max image "keywords" [--llm-provider PROV] [--llm-api-key KEY]
 - python-pptx >= 1.0.2 (required)
 - Pillow >= 10.0 (required)
 - python-dotenv >= 1.0 (optional, for .env support)
-- ui-ux-pro-max >= 1.0.0 (optional)
+- ui-ux-pro-max >= 1.0.0 (required)

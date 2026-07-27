@@ -207,7 +207,7 @@ def install_python_package(project_root: Path) -> bool:
     print("  Installing Python package...")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-e", str(project_root)],
+            [sys.executable, "-m", "pip", "install", str(project_root)],
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
@@ -216,11 +216,11 @@ def install_python_package(project_root: Path) -> bool:
         else:
             print(f"  [WARN] pip install failed (exit {result.returncode})")
             print(f"  {result.stderr[:200]}")
-            print(f"  You can install manually: pip install -e {project_root}")
+            print(f"  You can install manually: pip install {project_root}")
             return False
     except Exception as e:
         print(f"  [WARN] pip install failed: {e}")
-        print(f"  You can install manually: pip install -e {project_root}")
+        print(f"  You can install manually: pip install {project_root}")
         return False
 
 

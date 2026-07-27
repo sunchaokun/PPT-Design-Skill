@@ -86,6 +86,8 @@
 
 ### 安装
 
+> **前提**：Python 3.9+、Node.js（用于 ui-ux-pro-max）
+
 ```bash
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
@@ -93,12 +95,10 @@ cd PPT-Design-Skill
 # 一键安装 — 自动检测 AI 平台 + 安装 skill + pip 依赖 + ui-ux-pro-max
 python install.py
 
-# 手动安装
-pip install -e .
-
-# 单独安装 ui-ux-pro-max（必需依赖）
+# 如果一键安装失败，手动分步执行：
+pip install .
 npm install -g ui-ux-pro-max-cli
-uipro init --ai <your-platform>
+uipro init --ai <your-platform>   # opencode / claude / cursor / ...
 ```
 
 ### FreeStyle — 一句话生成
