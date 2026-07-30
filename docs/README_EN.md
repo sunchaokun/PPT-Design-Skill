@@ -2,15 +2,20 @@
 
 # PPT Design Skill
 
-**Generate professional .pptx presentations from a single sentence**
+> PPT generation skill for OpenCode / Claude Code / Codex / Cursor
 
-Triple-mode engine · Narrative-driven · AI images · **135,000+ Style Combinations** · **Advanced Design Effects (7 modules)** · **28 Design Quality Upgrades** · **Build Script Precision** · **VI Build Enterprise Compliance**
+**One prompt → professional .pptx · 40,000+ styles · AI images · Fully editable**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
 
-Compatible with OpenCode · Claude Code · Codex · Cursor
+Type in your AI coding tool: `Generate a dark cyberpunk investor pitch PPT` → skill auto-loads → outputs .pptx
+
+| FreeStyle | Build Script | VI Build |
+|:---:|:---:|:---:|
+| One-liner generation | **Pixel-perfect + proposals** | **Enterprise template compliance** |
+| 30-second quick draft | **python-pptx precise control** | **Preserve framework pages + build_helpers** |
 
 [中文](../README.md) | [Usage Guide](usage-guide.md) | English
 
@@ -54,59 +59,47 @@ Compatible with OpenCode · Claude Code · Codex · Cursor
 
 ---
 
-## 🔥 Features
-
-| Feature | Description |
-|---------|-------------|
-| **Triple-Mode Engine** | FreeStyle rapid generation + Build Script per-page precision + VI Build enterprise template compliance |
-| **Narrative Engine** | 3 strategies (YC Seed Deck / Product Demo / Sales Pitch) + Duarte Sparkline emotion arcs |
-| **40,000+ Style Combos** | 30 palettes × 25 font pairs × 15 decorations × 12 layout variants |
-| **Natural Language Style** | Describe your style: `--style "warm fintech"` / `--style "水墨 ink-wash"` |
-| **28 Design Quality Upgrades** | OKLCH color depth · Shadow elevation · Gradient overlay · Progress bar · Corner radius · CJK font pairing · Noise texture · Two-column bullets · 4 Hero patterns · Section dividers · Badge system · Gradient lines · Image masking · Decoration renderer · Code block redesign · Card upgrade · Adaptive margins · Typography scale |
-| **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
-| **Build Script Mode** | 10 page templates + Design Token system + post-build checks, delivery-grade quality |
-| **VI Build Mode** | `analyze_template.py` extracts template VI → LLM generates build.py → `build_helpers` precise construction, enterprise VI compliance |
-| **python-pptx Direct** | Fully editable .pptx output, 356x faster than HTML→screenshot |
-| **12 Master Layouts** | 13.333"×7.5" 16:9 precise coordinates |
-| **AI Image Engines** | Seedream / GPT Image / DALL-E / Wanx — 4 generation engines + Kimi enhancement |
-| **Animation System** | 12 transitions + 10 entrance + 8 exit + 8 emphasis effects + Morph transition |
-| **Advanced Design Effects** | Text gradient/glow/3D · Image crop/duotone/22 artistic effects · 3D shapes/pattern fill/frosted glass · 7 decoration elements · Mood-triggered effects |
-| **Code/Exercise Blocks** | Dark code blocks + language badges + exercise badges + step lists — education-ready |
-| **CJK Fonts** | 12 CJK font pairings with auto-fallback (Microsoft YaHei / STSong / SimHei etc.) |
-
----
-
 ## 🚀 Quick Start
 
-### Install
+### Install as Skill (Recommended)
 
 ```bash
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# One-click install — auto-detect AI platform + install skill + pip deps + ui-ux-pro-max
-python install.py
-
-# Manual install
-pip install -e .
-
-# Install ui-ux-pro-max separately (required dependency)
-npm install -g ui-ux-pro-max-cli
-uipro init --ai <your-platform>
+# One-click install — auto-detect platform + install skill + deps
+python install.py                     # Auto-detect
+python install.py --platform opencode # Specify platform
 ```
+
+Supports 13 platforms: OpenCode · Claude Code · Codex · Cursor · Windsurf · Roo Code · Gemini · Trae · Continue · Droid · KiloCode · Augment · Copilot
+
+### Use as Python Package
+
+```bash
+pip install .
+ppt-design "AI startup investor pitch" --style "dark cyberpunk"
+```
+
+### Use in AI Coding Tools
+
+After installation, type in OpenCode / Claude Code / Codex:
+
+```
+Generate a dark cyberpunk investor pitch PPT
+```
+
+The AI will auto-load the skill and generate a .pptx file.
 
 ### FreeStyle — Generate from a Sentence
 
 ```bash
-# Minimal usage
 ppt-design "AI startup investor pitch"
-
-# Natural language style — 40,000+ combinations
 ppt-design "fintech pitch" --style "warm fintech"
 ppt-design "product launch" --style "dark cyberpunk tech"
 ppt-design "ESG report" --style "calm nature"
 
-# AI images + style + animation
+# AI images + animation
 ppt-design "investor pitch" --style "dark cyberpunk" \
   --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY \
   --motion 7 --density 6
@@ -115,129 +108,69 @@ ppt-design "investor pitch" --style "dark cyberpunk" \
 ### VI Build — Enterprise Template Compliance
 
 ```bash
-# Step 1: Analyze enterprise template
 python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
-
-# Step 2: Feed analysis.txt to LLM, generate build.py
-
-# Step 3: Run generation
+# Feed analysis.txt to LLM to generate build.py, then:
 python build.py
 ```
 
-> Preserves framework pages (cover/TOC/back cover) + `build_helpers` precise construction — see [Usage Guide §5](usage-guide.md#5-vi-build-模式--基于模板-vi-的精确生成)
-
-### Build Script — Per-Page Precision (Delivery-Grade Quality)
+### Build Script — Per-Page Precision
 
 ```python
-# build.py — Direct python-pptx per-page precise control
-from pptx import Presentation
-from pptx.util import Inches, Pt
+from ppt_pro_max.build_helpers import *
 
 prs = Presentation()
-prs.slide_width = Inches(13.333)
-prs.slide_height = Inches(7.5)
-sl = prs.slides.add_slide(prs.slide_layouts[6])
-
-# Every element: exact x, y, w, h, font, size, color
-tb = sl.shapes.add_textbox(Inches(1.2), Inches(2.0), Inches(8), Inches(1.5))
-run = tb.text_frame.paragraphs[0].add_run()
-run.text = "Title"
-run.font.name = "Space Grotesk"  # run-level font, PowerPoint respects
-run.font.size = Pt(52)
-run.font.bold = True
-
+s = add_slide(prs)
+hero_slide(s, 'Title', 'Subtitle', C=C, typo=TYPOGRAPHY['mckinsey'])
+# ... precise control over every element: x, y, w, h, font, size, color
 prs.save("output/presentation.pptx")
 ```
 
-> 10 page templates + Design Token system + post-build check script — see [Usage Guide §4](usage-guide.md#4-build-script-模式--精确控制)
+---
+
+## 🔥 Features
+
+| Feature | Description |
+|---------|-------------|
+| **Triple-Mode Engine** | FreeStyle rapid generation + Build Script per-page precision + VI Build enterprise compliance |
+| **40,000+ Style Combos** | 30 palettes × 25 fonts × 15 decorations × 12 layouts, natural language `--style` |
+| **AI Image Engines** | Seedream / GPT Image / DALL-E / Gemini / Wanx — 5 engines + Kimi enhancement |
+| **python-pptx Direct** | Fully editable .pptx, 356x faster than HTML→screenshot |
+| **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
+| **Animation System** | 12 transitions + 10 entrance + 8 exit + 8 emphasis + Morph, motion 1-10 mapping |
+| **CJK Fonts** | 12 CJK font pairings with auto-fallback |
+| **5,500+ Component Library** | SmartArt/GroupShape templates, SQLite-indexed, match by category/node count |
 
 ---
 
 ## 🏗️ Triple-Mode Architecture
 
-### FreeStyle Pipeline
+| | **FreeStyle** | **Build Script** | **VI Build** |
+|---|---|---|---|
+| **Use case** | Quick exploration, prototyping | Delivery-grade precision | Enterprise VI compliance |
+| **Trigger** | Default | `"build mode"` / `"pixel-perfect"` | Provide template.pptx |
+| **Content** | AI auto-generates | Hand-written build.py | LLM reads template → build.py |
+| **Quality** | ★★★ | ★★★★★ | ★★★★★ |
+| **Proposals** | 3 style previews | 3 structurally-different proposals | 3 layout proposals (same VI Token) |
 
-```
-Input → Story Planning → Design Decisions → Content Generation → PPT Rendering → .pptx
-```
-
-Use for: quick exploration, style experiments, personal presentations
-
-### Build Script Mode
-
-```
-build.py → Design Token → Page Templates → python-pptx → .pptx → check.py validation
-               ↓              ↓              ↓
-           colors/fonts   10 templates   per-element precision
-           one-line theme  x/y/w/h      run-level fonts
-```
-
-Use for: **final delivery, precise control without template constraints, quality assurance**
-
-### VI Build Mode
-
-```
-template.pptx → analyze_template.py → LLM generates build.py → build_helpers → .pptx
-                      ↓                       ↓                  ↓
-                  Extract VI Token       copy_decorations    kpi_card / bar_chart
-                  colors/fonts/layout   copy_logo           page_header
-```
-
-Use for: **enterprise VI compliance, brand template adherence**
-
-> **Recommended workflow**: FreeStyle prototype → VI Build (with enterprise template) or Build Script (no template) for precision delivery
-
-### Project Directory Structure
-
-**Build Script Mode:**
-
-```
-my-project/
-├── build.py            # Core build script
-├── images/             # Local images
-└── output/             # Generated output
-    └── presentation.pptx
-```
-
-**VI Build Mode:**
-
-```
-my-project/
-├── build.py            # LLM-generated build script (using build_helpers)
-├── template.pptx       # Enterprise template (VI source)
-├── analysis.txt        # Template analysis output (LLM input)
-├── images/             # Local images
-└── output/             # Generated output
-    └── presentation.pptx
-```
+> **Recommended workflow**: FreeStyle prototype → Build / VI Build for precision delivery
 
 ---
 
-## 🖼️ Image Engines
+## 🎨 Design System
 
-| Engine | Type | CLI | Default Model |
-|--------|------|-----|---------------|
-| `placeholder` | Gradient placeholder | Default | — |
-| `search` | Unsplash / Pexels | `--image-mode search` | — |
-| `seedream` | AI generate | `--llm-provider seedream` | `doubao-seedream-5-0-260128` |
-| `gpt-image` | AI generate | `--llm-provider gpt-image` | `gpt-image-1` |
-| `dalle` | AI generate | `--llm-provider dalle` | `dall-e-3` |
-| `wanx` | AI generate | `--llm-provider wanx` | `wanx-v1` |
-| `kimi` | Enhanced search | `--llm-provider kimi` | `kimi-k2-0711-preview` |
+**Natural language style** — describe and generate:
 
-### Seedream Available Models
+```bash
+ppt-design "investor pitch" --style "warm fintech"       # → ocean-blue + clean-corporate + accent-bar
+ppt-design "product launch" --style "dark cyberpunk"      # → cyber-neon + tech-mono + neon-lines
+ppt-design "brand strategy" --style "elegant luxury"      # → golden-luxury + elegant-serif + gold-trim
+ppt-design "山水诗" --style "水墨"                        # → ink-wash palette + KaiTi + brush decoration
+```
 
-| Model | Description |
-|-------|-------------|
-| `doubao-seedream-5-0-260128` | **Default**, Seedream 5.0 |
-| `doubao-seedream-5-0-pro-260628` | Seedream 5.0 Pro |
-| `doubao-seedream-4-5-251128` | Seedream 4.5 |
+**41 mood keywords**: professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics, ink-wash, zen, sci, neon ...
 
-All AI engines include **cache-first** — same image never generated twice.
-
----
-
-## 🎨 Design System — 135,000+ Style Combinations
+<details>
+<summary><strong>📐 Design Atoms Detail</strong></summary>
 
 | Atom | Count | Examples |
 |------|-------|----------|
@@ -248,125 +181,69 @@ All AI engines include **cache-first** — same image never generated twice.
 
 **30 × 25 × 15 × 12 = 135,000 combinations**
 
-### Natural Language Style
+With ui-ux-pro-max (192 palettes · 84 styles · 74 fonts · 161 anti-patterns): 200,000+
 
-```bash
-ppt-design "investor pitch" --style "warm fintech"          # → ocean-blue + clean-corporate + accent-bar
-ppt-design "product launch" --style "dark cyberpunk"         # → cyber-neon + tech-mono + neon-lines
-ppt-design "brand strategy" --style "elegant luxury"         # → golden-luxury + elegant-serif + gold-trim
-ppt-design "ESG report" --style "calm nature"                # → sage-calm + humanist-sans + circle-accent
-ppt-design "startup pitch" --style "bold startup vibrant"    # → royal-purple + bold-sans + gradient-bar
-```
+</details>
 
-### Preset Themes
+<details>
+<summary><strong>🖼️ Image Engines</strong></summary>
 
-| Theme | Palette | Fonts | Decoration | Layout |
-|-------|---------|-------|------------|--------|
-| Professional | midnight-navy | clean-corporate | accent-bar | sidebar-left |
-| Dark Tech | cyber-neon | tech-mono | neon-lines | wide-cards |
-| Warm Elegant | golden-luxury | serif-editorial | gold-trim | centered |
-| Vibrant Startup | neon-gradient | bold-sans | gradient-bar | grid-2x2 |
-| Nature Calm | forest-green | humanist-sans | circle-accent | sidebar-left |
+| Engine | Type | CLI | Default Model |
+|--------|------|-----|---------------|
+| `placeholder` | Gradient placeholder | Default | — |
+| `search` | Unsplash / Pexels | `--image-mode search` | — |
+| `seedream` | AI generate | `--llm-provider seedream` | `doubao-seedream-5-0-260128` |
+| `gpt-image` | AI generate | `--llm-provider gpt-image` | `gpt-image-1` |
+| `dalle` | AI generate | `--llm-provider dalle` | `dall-e-3` |
+| `gemini` | AI generate | `--llm-provider gemini` | `gemini-2.5-flash-image` |
+| `wanx` | AI generate | `--llm-provider wanx` | `wanx-v1` |
+| `kimi` | Enhanced search | `--llm-provider kimi` | `kimi-k2-0711-preview` |
 
----
+All AI engines include **cache-first** — same image never generated twice.
 
-## 🏆 Design Quality Upgrades — 28 Professional Enhancements
+</details>
 
-v0.7.0 introduces 28 design quality upgrades across three tiers:
+<details>
+<summary><strong>🏆 28 Design Quality Upgrades</strong></summary>
 
-### Tier 1 — Visual Foundations (10)
+**Tier 1 — Visual Foundations (10)**: Layout Engine · Typography Scale · OKLCH Color Depth · Gradient Overlay · 5-Level Shadow Elevation · Smart Brand Strip · Image Color Grading · Card Upgrade · Dark Mode Fix · Code Block Redesign
 
-| # | Upgrade | Description |
-|---|---------|-------------|
-| 1.1 | **Layout Engine** | `LayoutEngine` + `Rect` + `ContentLayout` — unified coordinate computation |
-| 1.2 | **Typography Scale** | `TypeScale` dataclass with density/mode-adaptive font size ratios |
-| 1.3 | **OKLCH Color Depth** | Perceptually uniform 9-level color scale + 5-level alpha hierarchy |
-| 1.4 | **Gradient Overlay** | `add_gradient_overlay()` replaces flat overlay — softer cover/CTA pages |
-| 1.5 | **5-Level Shadow Elevation** | `ELEVATION_SCALE` from subtle→floating — clear visual hierarchy |
-| 1.6 | **Smart Brand Strip** | ~1/3 of pages skip brand color strip — avoids visual fatigue |
-| 1.7 | **Image Color Grading** | `grade_image_to_palette()` unifies image tones to brand palette |
-| 1.8 | **Card Upgrade** | Title 20pt / body 14pt, `featured` cards get gradient bar |
-| 1.9 | **Dark Mode Fix** | OKLCH luminance detection (0.299R+0.587G+0.114B) — no more misdetection |
-| 1.10 | **Code Block Redesign** | Always-dark bg #1E293B + separate language badge + muted text color |
+**Tier 2 — Typography Enhancements (6)**: CJK Font Pairing · Adaptive Margins · Badge System · Section Dividers · Decoration Renderer · Layout Variant Consumption
 
-### Tier 2 — Typography Enhancements (6)
+**Tier 3 — Advanced Visual (7)**: Noise Texture · Progress Bar · Corner Radius System · Gradient Lines · Image Masking · Two-Column Bullets · 4 Hero Patterns
 
-| # | Upgrade | Description |
-|---|---------|-------------|
-| 2.1 | **CJK Font Pairing** | 12 Latin+CJK combinations (e.g. Space Grotesk + Microsoft YaHei), auto-fallback |
-| 2.2 | **Adaptive Margins** | presenting (0.6") / reading (1.2") / balanced (0.9") density-aware margins |
-| 2.3 | **Badge System** | `add_badge()` — uppercase, 3 variants (default/solid/outline), CJK width-aware |
-| 2.4 | **Section Dividers** | `goal="section"` → oversized number + title + gradient line |
-| 2.5 | **Decoration Renderer** | `DecorationRenderer` unifies all 10 decoration styles |
-| 2.6 | **Layout Variant Consumption** | `render_slide()` reads content_margin_left / title_alignment / decoration_style |
+</details>
 
-### Tier 3 — Advanced Visual (7)
-
-| # | Upgrade | Description |
-|---|---------|-------------|
-| 3.1 | **Noise Texture** | Per-deck seeded Gaussian noise — adds subtle texture |
-| 3.2 | **Progress Bar** | Thin bottom progress indicator, replaces simple page numbers |
-| 3.3 | **Corner Radius System** | 4 levels (sm=4 / md=8 / lg=12 / pill=50) + `add_rounded_rect()` |
-| 3.4 | **Gradient Lines** | `add_gradient_line()` — alpha fade for elegant title underlines |
-| 3.5 | **Image Masking** | `add_masked_image()` — rounded-rect frame with 0.15" padding |
-| 3.6 | **Two-Column Bullets** | 6+ bullets auto-split into 2 columns + vertical separator |
-| 3.7 | **4 Hero Patterns** | gradient / split-left / bottom-fade / asymmetric cover layouts |
-
----
-
-## 🌟 Advanced Design Effects — 7 Modules (AD-P1~P7)
-
-Beyond shape-level effects (gradient/shadow/glow), the system now includes **text-level effects**, **image cropping into shapes**, **3D shapes**, **decoration library**, and **mood-driven auto-effects** for professional-grade output.
-
-### Module Overview
+<details>
+<summary><strong>🌟 Advanced Design Effects (7 Modules)</strong></summary>
 
 | Module | Capabilities | API |
 |--------|-------------|-----|
-| **AD-P1 Text Effects** | Text gradient (10 presets) · outline · shadow · glow · 3D text · alpha · vertical text · rotation · letter spacing | `gradient_text()` / `vertical_text()` / `seal_stamp()` |
-| **AD-P2 Image Effects** | Shape-cropped images (circle/hexagon/diamond) · duotone · grayscale · 22 artistic effects · 7 Pillow filters · brightness/contrast/saturation | `circle_image()` / `duotone_image()` / `artistic_image()` |
-| **AD-P3 Style Expansion** | +5 palettes (ink-wash/zen-minimal/sci-paper/cyber-neon-pro) · +5 fonts (KaiTi/FangSong/Orbitron) · +5 decorations · +4 layouts · +5 moods | `--style "水墨"` / `--style "霓虹"` |
-| **AD-P4 3D & Patterns** | 3D shapes (extrusion+bevel+material) · 31 pattern fills · semi-transparent panel (softEdge) | `shape_3d()` / `pattern_fill()` / `frosted_panel()` |
-| **AD-P5 Animation** | Morph transition (Office 365+) · 8 exit animations · 8 emphasis animations | `exit_animation()` / `emphasis_animation()` |
+| **AD-P1 Text Effects** | Gradient (10 presets) · outline · shadow · glow · 3D · alpha · vertical · rotation · letter spacing | `gradient_text()` / `vertical_text()` / `seal_stamp()` |
+| **AD-P2 Image Effects** | Shape crop (circle/hexagon/diamond) · duotone · grayscale · 22 artistic effects · 7 Pillow filters | `circle_image()` / `duotone_image()` / `artistic_image()` |
+| **AD-P3 Style Expansion** | +5 palettes · +5 fonts (KaiTi/FangSong/Orbitron) · +5 decorations · +4 layouts · +5 moods | `--style "水墨"` / `--style "霓虹"` |
+| **AD-P4 3D & Patterns** | 3D shapes (extrusion+bevel+material) · 31 pattern fills · semi-transparent panel | `shape_3d()` / `pattern_fill()` / `frosted_panel()` |
+| **AD-P5 Animation** | Morph transition · 8 exit animations · 8 emphasis animations | `exit_animation()` / `emphasis_animation()` |
 | **AD-P6 Decorations** | Brush divider · seal stamp · scroll frame · neon border · grid background · glass panel · ink splash | `brush_divider()` / `neon_border()` / `ink_splash()` |
-| **AD-P7 Mode Integration** | mood → text effect preset auto-mapping · mood → image effect auto-mapping · `compose()` returns effect fields | `--style "水墨"` auto-triggers ink-wash gradient + grayscale images |
+| **AD-P7 Mode Integration** | mood → text/image effect auto-mapping · `compose()` returns effect fields | `--style "水墨"` auto-triggers |
 
-### Code Example
+**Code example**:
 
 ```python
 from ppt_pro_max.build_helpers import *
 
 prs = Presentation()
 s = add_slide(prs)
-
-# Text gradient — 10 presets
 gradient_text(s, 1.0, 1.0, 8.0, 1.5, "Title", preset='gold-shine', font_size=44)
-
-# Circle-cropped image
 circle_image(s, 6.5, 3.0, 1.0, "photo.jpg")
-
-# 3D shape
 shape_3d(s, 1.0, 3.5, 3.0, 2.0, depth=15.0, material='metal')
-
-# Frosted glass panel
 frosted_panel(s, 5.0, 3.0, 6.0, 3.0, tint='#1A1A3A', alpha=20)
-
-# Brush divider + seal stamp
 brush_divider(s, 1.0, 5.0, 6.0, color='#2C2C2C')
 seal_stamp(s, 11.0, 5.5, 0.8, "印", rotation=-15)
-
-# Morph transition
-slide_transition(s, 'morph')
-
 prs.save("output.pptx")
 ```
 
-### Mood Auto-Trigger
-
-```bash
-ppt-design "山水诗" --style "水墨"        # → ink-wash palette + KaiTi font + brush decoration + ink-wash gradient + grayscale images
-ppt-design "AI launch" --style "霓虹"      # → cyber-neon palette + Orbitron font + neon border + purple gradient + duotone images
-ppt-design "thesis" --style "科研学术"      # → sci-paper palette + Georgia font + grid background + blue gradient
-```
+</details>
 
 ---
 
