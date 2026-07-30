@@ -1,6 +1,6 @@
 ---
 name: ppt-design-skill
-version: 0.11.1
+version: 0.12.0
 description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: FreeStyle + Build + VI Build. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style-description] [--fetch-images] [--proposal]"
 license: MIT
@@ -30,36 +30,143 @@ These sections are the LLM's only reference for writing correct output:
 
 ALWAYS follow this 5-step workflow. Each step requires user confirmation before proceeding. Do NOT skip steps or generate final PPT directly — rework is extremely costly.
 
-### Step 1: Requirements & Framework
+**Mode selection rule**: If user explicitly requests Build mode or VI Build mode, follow the Build/VI Build path. Otherwise default to FreeStyle. When in doubt, ask the user.
+
+### Step 1: Requirements & Framework (All Modes)
 
 - Understand: topic, audience, language, scenario
 - Read any user-provided materials (README, docs, data files)
 - Design the skeleton: total pages, per-page goal, core title for each page
 - Determine: language (zh/en), business_mode, style direction
 - **Design Read**: declare VARIANCE (1-10), MOTION (1-10), DENSITY (1-10) based on audience and scenario
-- Present to user as text outline, confirm before proceeding
+- **Mode decision**: determine which mode to use based on user request and quality requirements
+  - Build Mode: user explicitly requests "build mode" / "pixel-perfect" / "delivery-grade" / "手写build.py"
+  - VI Build Mode: user provides enterprise template (template.pptx) + requests brand compliance
+  - FreeStyle: default, quick exploration, prototyping
+- Present to user as text outline (including mode choice), confirm before proceeding
 
-**Dial → Action Map (V/M/D → LLM decisions using EXISTING content.json fields and generate_ppt() params):**
+**Dial → Action Map (V/M/D → LLM decisions):**
 
-| VARIANCE | Action |
-|----------|--------|
-| 1-3 | Use `goal:"content"` with centered layouts; equal-width cards; `--layout-variant centered` or `standard` in generate_ppt() call |
-| 4-7 | Mix `goal:"content"` with `goal:"features"`; feature first card; `--layout-variant sidebar-left` or `asymmetric` in generate_ppt() call; vary which pages have images |
-| 8-10 | Use diverse goal types per page; avoid any repeated layout family; `--layout-variant asymmetric`; insert section dividers between every topic shift |
+| VARIANCE | FreeStyle Action | Build/VI Build Action |
+|----------|-----------------|----------------------|
+| 1-3 | `goal:"content"` + centered layouts; `--layout-variant centered` | Uniform page structure; consistent margins; same component family per page |
+| 4-7 | Mix `goal:"content"` with `goal:"features"`; `--layout-variant sidebar-left` | Mix 2-3 layout strategies (e.g., sidebar + grid + split); vary which pages use which strategy |
+| 8-10 | Diverse goal types; `--layout-variant asymmetric`; section dividers | Every page uses a different layout strategy; no repeated visual pattern; section dividers between topic shifts |
 
-| MOTION | Action |
-|--------|--------|
-| 1-3 | No special action — default transitions only |
-| 4-7 | Ensure cover slide has `goal:"hook"` (gets fade-in); section dividers get entrance animation automatically |
-| 8-10 | Same as 4-7 plus: request `--motion 8` in generate_ppt() call; more section dividers for animation variety |
+| MOTION | FreeStyle Action | Build/VI Build Action |
+|--------|-----------------|----------------------|
+| 1-3 | Default transitions only | No animations; `slide_transition()` with fade only |
+| 4-7 | `goal:"hook"` gets fade-in; section dividers get entrance animation | `entrance_animation()` on key elements; `slide_transition()` on section dividers |
+| 8-10 | `--motion 8`; more section dividers for variety | `entrance_animation()` + `exit_animation()` on multiple elements; morph transitions; staggered delays |
 
-| DENSITY | Action (bullet count per page in content.json) |
-|---------|------------------------------------------------|
-| 1-3 | 2-3 bullets per content page; insert breathing pages (goal:"section" or goal:"content" with ≤2 bullets) after every 2 content pages |
-| 4-7 | 3-5 bullets per content page; mix: some pages 3 bullets, some 6+ (triggers two-column) |
-| 8-10 | 6+ bullets on data/overview pages; use `component_type:"group"` + `component_category:"infographic"` for dense pages; no breathing pages |
+| DENSITY | FreeStyle Action | Build/VI Build Action |
+|---------|-----------------|----------------------|
+| 1-3 | 2-3 bullets; breathing pages after every 2 content pages | Generous spacing; `SPACING['minimal']`; 1-2 elements per page zone |
+| 4-7 | 3-5 bullets; mix densities | `SPACING['mckinsey']`; mix KPI cards with bullet pages |
+| 8-10 | 6+ bullets; `component_type:"group"` + `component_category:"infographic"` | `SPACING['cyberpunk']`; dense dashboards; `kpi_card()` grids; `bar_chart()` stacks |
 
-### Step 2: Visual Proposals (3 styles)
+### Step 2: Visual Proposals (3 styles) — Build/VI Build Mode
+
+**⚠️ This is the PRIMARY path when user requests Build or VI Build mode. Do NOT fall back to FreeStyle proposals.**
+
+Build mode proposals differ fundamentally from FreeStyle proposals: each proposal has a **completely different page structure, layout strategy, and visual language** — not just a palette/font swap. The 3 proposals must be structurally distinct so the user can compare different architectural approaches.
+
+#### Build Mode Proposals (No Template)
+
+Generate 3 lightweight `build.py` scripts (proposal_A.py, proposal_B.py, proposal_C.py), each rendering 4-5 key pages (cover + 1 content + 1 data/features + 1 cta) with:
+
+| Proposal | Differentiation Strategy | Example |
+|----------|-------------------------|---------|
+| **A** | Structure closest to user's style description | "McKinsey" → sidebar + table + numbered cards |
+| **B** | Same topic, alternative layout architecture | "McKinsey topic" → grid dashboard + KPI cards + bar charts |
+| **C** | Radical visual departure | "McKinsey topic" → creative circles + emoji + before-after comparison |
+
+**Structural differentiation dimensions (pick ≥2 per proposal to differ):**
+
+| Dimension | Options | What Changes in build.py |
+|-----------|---------|--------------------------|
+| Page structure | sidebar-left / full-width / grid-2x2 / split-image | `page_header()` position, content zone x/y/w/h |
+| Data presentation | table / bar_chart / kpi_card grid / donut_chart | Which `build_helpers` functions are called |
+| Card style | highlight_cards / custom rrect stack / numbered list | Card component choice and layout |
+| Cover type | hero_slide / section_divider / custom split | Cover page function calls |
+| Typography scale | TYPOGRAPHY['mckinsey'] / ['cyberpunk'] / ['creative'] / ['minimal'] | `t = TYPOGRAPHY[...]` selection |
+| Spacing system | SPACING['mckinsey'] / ['cyberpunk'] / ['creative'] / ['minimal'] | `sp = SPACING[...]` selection |
+| Color system | C dict with different primary/accent/muted | Color token values in C dict |
+
+**Proposal generation workflow:**
+
+1. Write 3 build.py files (proposal_A.py, proposal_B.py, proposal_C.py) with:
+   - Different `C` color dict (3 distinct palettes)
+   - Different `TYPOGRAPHY[...]` and `SPACING[...]` selections
+   - Different page structure and component choices per page
+   - Same framework content (titles + placeholder data) so user compares structure, not content
+2. Run each: `python proposal_A.py`, `python proposal_B.py`, `python proposal_C.py`
+3. Present 3 output PPTs to user with descriptions:
+   - **A**: "Sidebar + table layout — consulting style, structured and data-driven"
+   - **B**: "Grid dashboard — tech-forward, KPI-focused, information-dense"
+   - **C**: "Creative circles — visual storytelling, emoji-accented, approachable"
+4. User picks one direction (A/B/C) or requests adjustments
+5. Low rework cost: only structural parameters change, content is placeholder
+
+**Example proposal_A.py (McKinsey-style skeleton):**
+
+```python
+from ppt_pro_max.build_helpers import *
+
+C = {'primary': '#2E6504', 'accent': '#7DA92F', 'muted': '#81C784',
+     'light': '#C8E6C9', 'white': '#FFFFFF', 'background': '#FFFFFF',
+     'card_bg': '#F9F9F9', 'text_dark': '#1A1A1A', 'text_body': '#333333',
+     'text_muted': '#666666', 'divider': '#CCCCCC',
+     'font_heading': 'Georgia', 'font_body': 'Calibri'}
+t = TYPOGRAPHY['mckinsey']
+sp = SPACING['mckinsey']
+
+prs = Presentation()
+s = add_slide(prs)
+hero_slide(s, '{query}', 'Proposal A — Sidebar + Table', C=C, typo=t)
+
+s = add_slide(prs)
+page_header(s, 'Current Challenges', 'Key obstacles to growth', C, typo=t, spacing=sp)
+# sidebar + bullets layout
+rect(s, 0, 0, 3.5, 7.5, C['primary'], C=C)
+multiline(s, 0.4, 1.5, 2.7, 4, ['Challenge 1', 'Challenge 2', 'Challenge 3'],
+          font_size=t.body, color='white', C=C)
+
+s = add_slide(prs)
+page_header(s, 'Key Metrics', 'Performance overview', C, typo=t, spacing=sp)
+kpi_card(s, 0.65, 1.8, 3.8, 1.35, '12.8亿', '年度产值', '+8.3%', C=C, typo=t)
+kpi_card(s, 4.8, 1.8, 3.8, 1.35, '94.2%', '客户满意度', '+2.1%', C=C, typo=t)
+
+s = add_slide(prs)
+cta_slide(s, 'Get Started', 'Contact us today', C=C, typo=t)
+
+prs.save('proposal_A.pptx')
+```
+
+#### VI Build Mode Proposals (With Template)
+
+When user provides a template.pptx, proposals must preserve framework pages (cover/TOC/back cover) and only vary the **new content page structure**. All 3 proposals share the same VI Token (extracted from template), but differ in layout architecture for content pages.
+
+1. Run `python -m ppt_pro_max.analyze_template template.pptx > analysis.txt`
+2. Extract VI Token (C dict) from analysis.txt — this is **fixed** across all 3 proposals
+3. Generate 3 build.py files with:
+   - **Same** C dict (VI Token from template)
+   - **Same** `Presentation('template.pptx')` + `copy_decorations()` + `copy_logo()` on every page
+   - **Different** content page layout strategies (sidebar vs grid vs split)
+   - **Different** component choices for data pages (kpi_card vs bar_chart vs table)
+4. Run each, present to user, user picks direction
+
+**Example VI Build proposal differentiation:**
+
+| Proposal | Content Page Layout | Data Page Component | Visual Character |
+|----------|--------------------|--------------------|-----------------|
+| A | Sidebar + content (left nav bar) | kpi_card row | Structured, report-style |
+| B | Full-width + section dividers | bar_chart + comparison_bars | Narrative, story-driven |
+| C | Grid 2x2 + cards | donut_chart + highlight_cards | Dashboard, data-centric |
+
+### Step 2: Visual Proposals (3 styles) — FreeStyle Mode
+
+**Use this path ONLY when user does NOT request Build/VI Build mode.**
 
 - Generate 3 preview PPTs with different styles but same framework content
 - Write a lightweight content.json (framework-level titles + short placeholder bullets) to a temp file, then call pipeline 3 times with different `--style`
@@ -68,43 +175,59 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 - User picks one style direction (A/B/C) or requests adjustments
 - Low rework cost: only style parameters change
 
-### Step 3: Detailed Content → content.json
+### Step 3: Detailed Content (All Modes)
 
+**Build/VI Build Mode:**
+- Write full content for every page directly into the chosen build.py
+- Content is hardcoded per page: titles, KPI numbers, bullet text, chart data, code snippets
+- MUST be query-specific and domain-accurate — NEVER use generic template content
+- MUST follow the Content Design Rules below
+- Present key content to user for review before final generation
+- User confirms content accuracy before proceeding
+
+**FreeStyle Mode:**
 - Write full content for every page: titles, subtitles, bullets, cards, code, exercise, chart data
 - MUST be query-specific and domain-accurate — NEVER use generic template content
 - MUST follow the Content Design Rules below to trigger design capabilities
 - Save as content.json, present key content to user for review
 - User confirms content accuracy before proceeding
 
-### Step 4: Draft Generation & Revision
+### Step 4: Draft Generation & Revision (All Modes)
 
+**Build/VI Build Mode:**
+- Run the full build.py: `python build.py`
+- Verify output: check page count, file size, content rendering, shape count per slide
+- For revisions: modify build.py and re-run (build.py is the single source of truth)
+- Version control: save output to `output/v1/`, increment on revisions
+
+**FreeStyle Mode:**
 - Generate full PPT: `generate_ppt(query, content_file=..., style=confirmed_style, fetch_images=True, ...)`
 - Verify output: check page count, file size, content rendering
 - For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
 
-### Step 5: Final Delivery
+### Step 5: Final Delivery (All Modes)
 
 - User confirms satisfaction
 - Pipeline auto-saves with version control
 
 ### Content Design Rules (CRITICAL — maximizes design quality)
 
-When writing content.json, follow these rules to produce the best possible rendering output.
+When writing content (content.json for FreeStyle, or hardcoded text in build.py for Build/VI Build), follow these rules to produce the best possible rendering output.
 
-| Rule | Why | Example |
-|------|-----|---------|
-| features: first card featured with longer body | First card gets gradient bar + 22pt title + higher elevation | Card 1: "智能推理引擎 — 自动选择最优框架" vs Card 2: "全链路监控" |
-| 6+ bullets → two-column layout | Better density; layout engine auto-splits | 6 concise data points instead of 3 long ones |
-| tech topics: include code page | Code pages add technical credibility | `{"code": {"language": "python", "source": "..."}}` |
-| education/training: include exercise page | Exercise pages add interactivity | `{"exercise": {"duration": "5 min", "steps": [...]}}` |
-| topic transitions: insert section divider | Visual rhythm (oversized number + gradient line) | Between problem→solution |
-| hook: short subtitle (<40 chars); cta: long (>60) | Different hero compositions | hook: "5分钟取代5周" vs cta: "免费额度包含1000次推理/月" |
-| vary bullet density (some 3-bullet, some 6+) | Varying density feels natural; 10+ items → cards/grid/table, never list | Don't make every page the same density |
-| use concrete real data; no fake precision | "GPU成本年增3倍" not "成本持续增长"; no fabricated 92%/4.1× | Real data only; mark as "example" if hypothetical |
-| ≤5 bullets: single column | 6+: two-column; 10+: use cards/grid/infographic component, never list | 3 bullets → single col; 7 bullets → two-col |
-| no filler verbs (赋能/领先/一站式/生态/革新/引领) | AI-generated buzzwords destroy credibility | Use plain functional language |
-| quotes ≤3 lines, attribution = name+title | PPT quotes are fragments, not full reviews | "Name, CTO, Company" — never name alone |
-| theme lock: one theme per deck, no mid-deck switch | Dark stays dark, light stays light; micro-variation OK | #0A1E3D → #0F2847 OK; #0A1E3D → #FFF8F0 NOT OK |
+| Rule | Why | FreeStyle Example | Build Example |
+|------|-----|-------------------|---------------|
+| features: first card featured with longer body | First card gets gradient bar + 22pt title + higher elevation | Card 1: "智能推理引擎 — 自动选择最优框架" vs Card 2: "全链路监控" | `highlight_cards()`: first tuple gets accent bar + larger title |
+| 6+ bullets → two-column layout | Better density; layout engine auto-splits | 6 concise data points instead of 3 long ones | Use two `multiline()` calls side by side, or `kpi_card()` grid |
+| tech topics: include code page | Code pages add technical credibility | `{"code": {"language": "python", "source": "..."}}` | `code_block(slide, left, top, w, h, lines, language='python', C=C)` |
+| education/training: include exercise page | Exercise pages add interactivity | `{"exercise": {"duration": "5 min", "steps": [...]}}` | Custom: `rrect()` badge + `multiline()` numbered steps |
+| topic transitions: insert section divider | Visual rhythm (oversized number + gradient line) | Between problem→solution | `section_divider(slide, 2, 'Solution', C=C, typo=t)` |
+| hook: short subtitle (<40 chars); cta: long (>60) | Different hero compositions | hook: "5分钟取代5周" vs cta: "免费额度包含1000次推理/月" | `hero_slide(slide, title, short_sub, C=C)` / `cta_slide(slide, title, long_sub, C=C)` |
+| vary bullet density (some 3-bullet, some 6+) | Varying density feels natural; 10+ items → cards/grid/table, never list | Don't make every page the same density | Mix `multiline()` pages with `kpi_card()` / `bar_chart()` pages |
+| use concrete real data; no fake precision | "GPU成本年增3倍" not "成本持续增长"; no fabricated 92%/4.1× | Real data only; mark as "example" if hypothetical | Same — hardcode real numbers in `kpi_card()` and `bar_chart()` data |
+| ≤5 bullets: single column | 6+: two-column; 10+: use cards/grid/infographic component, never list | 3 bullets → single col; 7 bullets → two-col | 3 bullets → one `multiline()`; 6+ → two `multiline()` or `highlight_cards()` |
+| no filler verbs (赋能/领先/一站式/生态/革新/引领) | AI-generated buzzwords destroy credibility | Use plain functional language | Same — hardcode plain language in build.py |
+| quotes ≤3 lines, attribution = name+title | PPT quotes are fragments, not full reviews | "Name, CTO, Company" — never name alone | Same for `text()` content |
+| theme lock: one theme per deck, no mid-deck switch | Dark stays dark, light stays light; micro-variation OK | #0A1E3D → #0F2847 OK; #0A1E3D → #FFF8F0 NOT OK | Same C dict throughout; no mixing primary/accent mid-deck |
 
 ## When to Activate
 
@@ -114,51 +237,43 @@ When writing content.json, follow these rules to produce the best possible rende
 - User wants **brand-compliant** presentations with template + version control
 - User wants **page-level CRUD** on existing PPT (add/delete/swap/move pages)
 - User wants **diagrams** in PPT (flowchart, funnel, timeline, SWOT, etc.)
+- User explicitly requests **build mode** / **pixel-perfect** / **delivery-grade** output
+- User provides a **template.pptx** and wants enterprise VI compliance
 
 ## Three-Mode Architecture
 
-| | FreeStyle | Build Script | **VI Build** |
+| | **Build Script** | **VI Build** | FreeStyle |
 |---|---|---|---|
-| **Use case** | Quick exploration, prototyping | Delivery-grade, no template | **Enterprise VI compliance** |
-| **Trigger** | Default | Hand-write `build.py` | `analyze_template.py` + `build_helpers` |
-| **Content source** | AI auto-generates | Hardcoded per page in build.py | LLM reads template analysis, generates build.py |
-| **Brand compliance** | Style atom combos | Design Token dict `C` | **Extracted VI Token from template** |
-| **Layout control** | Auto-match goal type | **Per-element x/y/w/h** | **Preserve framework pages + build_helpers for new** |
-| **Font control** | Theme-level | **Run-level per character** | **Run-level + template font inheritance** |
-| **Template reuse** | None | None | **Framework pages preserved + decorations/LOGO copied** |
-| **Quality ceiling** | ★★★ | ★★★★★ | ★★★★★ |
+| **Use case** | Delivery-grade, no template | **Enterprise VI compliance** | Quick exploration, prototyping |
+| **Trigger** | User requests "build mode" / "pixel-perfect" / "delivery-grade" | User provides template.pptx + requests brand compliance | Default (no explicit mode request) |
+| **Content source** | Hardcoded per page in build.py | LLM reads template analysis, generates build.py | AI auto-generates via content.json |
+| **Brand compliance** | Design Token dict `C` | **Extracted VI Token from template** | Style atom combos |
+| **Layout control** | **Per-element x/y/w/h** | **Preserve framework pages + build_helpers for new** | Auto-match goal type |
+| **Font control** | **Run-level per character** | **Run-level + template font inheritance** | Theme-level |
+| **Template reuse** | None | **Framework pages preserved + decorations/LOGO copied** | None |
+| **Proposal type** | 3 build.py (structural differentiation) | 3 build.py (layout strategy differentiation, same VI Token) | 3 style previews (palette/mood swap) |
+| **Quality ceiling** | ★★★★★ | ★★★★★ | ★★★ |
 
 > **Recommended workflow**: FreeStyle prototype → VI Build (with enterprise template) or Build Script (no template) for precision delivery.
 
-### FreeStyle Mode (Quick Exploration)
+### Build Mode (Pixel-Perfect Delivery) — PRIMARY DELIVERY MODE
 
-One command, AI generates everything — content, design, images.
+LLM writes `build.py` scripts from blank canvas, using build_helpers for maximum per-element control. This is the highest-quality output mode with full control over every shape's position, size, color, and typography.
 
-```bash
-python -m ppt_pro_max "AI startup investor pitch"
-
-# Natural language style (40K+ combos)
-python -m ppt_pro_max "fintech pitch" --style "warm fintech"
-python -m ppt_pro_max "product launch" --style "dark cyberpunk"
-
-# AI images (Seedream recommended)
-python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream
-
-# Exact atom control
-python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif --layout-variant centered
-
-# Design dials
-python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
-```
-
-### Build Mode (Pixel-Perfect Delivery)
-
-LLM writes `build.py` scripts from blank canvas, using build_helpers for maximum per-element control.
+**When to use**: User explicitly requests build mode, or when delivery-grade quality is needed (investor deck, board presentation, client deliverable).
 
 ```bash
 # LLM generates build.py, then:
 python build.py
 ```
+
+**Build Mode workflow (follow Execution Workflow Steps 1-5 with Build-specific Step 2):**
+
+1. Step 1: Requirements & Framework (same as all modes)
+2. Step 2: Generate 3 structurally-different build.py proposals → user picks direction
+3. Step 3: Fill chosen build.py with full content
+4. Step 4: Run build.py → verify → revise
+5. Step 5: Final delivery
 
 See **Build Helpers API** section below for function reference.
 
@@ -210,6 +325,29 @@ prs.save('output.pptx')
 - Framework pages (cover/TOC/back cover) are preserved untouched
 - Use `copy_decorations()` / `copy_logo()` to maintain VI consistency
 - VI Token (`C` dict) extracted from `analyze_template.py` output, not hand-written
+
+### FreeStyle Mode (Quick Exploration)
+
+One command, AI generates everything — content, design, images. Best for rapid prototyping and early-stage ideation.
+
+**When to use**: Default mode when user does not specify a mode. Good for quick drafts, brainstorming, style exploration.
+
+```bash
+python -m ppt_pro_max "AI startup investor pitch"
+
+# Natural language style (40K+ combos)
+python -m ppt_pro_max "fintech pitch" --style "warm fintech"
+python -m ppt_pro_max "product launch" --style "dark cyberpunk"
+
+# AI images (Seedream recommended)
+python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream
+
+# Exact atom control
+python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif --layout-variant centered
+
+# Design dials
+python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
+```
 
 ## Design Constraints
 
@@ -289,15 +427,55 @@ prs.save('output.pptx')
 - No progress bars with filled background tracks for comparison
 - No scroll hints (Scroll, ↓)
 
-### Design Vocabulary (pattern → trigger condition → content.json mapping)
+### Design Vocabulary (pattern → FreeStyle trigger → Build implementation)
 
-**Covers**: Asymmetric Split Hero → `goal:"hook"`, image on one side | Editorial Manifesto → `goal:"hook"`, no image, large type | Full-Bleed Image → `goal:"hook"`, image with overlay | Data-Impact → `goal:"hook"`, big number + one-liner | Minimal Typography → `goal:"hook"`, text-only, extreme whitespace
+**Covers:**
 
-**Inner pages**: Sidebar+Content → `--layout-variant sidebar-left` in generate_ppt(), consulting/reports | Split Text-Image → `goal:"content"`, image field | Bento Grid → `goal:"features"`, 4+ cards | Big Number Focus → `goal:"data"`, single metric | Card Row → `goal:"features"`, 3 cards | Comparison Split → `goal:"content"`, two-column contrast | Timeline Horizontal → `component_category:"timeline"` | Quote Spotlight → `goal:"content"`, quote in bullets | Code Terminal → `goal:"code"` | Full-Width Visual → `goal:"content"`, full-bleed image
+| Pattern | FreeStyle Trigger | Build Implementation |
+|---------|-------------------|---------------------|
+| Asymmetric Split Hero | `goal:"hook"`, image on one side | `rect()` split bg + `text()` left + image right |
+| Editorial Manifesto | `goal:"hook"`, no image, large type | `hero_slide()` text-only |
+| Full-Bleed Image | `goal:"hook"`, image with overlay | `rect()` full-bg + image + `gradient_text()` overlay |
+| Data-Impact | `goal:"hook"`, big number + one-liner | `rect()` bg + `text()` huge number + `text()` one-liner |
+| Minimal Typography | `goal:"hook"`, text-only, extreme whitespace | `text()` large title with wide margins |
 
-**Data**: Table Diagram → `goal:"data"`, diagram type:"table" | Chart Focus → `goal:"data"`, diagram type: chart | Metric Dashboard → `component_category:"infographic"` | Infographic Component → `component_type:"group"` | Number Grid → `goal:"data"`, 2×2 metrics
+**Inner pages:**
 
-**Content relationship → visual strategy**: Sequential → Timeline | Contrast → Comparison Split | Primary+secondary → unequal layout | Equal-weight → Card Row | Hierarchical → Hierarchy component | Evidence → center + orbit | Process → Cycle/Process component | Data-driven → Big Number/Chart
+| Pattern | FreeStyle Trigger | Build Implementation |
+|---------|-------------------|---------------------|
+| Sidebar+Content | `--layout-variant sidebar-left` | `rect()` sidebar + `page_header()` + content right |
+| Split Text-Image | `goal:"content"`, image field | `text()` left half + `circle_image()` right |
+| Bento Grid | `goal:"features"`, 4+ cards | `rrect()` grid of 4+ cells |
+| Big Number Focus | `goal:"data"`, single metric | `text()` oversized number + `text()` label |
+| Card Row | `goal:"features"`, 3 cards | `highlight_cards()` |
+| Comparison Split | `goal:"content"`, two-column contrast | `comparison_bars()` or two `multiline()` side by side |
+| Timeline Horizontal | `component_category:"timeline"` | `rect()` line + `oval()` dots + `text()` labels |
+| Quote Spotlight | `goal:"content"`, quote in bullets | `gradient_text()` large quote + `text()` attribution |
+| Code Terminal | `goal:"code"` | `code_block()` |
+| Full-Width Visual | `goal:"content"`, full-bleed image | `rect()` bg image + `frosted_panel()` + `text()` |
+
+**Data pages:**
+
+| Pattern | FreeStyle Trigger | Build Implementation |
+|---------|-------------------|---------------------|
+| Table Diagram | `goal:"data"`, diagram type:"table" | `rect()` headers + `multiline()` rows |
+| Chart Focus | `goal:"data"`, diagram type: chart | `bar_chart()` or `donut_chart()` |
+| Metric Dashboard | `component_category:"infographic"` | `kpi_card()` grid |
+| Infographic Component | `component_type:"group"` | Custom shapes with `rect()`/`oval()`/`text()` |
+| Number Grid | `goal:"data"`, 2x2 metrics | 2x2 `kpi_card()` layout |
+
+**Content relationship → visual strategy:**
+
+| Relationship | Visual Strategy | FreeStyle Trigger | Build Implementation |
+|--------------|----------------|-------------------|---------------------|
+| Sequential | Timeline | `component_category:"timeline"` | Custom timeline with `rect()`/`oval()`/`text()` |
+| Contrast | Comparison Split | `goal:"content"` two-col | `comparison_bars()` |
+| Primary+secondary | Unequal layout | `--layout-variant sidebar-left` | Sidebar `rect()` + main content |
+| Equal-weight | Card Row | `goal:"features"` | `highlight_cards()` |
+| Hierarchical | Hierarchy tree | `component_type:"group"` | Custom tree with `rect()`/`text()` |
+| Evidence | Center + orbit | Auto | `oval()` + `text()` |
+| Process | Cycle/Process | `component_category:"process"` | Custom cycle with `oval()`/`text()` |
+| Data-driven | Big Number/Chart | `goal:"data"` | `kpi_card()` or `bar_chart()` |
 
 ### Redesign Protocol
 - Greenfield: start from Dial baseline
@@ -343,6 +521,9 @@ prs.save('output.pptx')
 ```python
 from ppt_pro_max import generate_ppt, fetch_image
 
+# Build Mode (primary delivery mode)
+# LLM writes build.py using build_helpers — see Build Helpers API section
+
 # FreeStyle
 result = generate_ppt("AI startup pitch", style="dark cyberpunk", fetch_images=True)
 
@@ -353,7 +534,7 @@ result = generate_ppt("pitch", content_file="content.json", style="warm fintech"
 result = generate_ppt("pitch", content_file="content.json", style="professional",
                       layout_variant="sidebar-left", motion=5, density=6, variance=7)
 
-# Proposal flow
+# Proposal flow (FreeStyle only — Build mode uses build.py proposals)
 result = generate_ppt("pitch", proposal=True, style="dark cyberpunk")
 
 # Standalone image generation
@@ -580,23 +761,101 @@ C = {
 }
 ```
 
-### Functions
+### Classes
+
+| Class | Attributes | Purpose |
+|-------|-----------|---------|
+| `Typography` | `hero`, `h1`, `h2`, `h3`, `body`, `caption`, `micro` (all pt) | Font size scale per design style; access via `t.hero`, `t.h1`, etc. |
+| `Spacing` | `page_margin`, `section_gap`, `card_gap`, `card_padding`, `line_height`, `bar_gap` (all inches or ratio) | Spacing system per design style; access via `sp.page_margin`, etc. |
+
+**Predefined scales:**
+
+| Key | TYPOGRAPHY | SPACING | Best For |
+|-----|-----------|---------|----------|
+| `'mckinsey'` | hero=44, h1=28, h2=20, h3=16, body=12 | margin=0.65, card_gap=0.35 | Consulting, finance, structured reports |
+| `'cyberpunk'` | hero=48, h1=28, h2=18, h3=14, body=11 | margin=0.8, card_gap=0.4 | Tech, dark theme, information-dense |
+| `'creative'` | hero=44, h1=28, h2=22, h3=18, body=13 | margin=0.8, card_gap=0.4 | Creative, playful, approachable |
+| `'professional'` | hero=44, h1=28, h2=20, h3=16, body=12 | margin=0.65, card_gap=0.35 | Corporate, general business |
+| `'minimal'` | hero=40, h1=24, h2=18, h3=14, body=11 | margin=1.0, card_gap=0.5 | Minimalist, breathing room |
+
+Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp = SPACING['mckinsey']`.
+
+### Functions — Page Structure
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
 | `add_slide(prs)` | Add blank slide | Auto-finds blank layout |
-| `page_header(slide, title, subtitle, C)` | Title + subtitle + divider line | Standard content page header |
-| `kpi_card(slide, left, top, width, height, number, label, trend, C)` | KPI metric card | number (big), label, trend (+8.3%) |
-| `bar_chart(slide, left, top, data, C)` | Horizontal bar chart | data: [(label, pct, val), ...] |
-| `comparison_bars(slide, left, top, metrics, C)` | Before/after comparison | metrics: [(label, v_old, v_new, pct_old, pct_new), ...] |
-| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C)` | Donut chart (simplified) | sectors: [(name, pct_str, color), ...] |
-| `highlight_cards(slide, left, top, cards, C)` | Highlight card row | cards: [(title, desc, accent_color), ...] |
+| `hero_slide(slide, title, subtitle, C, typo)` | Cover/hero page | Full-bleed primary bg + large title |
+| `cta_slide(slide, title, subtitle, C, typo)` | Call-to-action page | Full-bleed primary bg + title + subtitle |
+| `section_divider(slide, number, title, C, typo)` | Section divider | Oversized number + title + gradient line |
+| `page_header(slide, title, subtitle, C, typo, spacing)` | Title + subtitle + divider line | Standard content page header |
+
+### Functions — Data & Charts
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `kpi_card(slide, left, top, width, height, number, label, trend, C, typo)` | KPI metric card | number (big), label, trend (+8.3%) |
+| `bar_chart(slide, left, top, data, C, typo, spacing)` | Horizontal bar chart | data: [(label, pct, val), ...] |
+| `comparison_bars(slide, left, top, metrics, C, typo, spacing)` | Before/after comparison | metrics: [(label, v_old, v_new, pct_old, pct_new), ...] |
+| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C, typo)` | Donut chart (simplified) | sectors: [(name, pct_str, color), ...] |
+| `highlight_cards(slide, left, top, cards, C, typo, spacing)` | Highlight card row | cards: [(title, desc, accent_color), ...] |
+
+### Functions — Text & Code
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
 | `text(slide, left, top, width, height, txt, font_size, color, bold, align, font_name, C)` | Single-line text | color: role name or hex |
 | `multiline(slide, left, top, width, height, lines, font_size, color, C)` | Multi-line text | lines: list of strings |
+| `gradient_text(slide, left, top, width, height, txt, preset, stops, font_size, bold, font_name, align)` | Gradient-filled text | preset: 'gold-shine', etc.; or custom stops |
+| `vertical_text(slide, left, top, width, height, txt, direction, font_name, font_size, color, bold, align)` | Vertical text | direction: 'ea' (east-asian) |
+| `code_block(slide, left, top, width, height, lines, language, C, typo)` | Code block with language badge | lines: list of code strings; dark bg #1E1E1E |
+
+### Functions — Shapes
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
 | `rect(slide, left, top, width, height, fill, line, C)` | Rectangle | fill/line: role name or hex |
 | `rrect(slide, left, top, width, height, fill, line, C)` | Rounded rectangle | Same as rect |
 | `oval(slide, left, top, width, height, fill, line, C)` | Ellipse | Same as rect |
 | `top_bar(slide, color, C)` | Top accent bar | Brand color strip |
+| `shape_3d(slide, left, top, width, height, depth, material, extrusion_color, shape_type)` | 3D extruded shape | depth_pt, material: 'powder'/'metal' |
+| `bevel_shape(slide, left, top, width, height, top_w, top_h, material, shape_type)` | Beveled shape | Bevel edge dimensions |
+| `pattern_fill(slide, left, top, width, height, pattern_type, fg_color, bg_color, fg_alpha, shape_type)` | Pattern-filled shape | 31 pattern types available |
+| `frosted_panel(slide, left, top, width, height, tint, alpha, soft_edge)` | Frosted glass panel | Semi-transparent overlay |
+
+### Functions — Image Effects
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `circle_image(slide, cx, cy, radius, image_path, border_color)` | Circle-cropped image | Center x/y + radius |
+| `soft_edge_image(slide, left, top, width, height, image_path, soft_radius)` | Soft-edge faded image | Feathered edge effect |
+| `duotone_image(slide, left, top, width, height, image_path, color1, color2)` | Duotone image | Two-color mapping |
+| `artistic_image(slide, left, top, width, height, image_path, effect, params)` | Artistic effect image | 22 effects: watercolor_sponge, etc. |
+
+### Functions — Decorations
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `brush_divider(slide, left, top, width, color, thickness)` | Brush-stroke divider | Organic hand-drawn line |
+| `seal_stamp(slide, left, top, size, txt, fill_hex, font_name, rotation, style)` | Chinese seal stamp | Traditional red stamp |
+| `neon_border(slide, left, top, width, height, color, radius)` | Neon glowing border | Cyberpunk-style glow |
+| `glass_panel(slide, left, top, width, height, tint, alpha, soft_edge)` | Glassmorphism panel | Frosted glass effect |
+| `grid_background(slide, spacing, color, alpha)` | Subtle grid background | Dot or line grid |
+| `ink_splash(slide, left, top, size, color, alpha)` | Ink splash decoration | Organic ink effect |
+
+### Functions — Animation
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `slide_transition(slide, transition_type, speed, advance_on_click, advance_after_ms)` | Slide transition | 12 types: fade, push, wipe, etc. |
+| `entrance_animation(slide, shape_id, effect, delay_ms, duration_ms, click_triggered)` | Entrance animation | 11 effects: fade_in, fly_in, zoom_in, etc. |
+| `exit_animation(slide, shape_id, effect, delay_ms, duration_ms, click_triggered)` | Exit animation | 8 presets: fade_out, fly_out, etc. |
+| `emphasis_animation(slide, shape_id, effect, delay_ms, duration_ms, click_triggered)` | Emphasis animation | 8 presets: pulse, grow, spin, etc. |
+
+### Functions — Template (VI Build only)
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
 | `copy_decorations(slide, template_slide)` | Copy decorations from template | Skips long text (>50 chars) and images |
 | `copy_logo(slide, template_slide, color_hints)` | Copy LOGO from template | Only finds GROUP shapes (shape_type==6) |
 
