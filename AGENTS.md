@@ -6,6 +6,8 @@ AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand 
 
 **⚠️ python-pptx full API reference: [`src/ppt_pro_max/docs/python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — 170+ shape types, 73 chart types, tables, connectors, freeform, hyperlinks, media, effects, 3D, OOXML. **Must read before writing python-pptx code.**
 
+**⚠️ READ BEFORE deleting any file: [`skill/ARCHITECTURE.md`](skill/ARCHITECTURE.md)** — Module registry with risk levels (CORE/ENTRY/INTERNAL/ISOLATED). Run `python scripts/check_deps.py <module_name>` to check deletion impact.
+
 ## Commands
 
 ### Generate PPT
