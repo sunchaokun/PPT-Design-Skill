@@ -704,7 +704,7 @@ img = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream"
 print(img["path"])
 ```
 
-**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, `proposal`, `confirmed_proposal`, `component_library`, `palette`, `fonts`, `decoration`, `mood`
+**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, `proposal`, `confirmed_proposal`, `materials_dir`, `beautify`, `component_library`, `palette`, `fonts`, `decoration`, `mood`, `llm_provider`, `llm_api_key`, `pages`
 
 ## 4-Phase Pipeline
 
@@ -998,31 +998,31 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
-| `add_slide(prs)` | Add blank slide | Auto-finds blank layout |
-| `hero_slide(slide, title, subtitle, C, typo)` | Cover/hero page | Full-bleed primary bg + large title |
-| `cta_slide(slide, title, subtitle, C, typo)` | Call-to-action page | Full-bleed primary bg + title + subtitle |
-| `section_divider(slide, number, title, C, typo)` | Section divider | Oversized number + title + gradient line |
-| `page_header(slide, title, subtitle, C, typo, spacing)` | Title + subtitle + divider line | Standard content page header |
+| `add_slide(prs, layout_index)` | Add blank slide | Auto-finds blank layout; layout_index optional |
+| `hero_slide(slide, title, subtitle, C, typo)` | Cover/hero page | Full-bleed primary bg + large title; grouped=True |
+| `cta_slide(slide, title, subtitle, C, typo)` | Call-to-action page | Full-bleed primary bg + title + subtitle; grouped=True |
+| `section_divider(slide, number, title, C, typo)` | Section divider | Oversized number + title + gradient line; grouped=True |
+| `page_header(slide, title, subtitle, C, left, width, typo, spacing)` | Title + subtitle + divider line | left=0.65, width=None by default |
 
 ### Functions — Data & Charts
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
-| `kpi_card(slide, left, top, width, height, number, label, trend, C, typo)` | KPI metric card | number (big), label, trend (+8.3%) |
-| `bar_chart(slide, left, top, data, C, typo, spacing)` | Horizontal bar chart | data: [(label, pct, val), ...] |
-| `comparison_bars(slide, left, top, metrics, C, typo, spacing)` | Before/after comparison | metrics: [(label, v_old, v_new, pct_old, pct_new), ...] |
-| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C, typo)` | Donut chart (simplified) | sectors: [(name, pct_str, color), ...] |
-| `highlight_cards(slide, left, top, cards, C, typo, spacing)` | Highlight card row | cards: [(title, desc, accent_color), ...] |
+| `kpi_card(slide, left, top, width, height, number, label, trend, trend_up, C, typo)` | KPI metric card | number (big), label, trend (+8.3%), trend_up=True |
+| `bar_chart(slide, left, top, data, max_width, bar_height, C, typo, spacing)` | Horizontal bar chart | data: [(label, pct, val), ...]; max_width=5.0, bar_height=0.3 |
+| `comparison_bars(slide, left, top, metrics, max_width, C, typo, spacing)` | Before/after comparison | metrics: [(label, v_old, v_new, pct_old, pct_new), ...]; max_width=4.0 |
+| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C, typo)` | Donut chart (simplified) | sectors: [(name, pct_str, color), ...]; grouped=True |
+| `highlight_cards(slide, left, top, cards, total_width, C, typo, spacing)` | Highlight card row | cards: [(title, desc, accent_color), ...]; total_width=12.0 |
 
 ### Functions — Text & Code
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
-| `text(slide, left, top, width, height, txt, font_size, color, bold, align, font_name, C)` | Single-line text | color: role name or hex |
-| `multiline(slide, left, top, width, height, lines, font_size, color, C)` | Multi-line text | lines: list of strings |
+| `text(slide, left, top, width, height, txt, font_size, color, bold, align, font_name, C, anchor)` | Single-line text | color: role name or hex; anchor: 'top'/'middle'/'bottom' |
+| `multiline(slide, left, top, width, height, lines, font_size, color, bold, align, font_name, C, line_spacing)` | Multi-line text | lines: list of strings; bold/align/font_name optional |
 | `gradient_text(slide, left, top, width, height, txt, preset, stops, font_size, bold, font_name, align)` | Gradient-filled text | preset: 'gold-shine', etc.; or custom stops |
-| `vertical_text(slide, left, top, width, height, txt, direction, font_name, font_size, color, bold, align)` | Vertical text | direction: 'ea' (east-asian) |
-| `code_block(slide, left, top, width, height, lines, language, C, typo)` | Code block with language badge | lines: list of code strings; dark bg #1E1E1E |
+| `vertical_text(slide, left, top, width, height, txt, direction, font_name, font_size, color, bold, align)` | Vertical text | direction: 'ea' (east-asian); defaults: STKaiti 24pt |
+| `code_block(slide, left, top, width, height, lines, language, C, typo)` | Code block with language badge | lines: list of code strings; dark bg #1E1E1E; grouped=True |
 
 ### Functions — Shapes
 
@@ -1031,7 +1031,7 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 | `rect(slide, left, top, width, height, fill, line, C)` | Rectangle | fill/line: role name or hex |
 | `rrect(slide, left, top, width, height, fill, line, C)` | Rounded rectangle | Same as rect |
 | `oval(slide, left, top, width, height, fill, line, C)` | Ellipse | Same as rect |
-| `top_bar(slide, color, C)` | Top accent bar | Brand color strip |
+| `top_bar(slide, color, width, height, C)` | Top accent bar | Brand color strip; width=13.333, height=0.08 |
 | `shape_3d(slide, left, top, width, height, depth, material, extrusion_color, shape_type)` | 3D extruded shape | depth_pt, material: 'powder'/'metal' |
 | `bevel_shape(slide, left, top, width, height, top_w, top_h, material, shape_type)` | Beveled shape | Bevel edge dimensions |
 | `pattern_fill(slide, left, top, width, height, pattern_type, fg_color, bg_color, fg_alpha, shape_type)` | Pattern-filled shape | 31 pattern types available |
@@ -1051,10 +1051,10 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
 | `brush_divider(slide, left, top, width, color, thickness)` | Brush-stroke divider | Organic hand-drawn line |
-| `seal_stamp(slide, left, top, size, txt, fill_hex, font_name, rotation, style)` | Chinese seal stamp | Traditional red stamp |
+| `seal_stamp(slide, left, top, size, txt, fill_hex, font_name, rotation, style, border_width_pt)` | Chinese seal stamp | Traditional red stamp; border_width_pt=4.0 |
 | `neon_border(slide, left, top, width, height, color, radius)` | Neon glowing border | Cyberpunk-style glow |
 | `glass_panel(slide, left, top, width, height, tint, alpha, soft_edge)` | Glassmorphism panel | Frosted glass effect |
-| `grid_background(slide, spacing, color, alpha)` | Subtle grid background | Dot or line grid |
+| `grid_background(slide, spacing, color, alpha)` | Subtle grid background | Dot or line grid; spacing=1.0, color='#E0E0E0', alpha=15 |
 | `ink_splash(slide, left, top, size, color, alpha)` | Ink splash decoration | Organic ink effect |
 
 ### Functions — Animation
@@ -1070,7 +1070,7 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
-| `copy_decorations(slide, template_slide)` | Copy decorations from template | Skips long text (>50 chars) and images |
+| `copy_decorations(slide, template_slide, skip_long_text, skip_image)` | Copy decorations from template | skip_long_text=True, skip_image=True |
 | `copy_logo(slide, template_slide, color_hints)` | Copy LOGO from template | Only finds GROUP shapes (shape_type==6) |
 
 ### Color Resolution
