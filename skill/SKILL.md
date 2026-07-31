@@ -1,6 +1,6 @@
 ---
 name: ppt-design-skill
-version: 0.12.0
+version: 0.13.0
 description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: FreeStyle + Build + VI Build. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style-description] [--fetch-images] [--proposal]"
 license: MIT
@@ -38,12 +38,13 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 - Read any user-provided materials (README, docs, data files)
 - Design the skeleton: total pages, per-page goal, core title for each page
 - Determine: language (zh/en), business_mode, style direction
+- **Domain detection**: identify the presentation domain from topic/keywords (see Domain-Specific Design Paradigms below). This determines the entire visual language, content structure, and anti-patterns — MUST be detected before Design Read
 - **Design Read**: declare VARIANCE (1-10), MOTION (1-10), DENSITY (1-10) based on audience and scenario
 - **Mode decision**: determine which mode to use based on user request and quality requirements
   - Build Mode: user explicitly requests "build mode" / "pixel-perfect" / "delivery-grade" / "手写build.py"
   - VI Build Mode: user provides enterprise template (template.pptx) + requests brand compliance
   - FreeStyle: default, quick exploration, prototyping
-- Present to user as text outline (including mode choice), confirm before proceeding
+- Present to user as text outline (including domain + mode choice), confirm before proceeding
 
 **Dial → Action Map (V/M/D → LLM decisions):**
 
@@ -229,6 +230,37 @@ When writing content (content.json for FreeStyle, or hardcoded text in build.py 
 | quotes ≤3 lines, attribution = name+title | PPT quotes are fragments, not full reviews | "Name, CTO, Company" — never name alone | Same for `text()` content |
 | theme lock: one theme per deck, no mid-deck switch | Dark stays dark, light stays light; micro-variation OK | #0A1E3D → #0F2847 OK; #0A1E3D → #FFF8F0 NOT OK | Same C dict throughout; no mixing primary/accent mid-deck |
 
+### Domain-Specific Content Rules (OVERRIDE above rules when domain matches)
+
+**Scientific Research — these rules REPLACE the business defaults:**
+
+| Rule | Why | Implementation |
+|------|-----|----------------|
+| Every data page = one Figure with caption | Journal convention; audience expects Figure-style | `text(slide, x, y, w, 0.3, 'Figure N: ...', font_size=10)` below visual |
+| Use semantic biology colors, not brand accent | Red=upregulated, blue=downregulated has scientific meaning | C dict with `up_color`, `down_color`, `control_color` instead of `primary`/`accent` |
+| Cite every claim: (Author, Year) or superscript | Uncited claims = scientific fraud | `text(slide, x, y, w, 0.2, '¹Smith et al., Nature 2024', font_size=8, color='text_muted')` |
+| NO KPI cards, NO hero slides, NO feature cards | These are business patterns, meaningless in science | Use Figure+caption, data tables, sequence views instead |
+| Cover = paper title format | Title + authors + affiliation, not marketing hero | `text()` title (28pt) + `multiline()` authors (14pt) + `text()` affiliation (12pt) |
+| No animation or transition | Research slides must be printable as-is | Skip all `entrance_animation()` / `slide_transition()` calls |
+| Panel labels (A, B, C) on multi-panel figures | Standard journal figure convention | `text(slide, x, y, 0.4, 0.3, 'A)', font_size=10, bold=True)` |
+| Axis labels on all charts | Data without axis labels is uninterpretable | `text(slide, x, y, w, 0.3, 'Expression (log₂FC)', font_size=9)` |
+
+**Academic Thesis — additional rules:**
+
+| Rule | Why | Implementation |
+|------|-----|----------------|
+| Chapter-flow structure, not story arc | Thesis defense follows chapter order, not marketing arc | Ch1 Introduction → Ch2 Methods → Ch3 Results → Ch4 Discussion |
+| Bibliography slide at end | Required for academic completeness | `multiline()` with numbered references (8-9pt) |
+| Advisor/committee on cover | Academic protocol | `text()` advisor name + title on cover slide |
+
+**Medical/Clinical — additional rules:**
+
+| Rule | Why | Implementation |
+|------|-----|----------------|
+| Evidence level labels | Clinical decisions require evidence grading | `text(slide, x, y, w, 0.2, '[Level A evidence]', font_size=9, color='text_muted')` |
+| Disclaimers where applicable | Regulatory requirement | `text(slide, x, y, w, 0.3, 'Disclaimer: ...', font_size=8, color='text_muted')` |
+| No decorative visuals | Patient safety > aesthetics | No `neon_border()`, `brush_divider()`, `ink_splash()` |
+
 ## When to Activate
 
 - User asks to create/generate/design a **PPT/presentation/deck/slide deck**
@@ -239,6 +271,8 @@ When writing content (content.json for FreeStyle, or hardcoded text in build.py 
 - User wants **diagrams** in PPT (flowchart, funnel, timeline, SWOT, etc.)
 - User explicitly requests **build mode** / **pixel-perfect** / **delivery-grade** output
 - User provides a **template.pptx** and wants enterprise VI compliance
+- User wants **scientific/academic** presentation (gene, protein, thesis, dissertation, 论文, 答辩, 实验)
+- User wants **medical/clinical** presentation (diagnosis, treatment, clinical trial, 诊断, 临床)
 
 ## Three-Mode Architecture
 
@@ -349,6 +383,123 @@ python -m ppt_pro_max "pitch" --palette wine-burgundy --fonts elegant-serif --la
 python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
 ```
 
+## Domain-Specific Design Paradigms
+
+**⚠️ CRITICAL: Detect domain BEFORE designing.** Using the wrong paradigm produces fundamentally mismatched output (e.g., McKinsey sidebar on a genomics slide). The domain determines visual language, content structure, typography, color system, and anti-patterns.
+
+### How to Detect Domain
+
+Match user topic/keywords to the paradigm with the most keyword hits. If ambiguous, ask the user.
+
+| Domain | Trigger Keywords |
+|--------|-----------------|
+| Scientific Research | gene, protein, genome, sequencing, CRISPR, pathway, assay, omics, PCR, RNA, DNA, expression, mutation, variant, bioinformatics, proteomics, metabolomics, single-cell, immunotherapy, checkpoint, clinical trial, CRISPR, 序列, 基因, 蛋白, 测序, 组学, 免疫, 细胞, 实验, 通路, 变异 |
+| Academic Thesis | thesis, dissertation, defense, viva, 论文答辩, 毕业, 学位, 答辩 |
+| Engineering/Technical | architecture, system design, infrastructure, deployment, API, microservice, 架构, 系统, 部署, 工程 |
+| Medical/Clinical | diagnosis, treatment, patient, clinical, surgery, therapy, 诊断, 治疗, 患者, 临床, 手术 |
+| Government/Public Sector | policy, regulation, compliance, budget, annual report, 政策, 法规, 合规, 预算, 年报 |
+| Business (default) | pitch, investor, sales, marketing, product launch, KPI, revenue, 投资人, 销售, 营销, 产品发布 |
+
+### Scientific Research Paradigm
+
+**Visual language**: Nature/Cell/Figure style — NOT business slides. Every data page looks like a journal figure, not a marketing card.
+
+| Aspect | DO (Research) | DON'T (Business anti-pattern) |
+|--------|---------------|------------------------------|
+| **Page structure** | Figure + caption below; one main visual per page | KPI cards, sidebar layout, feature cards |
+| **Data visualization** | Sequence alignment, heat map, volcano plot, Manhattan plot, phylogenetic tree, gel electrophoresis, chromatogram | Bar charts with KPI labels, donut charts |
+| **Numbering** | Figure 1, Figure 2, Figure 3... per page (required) | "01/04" card numbering (banned in business but REQUIRED here) |
+| **Color system** | Semantic biology colors: blue=downregulation, red=upregulation, green=control, purple=mutation; or journal-specific palettes (Nature blue/gray, Cell warm) | Brand accent colors, gradient fills |
+| **Typography** | Clean serif or sans-serif (Arial/Helvetica); figure labels 9-11pt; axis labels 10-12pt | Hero-sized titles, gradient text |
+| **Citations** | Required: (Author, Year) or superscript number¹ after claims | No citations (business slides don't cite) |
+| **Cover** | Paper title style: title + authors + affiliation + journal-style layout | Hero image + gradient overlay |
+| **Content flow** | Background → Methods → Results (Fig 1-4) → Discussion → References | Hook → Problem → Features → CTA |
+| **Animation** | NONE — research slides must be printable as-is | Any animation or transition |
+
+**Research content structure (per page):**
+
+```
+┌──────────────────────────────────┐
+│ Figure 3: ERK pathway activation │  ← Figure label (9-11pt, top-left)
+│                                  │
+│    [Main figure/visualization]   │  ← Full-width data visual
+│                                  │
+│ A) Western blot  B) Quantification│  ← Panel labels (A, B, C...)
+│                                  │
+│ ERK phosphorylation increased    │  ← Caption text (10-11pt)
+│ 3.2-fold (p<0.01)¹              │  ← Citation
+└──────────────────────────────────┘
+```
+
+**Research Build Mode components:**
+
+| Component | Implementation |
+|-----------|---------------|
+| Figure label | `text(slide, 0.5, 0.3, 6, 0.3, 'Figure 3:', font_size=10, color='text_dark', bold=True, C=C)` |
+| Panel label (A/B/C) | `text(slide, x, y, 0.4, 0.3, 'A)', font_size=10, bold=True, C=C)` |
+| Axis labels | `text(slide, x, y, w, 0.3, 'Expression (log₂FC)', font_size=9, C=C)` |
+| Data table | `rect()` header row + `multiline()` data rows with alternating `rrect()` backgrounds |
+| Sequence alignment | Custom: `rrect()` colored blocks per residue (A=green, T=red, G=yellow, C=blue) |
+| Heat map grid | Nested `rrect()` cells with color-coded fills per expression level |
+| Citation | `text(slide, x, y, w, 0.2, '¹Smith et al., Nature 2024', font_size=8, color='text_muted', C=C)` |
+
+**Research color palettes:**
+
+| Palette | Colors | Use When |
+|---------|--------|----------|
+| `nature` | #2C3E50 (text), #3498DB (data blue), #E74C3C (highlight red), #95A5A6 (neutral) | General biology, genomics |
+| `cell-journal` | #D35400 (warm accent), #2C3E50 (text), #27AE60 (green), #8E44AD (purple) | Cell biology, pathways |
+| `clinical` | #2C3E50 (text), #2980B9 (diagnosis), #C0392B (alert), #27AE60 (positive outcome) | Clinical trials, medical |
+| `genomics` | #2C3E50 (text), #8E44AD (mutation), #3498DB (wild-type), #E67E22 (variant) | Sequencing, variant analysis |
+
+### Academic Thesis Paradigm
+
+**Visual language**: Formal academic presentation — structured, citation-heavy, defense-appropriate.
+
+| Aspect | DO (Thesis) | DON'T |
+|--------|-------------|-------|
+| **Structure** | Title → Outline → Ch1→Ch2→Ch3→Conclusion (thesis chapter flow) | Hook→Problem→Features→CTA |
+| **Typography** | University-standard fonts; body 14-16pt; figure captions 10-11pt | Decorative fonts, gradient text |
+| **References** | Required on every claim; bibliography slide at end | No citations |
+| **Cover** | University name + logo + title + author + advisor + date | Marketing-style hero |
+| **Animation** | Minimal (fade only) | Any emphasis or exit animation |
+
+### Engineering/Technical Paradigm
+
+**Visual language**: System architecture, data flow, API specs — technical documentation style.
+
+| Aspect | DO (Engineering) | DON'T |
+|--------|------------------|-------|
+| **Diagrams** | Architecture diagrams, sequence diagrams, flow charts | Marketing feature cards |
+| **Code** | API examples, config snippets, CLI commands (mandatory) | Generic "feature" descriptions |
+| **Tables** | Spec tables, comparison matrices, performance benchmarks | KPI cards with trend arrows |
+| **Color** | Technical: dark bg (#1E293B) for code, neutral grays, single accent for highlight | Brand gradients |
+| **Animation** | Step-by-step reveal for architecture diagrams | Bounce/fly animations |
+
+### Medical/Clinical Paradigm
+
+**Visual language**: Clinical, evidence-based — similar to research but with patient-safety formality.
+
+| Aspect | DO (Medical) | DON'T |
+|--------|--------------|-------|
+| **Data** | Clinical trial results, survival curves, forest plots, diagnostic accuracy tables | Marketing dashboards |
+| **Color** | Clinical palette (blue=diagnosis, red=alert, green=outcome); no decorative colors | Vibrant startup colors |
+| **Disclaimers** | Required where applicable (e.g., "off-label use", "preliminary data") | None |
+| **Citations** | Mandatory — evidence-based claims only | Uncited claims |
+| **Animation** | NONE — must be printable for medical records | Any animation |
+
+### Government/Public Sector Paradigm
+
+**Visual language**: Formal, structured, compliance-driven.
+
+| Aspect | DO (Government) | DON'T |
+|--------|----------------|-------|
+| **Structure** | Executive summary → body → appendix; numbered sections | Marketing story arc |
+| **Typography** | Standard serif/sans-serif; conservative; minimum 14pt body | Creative fonts |
+| **Color** | Flag colors or institutional palette; muted | Bright startup colors |
+| **Data** | Official statistics, budget tables, compliance matrices | Trendy infographics |
+| **Animation** | NONE | Any animation |
+
 ## Design Constraints
 
 ### Typography
@@ -398,7 +549,13 @@ python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
 - Font pair: consistent throughout (heading + body, all slides)
 - Accent color + warm/cool gray + theme lock: enforced in Color rules and Content Design Rules
 
-### AI Tells Blacklist (HARD BAN unless user explicitly requests)
+### AI Tells Blacklist (HARD BAN unless user explicitly requests, OR domain is scientific/academic/medical)
+
+**Domain exceptions**: In Scientific Research, Academic Thesis, and Medical domains, the following are REQUIRED (not banned):
+- Figure numbering (Figure 1, Figure 2) — required for research data pages
+- Panel labels (A, B, C) — required for multi-panel figures
+- Section numbers (1. Introduction, 2. Methods) — required for thesis chapters
+- Citation superscripts (¹, ²) — required for evidence-based claims
 
 - No cover version labels (V0.6/BETA/内测版)
 - No "Brand · No.01" style sub-labels
@@ -491,7 +648,12 @@ python -m ppt_pro_max "pitch" --variance 7 --motion 5 --density 6
 - Education → exercise page + built-in bullets
 - Creative proposals → custom blocks + AI images
 - Brand launch → full-bleed images + minimal text
-- ONE design system per deck — no mixing McKinsey sidebar with Cyberpunk neon
+- **Scientific research** → Figure-style pages + semantic biology colors + sequence alignment + citations + NO animation
+- **Academic thesis** → chapter flow + formal serif + citations + bibliography + NO animation
+- **Engineering** → architecture diagrams + code blocks + spec tables + dark bg code
+- **Medical/clinical** → clinical data tables + survival curves + evidence citations + disclaimers + NO animation
+- **Government** → executive summary + numbered sections + flag colors + compliance tables + NO animation
+- ONE design system per deck — no mixing McKinsey sidebar with Nature Figure style
 
 ### Performance & Accessibility
 - <50 shapes per slide | images: cover-fit crop, never stretch | cache-first
@@ -578,6 +740,58 @@ Natural language: `--style "warm fintech"` auto-selects matching atoms. Decorati
 | Venn | 2-3 set intersection | sets with labels |
 
 ## Image Engines
+
+**⚠️ ALWAYS use the built-in CLI or Python API to generate images. NEVER write custom scripts to call image APIs — the CLI already handles cache-first, retry, multi-engine fallback, and cover-fit cropping.**
+
+### When you need an image — use one of these:
+
+**CLI (preferred for standalone image generation):**
+
+```bash
+# Generate AI image (auto-selects available engine)
+python -m ppt_pro_max image "futuristic AI city" --llm-provider seedream --llm-api-key $ARK_API_KEY
+
+# Search stock photos
+python -m ppt_pro_max image "team meeting" --image-mode search --unsplash-key $KEY
+
+# Auto mode: AI generation → fall back to search
+python -m ppt_pro_max image "product launch" --llm-provider seedream -v
+```
+
+**Python API (preferred when called from build.py or generate_ppt):**
+
+```python
+from ppt_pro_max import fetch_image
+
+# Generate AI image
+result = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream", llm_api_key="...")
+print(result["path"])  # Local file path — use this in add_picture() or circle_image()
+
+# Search stock photos
+result = fetch_image("team meeting", mode="search", unsplash_access_key="...")
+
+# Auto: generate → fall back to search
+result = fetch_image("product launch", mode="auto", llm_provider="seedream", llm_api_key="...")
+```
+
+**In FreeStyle pipeline — just pass --fetch-images:**
+
+```bash
+python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY
+```
+
+**In Build mode — call fetch_image() then use the path:**
+
+```python
+from ppt_pro_max import fetch_image
+from ppt_pro_max.build_helpers import *
+
+# Generate image, then place it
+result = fetch_image("protein structure 3D", mode="generate", llm_provider="seedream", llm_api_key="...")
+circle_image(slide, 6.5, 3.5, 1.5, result["path"])
+```
+
+### Engine Reference
 
 | Engine | Provider | Env Key | Default Model |
 |--------|----------|---------|---------------|
@@ -869,6 +1083,7 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 - **python-pptx 1.0.2**: No `PP_TRANSITION_TYPE`, must use XML for transitions/animations
 - **Cover-fit images**: Use `_add_picture_cover()` with Pillow pre-crop — never stretch
 - **Cache-first**: All image engines check cache before API call
+- **Image generation**: ALWAYS use `python -m ppt_pro_max image "keywords"` CLI or `fetch_image()` Python API. NEVER write custom scripts to call image APIs — the built-in CLI already handles cache, retry, multi-engine fallback, and cover-fit cropping
 - **Two-pass rebuild**: Page revision uses rebuild (not in-place) to avoid ZIP corruption
 - **1-based pages**: All `--pages` numbers refer to original document
 - **Windows**: Use `python` not `python3`
