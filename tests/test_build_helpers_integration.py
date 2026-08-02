@@ -137,14 +137,21 @@ class TestComparisonBars:
 
 
 class TestDonutChart:
-    def test_donut_chart_renders(self, build_env):
+    def test_donut_chart_native_multi_sector(self, build_env):
         slide = build_env['add_slide'](build_env['prs'])
         sectors = [('Product A', '40%', '#2E6504'), ('Product B', '35%', '#7DA92F'), ('Other', '25%', '#81C784')]
-        build_env['donut_chart'](slide, 4.0, 3.5, 1.5, 0.8, sectors, C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
-        assert '100%' in texts
-        all_text = ' '.join(texts)
-        assert 'Product A' in all_text
+        result = build_env['donut_chart'](slide, 4.0, 3.5, 1.5, 0.8, sectors, C=build_env['C'])
+        from pptx.shapes.graphfrm import GraphicFrame
+        assert isinstance(result, GraphicFrame)
+        chart = result.chart
+        assert chart.plots[0].series[0].values == (40.0, 35.0, 25.0)
+
+    def test_donut_chart_shape_fallback(self, build_env):
+        slide = build_env['add_slide'](build_env['prs'])
+        sectors = [('Product A', '40%', '#2E6504'), ('Product B', '35%', '#7DA92F')]
+        result = build_env['donut_chart'](slide, 4.0, 3.5, 1.5, 0.8, sectors, C=build_env['C'], native=False)
+        from pptx.shapes.group import GroupShape
+        assert isinstance(result, GroupShape)
 
 
 class TestHighlightCards:

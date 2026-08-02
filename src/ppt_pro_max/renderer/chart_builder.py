@@ -5,15 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 try:
-    from pptx.chart.data import CategoryChartData, XyChartData
-    from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
+    from pptx.chart.data import CategoryChartData, XyChartData, BubbleChartData
+    from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION, XL_LABEL_POSITION
     from pptx.dml.color import RGBColor
     from pptx.util import Inches, Pt
 
     _PPTX_AVAILABLE = True
 except ImportError:
     _PPTX_AVAILABLE = False
-
 
 _LEGACY_CHART_TYPE_MAP: dict[str, Any] = {}
 _ENTERPRISE_CHART_TYPE_MAP: dict[str, Any] = {}
@@ -33,14 +32,34 @@ if _PPTX_AVAILABLE:
         "bar_stacked": XL_CHART_TYPE.COLUMN_STACKED,
         "bar_100": XL_CHART_TYPE.COLUMN_STACKED_100,
         "bar_3d": XL_CHART_TYPE.COLUMN_CLUSTERED,
+        "bar_horizontal": XL_CHART_TYPE.BAR_CLUSTERED,
+        "bar_horizontal_stacked": XL_CHART_TYPE.BAR_STACKED,
+        "bar_horizontal_100": XL_CHART_TYPE.BAR_STACKED_100,
         "line": XL_CHART_TYPE.LINE,
         "line_markers": XL_CHART_TYPE.LINE_MARKERS,
+        "line_stacked": XL_CHART_TYPE.LINE_STACKED,
+        "line_stacked_100": XL_CHART_TYPE.LINE_STACKED_100,
         "pie": XL_CHART_TYPE.PIE,
         "pie_3d": XL_CHART_TYPE.PIE,
+        "pie_exploded": XL_CHART_TYPE.PIE_EXPLODED,
         "doughnut": XL_CHART_TYPE.DOUGHNUT,
+        "doughnut_exploded": XL_CHART_TYPE.DOUGHNUT_EXPLODED,
         "area": XL_CHART_TYPE.AREA,
+        "area_stacked": XL_CHART_TYPE.AREA_STACKED,
+        "area_stacked_100": XL_CHART_TYPE.AREA_STACKED_100,
         "scatter": XL_CHART_TYPE.XY_SCATTER,
+        "scatter_lines": XL_CHART_TYPE.XY_SCATTER_LINES,
+        "scatter_smooth": XL_CHART_TYPE.XY_SCATTER_SMOOTH,
+        "radar": XL_CHART_TYPE.RADAR_FILLED,
+        "radar_markers": XL_CHART_TYPE.RADAR_MARKERS,
+        "bubble": XL_CHART_TYPE.BUBBLE,
+        "stock_hlc": XL_CHART_TYPE.STOCK_HLC,
+        "stock_ohlc": XL_CHART_TYPE.STOCK_OHLC,
     }
+
+_PIE_TYPES = {"pie", "pie_3d", "pie_exploded", "doughnut", "doughnut_exploded"}
+_XY_TYPES = {"scatter", "scatter_lines", "scatter_smooth"}
+_BUBBLE_TYPES = {"bubble"}
 
 
 class ChartBuilder:
@@ -77,7 +96,7 @@ class ChartBuilder:
         chart_data.categories = data.get("labels", ["Q1", "Q2", "Q3", "Q4"])
 
         values = data.get("values", [10, 25, 45, 80])
-        if isinstance(values, list) and isinstance(values[0], list):
+        if isinstance(values, list) and len(values) > 0 and isinstance(values[0], list):
             for i, series in enumerate(values):
                 chart_data.add_series(f"Series {i + 1}", series)
         else:
@@ -123,37 +142,12 @@ class ChartBuilder:
         if pptx_type is None:
             pptx_type = _ENTERPRISE_CHART_TYPE_MAP.get("bar")
 
-        is_xy_chart = chart_type_str == "scatter"
+        is_xy = chart_type_str in _XY_TYPES
+        is_bubble = chart_type_str in _BUBBLE_TYPES
+        is_pie = chart_type_str in _PIE_TYPES
 
         try:
-            if is_xy_chart:
-                chart_data = XyChartData()
-                series_list = chart_config.get("series", [])
-                if series_list:
-                    for s_idx, s in enumerate(series_list):
-                        xy_series = chart_data.add_series(s.get("name", f"Series {s_idx + 1}"))
-                        for cat_idx, val in enumerate(s.get("values", [])):
-                            xy_series.add_data_point(cat_idx + 1, val)
-                else:
-                    values = chart_config.get("values", [10, 25, 45, 80])
-                    xy_series = chart_data.add_series("Data")
-                    for i, v in enumerate(values):
-                        xy_series.add_data_point(i + 1, v)
-            else:
-                chart_data = CategoryChartData()
-                chart_data.categories = chart_config.get("categories", ["Q1", "Q2", "Q3", "Q4"])
-
-                series_list = chart_config.get("series", [])
-                if series_list:
-                    for s in series_list:
-                        chart_data.add_series(s.get("name", "Data"), s.get("values", []))
-                else:
-                    values = chart_config.get("values", [10, 25, 45, 80])
-                    if isinstance(values, list) and len(values) > 0 and isinstance(values[0], list):
-                        for i, series in enumerate(values):
-                            chart_data.add_series(f"Series {i + 1}", series)
-                    else:
-                        chart_data.add_series("Data", values)
+            chart_data = self._build_chart_data(chart_config, is_xy, is_bubble)
 
             if position is None:
                 position = {}
@@ -168,34 +162,176 @@ class ChartBuilder:
             )
 
             chart = chart_frame.chart
-
             style = chart_config.get("style", {})
-            show_legend = style.get("show_legend", True)
-            show_labels = style.get("show_labels", False)
+
+            self._apply_legend(chart, style)
+            self._apply_data_labels(chart, style, is_pie)
+            self._apply_colors(chart, chart_config, style, brand_colors, is_pie)
+            self._apply_chart_title(chart, chart_config)
+            self._apply_axes(chart, style, is_pie)
+            self._apply_chart_style(chart, style)
+
+            return chart_frame
+        except Exception:
+            return None
+
+    def _build_chart_data(self, chart_config: dict, is_xy: bool, is_bubble: bool) -> Any:
+        if is_bubble:
+            return self._build_bubble_data(chart_config)
+        if is_xy:
+            return self._build_xy_data(chart_config)
+        return self._build_category_data(chart_config)
+
+    def _build_category_data(self, chart_config: dict) -> Any:
+        chart_data = CategoryChartData()
+        chart_data.categories = chart_config.get("categories", ["Q1", "Q2", "Q3", "Q4"])
+
+        series_list = chart_config.get("series", [])
+        if series_list:
+            for s in series_list:
+                chart_data.add_series(s.get("name", "Data"), s.get("values", []))
+        else:
+            values = chart_config.get("values", [10, 25, 45, 80])
+            if isinstance(values, list) and len(values) > 0 and isinstance(values[0], list):
+                for i, series in enumerate(values):
+                    chart_data.add_series(f"Series {i + 1}", series)
+            else:
+                chart_data.add_series("Data", values)
+        return chart_data
+
+    def _build_xy_data(self, chart_config: dict) -> Any:
+        chart_data = XyChartData()
+        series_list = chart_config.get("series", [])
+        if series_list:
+            for s_idx, s in enumerate(series_list):
+                xy_series = chart_data.add_series(s.get("name", f"Series {s_idx + 1}"))
+                for point in s.get("values", []):
+                    if isinstance(point, (list, tuple)) and len(point) >= 2:
+                        xy_series.add_data_point(point[0], point[1])
+                    else:
+                        xy_series.add_data_point(s_idx + 1, point if not isinstance(point, (list, tuple)) else 0)
+        else:
+            values = chart_config.get("values", [10, 25, 45, 80])
+            xy_series = chart_data.add_series("Data")
+            for i, v in enumerate(values):
+                if isinstance(v, (list, tuple)) and len(v) >= 2:
+                    xy_series.add_data_point(v[0], v[1])
+                else:
+                    xy_series.add_data_point(i + 1, v)
+        return chart_data
+
+    def _build_bubble_data(self, chart_config: dict) -> Any:
+        chart_data = BubbleChartData()
+        series_list = chart_config.get("series", [])
+        if series_list:
+            for s_idx, s in enumerate(series_list):
+                b_series = chart_data.add_series(s.get("name", f"Series {s_idx + 1}"))
+                for point in s.get("values", []):
+                    if isinstance(point, (list, tuple)) and len(point) >= 3:
+                        b_series.add_data_point(point[0], point[1], point[2])
+                    elif isinstance(point, (list, tuple)) and len(point) >= 2:
+                        b_series.add_data_point(point[0], point[1], 1)
+        else:
+            values = chart_config.get("values", [])
+            if values:
+                b_series = chart_data.add_series("Data")
+                for i, v in enumerate(values):
+                    if isinstance(v, (list, tuple)) and len(v) >= 3:
+                        b_series.add_data_point(v[0], v[1], v[2])
+        return chart_data
+
+    def _apply_legend(self, chart: Any, style: dict) -> None:
+        show_legend = style.get("show_legend", True)
+        chart.has_legend = show_legend
+        if show_legend:
+            pos_map = {
+                "bottom": XL_LEGEND_POSITION.BOTTOM,
+                "top": XL_LEGEND_POSITION.TOP,
+                "left": XL_LEGEND_POSITION.LEFT,
+                "right": XL_LEGEND_POSITION.RIGHT,
+            }
             legend_position = style.get("legend_position", "bottom")
-            color_scheme = style.get("color_scheme", "brand")
+            chart.legend.position = pos_map.get(legend_position, XL_LEGEND_POSITION.BOTTOM)
+            chart.legend.include_in_layout = False
 
-            chart.has_legend = show_legend
-            if show_legend:
-                pos_map = {
-                    "bottom": XL_LEGEND_POSITION.BOTTOM,
-                    "top": XL_LEGEND_POSITION.TOP,
-                    "left": XL_LEGEND_POSITION.LEFT,
-                    "right": XL_LEGEND_POSITION.RIGHT,
-                }
-                chart.legend.position = pos_map.get(legend_position, XL_LEGEND_POSITION.BOTTOM)
+    def _apply_data_labels(self, chart: Any, style: dict, is_pie: bool) -> None:
+        show_labels = style.get("show_labels", False)
+        if not show_labels:
+            return
 
-            if show_labels:
-                plot = chart.plots[0]
-                plot.has_data_labels = True
-                data_labels = plot.data_labels
-                data_labels.font.size = Pt(9)
+        plot = chart.plots[0]
+        plot.has_data_labels = True
+        data_labels = plot.data_labels
+        data_labels.font.size = Pt(style.get("label_font_size", 9))
 
-            num_series = len(chart_config.get("series", []))
-            if num_series == 0:
-                num_series = 1
+        show_value = style.get("show_value", True)
+        show_percentage = style.get("show_percentage", False)
+        show_category = style.get("show_category_name", False)
+
+        if is_pie:
+            show_percentage = style.get("show_percentage", True)
+            show_value = style.get("show_value", False)
+
+        try:
+            data_labels.show_value = show_value
+        except Exception:
+            pass
+        try:
+            data_labels.show_percentage = show_percentage
+        except Exception:
+            pass
+        try:
+            data_labels.show_category_name = show_category
+        except Exception:
+            pass
+
+        number_format = style.get("number_format")
+        if number_format:
+            try:
+                data_labels.number_format = number_format
+            except Exception:
+                pass
+
+        label_position = style.get("label_position")
+        if label_position and _PPTX_AVAILABLE:
+            pos_map = {
+                "center": XL_LABEL_POSITION.CENTER,
+                "inside_end": XL_LABEL_POSITION.INSIDE_END,
+                "outside_end": XL_LABEL_POSITION.OUTSIDE_END,
+                "best_fit": XL_LABEL_POSITION.BEST_FIT,
+            }
+            try:
+                data_labels.label_position = pos_map.get(label_position, XL_LABEL_POSITION.OUTSIDE_END)
+            except Exception:
+                pass
+
+    def _apply_colors(self, chart: Any, chart_config: dict, style: dict,
+                      brand_colors: dict[str, str] | None, is_pie: bool) -> None:
+        color_scheme = style.get("color_scheme", "brand")
+        series_list = chart_config.get("series", [])
+        num_series = len(series_list) if series_list else 1
+        if is_pie and num_series <= 1:
+            categories = chart_config.get("categories", [])
+            num_points = len(categories) if categories else 4
+            chart_colors = self._resolve_colors(color_scheme, brand_colors, num_points)
+        else:
             chart_colors = self._resolve_colors(color_scheme, brand_colors, num_series)
-            plot = chart.plots[0]
+        plot = chart.plots[0]
+
+        if is_pie and num_series <= 1:
+            try:
+                series = plot.series[0]
+                for i, point in enumerate(series.points):
+                    try:
+                        point.format.fill.solid()
+                        point.format.fill.fore_color.rgb = RGBColor.from_string(
+                            chart_colors[i % len(chart_colors)].lstrip("#")
+                        )
+                    except Exception:
+                        break
+            except Exception:
+                pass
+        else:
             for i, series in enumerate(plot.series):
                 try:
                     series.format.fill.solid()
@@ -205,14 +341,64 @@ class ChartBuilder:
                 except Exception:
                     pass
 
-            chart_title = chart_config.get("title")
-            if chart_title:
-                chart.has_title = True
-                chart.chart_title.text_frame.paragraphs[0].text = chart_title
+    def _apply_chart_title(self, chart: Any, chart_config: dict) -> None:
+        chart_title = chart_config.get("title")
+        if chart_title is None:
+            chart_title = chart_config.get("style", {}).get("title")
+        if chart_title:
+            chart.has_title = True
+            chart.chart_title.text_frame.paragraphs[0].text = chart_title
 
-            return chart_frame
+    def _apply_axes(self, chart: Any, style: dict, is_pie: bool) -> None:
+        if is_pie:
+            return
+
+        value_axis_title = style.get("value_axis_title")
+        category_axis_title = style.get("category_axis_title")
+        gridlines = style.get("gridlines", "major_y")
+        tick_format = style.get("tick_number_format")
+
+        try:
+            value_axis = chart.value_axis
+            if value_axis_title:
+                value_axis.has_title = True
+                value_axis.axis_title.text_frame.paragraphs[0].text = value_axis_title
+            if tick_format:
+                value_axis.tick_labels.number_format = tick_format
+
+            if "major_y" in gridlines:
+                value_axis.has_major_gridlines = True
+                try:
+                    value_axis.major_gridlines.format.line.color.rgb = RGBColor(0xE0, 0xE0, 0xE0)
+                except Exception:
+                    pass
+            else:
+                value_axis.has_major_gridlines = False
+
+            if "major_x" in gridlines:
+                try:
+                    cat_axis = chart.category_axis
+                    cat_axis.has_major_gridlines = True
+                except Exception:
+                    pass
         except Exception:
-            return None
+            pass
+
+        try:
+            category_axis = chart.category_axis
+            if category_axis_title:
+                category_axis.has_title = True
+                category_axis.axis_title.text_frame.paragraphs[0].text = category_axis_title
+        except Exception:
+            pass
+
+    def _apply_chart_style(self, chart: Any, style: dict) -> None:
+        chart_style = style.get("chart_style")
+        if chart_style is not None:
+            try:
+                chart.style = int(chart_style)
+            except Exception:
+                pass
 
     def _resolve_colors(self, color_scheme, brand_colors: dict[str, str] | None, num_series: int) -> list[str]:
         if color_scheme == "auto":

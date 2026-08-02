@@ -522,9 +522,45 @@ def comparison_bars(slide, left, top, metrics, max_width=4.0, C=None,
 
 
 def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
-                typo=None, grouped=True):
+                typo=None, grouped=True, native=True):
+    """Donut/pie chart. When native=True and sectors>1, uses PowerPoint native
+    doughnut chart for accurate sector angles. When native=False or sectors==1,
+    falls back to Shape-based rendering for maximum visual customization."""
     C = C or {}
     t = typo or TYPOGRAPHY.get('mckinsey')
+
+    if native and len(sectors) > 1:
+        chart_w = radius * 2 + 2.5
+        chart_h = radius * 2 + 0.6
+        chart_left = cx - radius - 0.2
+        chart_top = cy - radius - 0.3
+
+        categories = [s[0] for s in sectors]
+        pct_values = []
+        for s in sectors:
+            pct_str = s[1].replace('%', '').strip()
+            try:
+                pct_values.append(float(pct_str))
+            except (ValueError, AttributeError):
+                pct_values.append(0)
+        sector_colors = [s[2] for s in sectors]
+
+        series = [{"name": "Share", "values": pct_values}]
+        chart_style = {
+            "show_legend": True,
+            "legend_position": "right",
+            "show_labels": True,
+            "show_percentage": True,
+            "show_value": False,
+            "label_position": "best_fit",
+            "color_scheme": sector_colors,
+        }
+
+        result = native_chart(slide, chart_left, chart_top, chart_w, chart_h,
+                              "doughnut", categories=categories, series=series,
+                              style=chart_style, C=C)
+        if result is not None:
+            return result
 
     if grouped:
         group = slide.shapes.add_group_shape()
@@ -595,6 +631,71 @@ def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
                  font_size=t.caption, color=C.get('text_body', '#333333'),
                  font_name=C.get('font_body'), C=C)
             ly += 0.35
+
+
+def native_chart(slide, left, top, width, height, chart_type,
+                 categories=None, series=None, style=None, C=None):
+    """Native PowerPoint chart — editable data, axes, gridlines, legend.
+
+    chart_type: 'bar'|'bar_stacked'|'bar_100'|'bar_3d'|
+                'bar_horizontal'|'bar_horizontal_stacked'|'bar_horizontal_100'|
+                'line'|'line_markers'|'line_stacked'|'line_stacked_100'|
+                'pie'|'pie_3d'|'pie_exploded'|
+                'doughnut'|'doughnut_exploded'|
+                'area'|'area_stacked'|'area_stacked_100'|
+                'scatter'|'scatter_lines'|'scatter_smooth'|
+                'radar'|'radar_markers'|'bubble'
+    categories: ['Q1','Q2','Q3','Q4']  (not used for scatter/bubble)
+    series: [{'name':'Revenue','values':[30,45,60,75]}, ...]
+            For scatter: values = [[x1,y1],[x2,y2],...]
+            For bubble:  values = [[x1,y1,size1],[x2,y2,size2],...]
+    style: {
+        'show_legend': True,
+        'legend_position': 'bottom',  # bottom|top|left|right
+        'show_labels': False,
+        'show_value': True,
+        'show_percentage': False,
+        'show_category_name': False,
+        'label_font_size': 9,
+        'label_position': 'outside_end',  # center|inside_end|outside_end|best_fit
+        'number_format': '#,##0',
+        'color_scheme': 'brand',  # 'brand'|'auto'|['#hex',...]
+        'title': 'Chart Title',
+        'value_axis_title': 'Revenue ($M)',
+        'category_axis_title': 'Quarter',
+        'gridlines': 'major_y',  # 'none'|'major_y'|'major_x'|'major_xy'
+        'tick_number_format': '#,##0',
+        'chart_style': 2,  # 1-48 built-in PowerPoint chart style
+    }
+    C: color dictionary (used for 'brand' color_scheme)
+    """
+    from ppt_pro_max.renderer.chart_builder import ChartBuilder
+
+    if categories is None:
+        categories = ["Q1", "Q2", "Q3", "Q4"]
+    if series is None:
+        series = [{"name": "Data", "values": [10, 25, 45, 80]}]
+    if style is None:
+        style = {}
+
+    chart_config = {
+        "type": chart_type,
+        "categories": categories,
+        "series": series,
+        "style": style,
+    }
+
+    brand_colors = None
+    if C:
+        brand_colors = {
+            "primary": C.get("primary", "#2563EB"),
+            "secondary": C.get("secondary", "#64748B"),
+            "accent": C.get("accent", "#F97316"),
+        }
+
+    position = {"x": left, "y": top, "width": width, "height": height}
+    builder = ChartBuilder()
+    return builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
 
 
 def highlight_cards(slide, left, top, cards, total_width=12.0, C=None,

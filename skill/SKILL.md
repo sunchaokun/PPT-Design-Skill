@@ -1006,13 +1006,107 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 
 ### Functions — Data & Charts
 
-| Function | Purpose | Key Params |
-|----------|---------|------------|
-| `kpi_card(slide, left, top, width, height, number, label, trend, trend_up, C, typo)` | KPI metric card | number (big), label, trend (+8.3%), trend_up=True |
-| `bar_chart(slide, left, top, data, max_width, bar_height, C, typo, spacing)` | Horizontal bar chart | data: [(label, pct, val), ...]; max_width=5.0, bar_height=0.3 |
-| `comparison_bars(slide, left, top, metrics, max_width, C, typo, spacing)` | Before/after comparison | metrics: [(label, v_old, v_new, pct_old, pct_new), ...]; max_width=4.0 |
-| `donut_chart(slide, cx, cy, radius, inner_radius, sectors, C, typo)` | Donut chart (simplified) | sectors: [(name, pct_str, color), ...]; grouped=True |
-| `highlight_cards(slide, left, top, cards, total_width, C, typo, spacing)` | Highlight card row | cards: [(title, desc, accent_color), ...]; total_width=12.0 |
+**Two chart systems — choose based on scenario:**
+
+| Function | Type | When to Use | Key Params |
+|----------|------|-------------|------------|
+| `native_chart()` | **Native chart** | Standard data charts with real data; needs axes, gridlines, editable data table, legend, accurate proportions | chart_type, categories, series, style |
+| `bar_chart()` | Shape composite | Custom progress bars, rounded bars, icon bars, brand-styled horizontal bars where native charts can't achieve the visual | data: [(label, pct, val)]; max_width=5.0 |
+| `comparison_bars()` | Shape composite | Before/after comparison, A/B metrics, custom dual-bar layouts | metrics: [(label, v_old, v_new, pct_old, pct_new)] |
+| `donut_chart()` | Hybrid | Multi-sector → auto-routes to native doughnut; single-sector or native=False → Shape composite for custom center KPI | sectors: [(name, pct_str, color)]; native=True |
+| `kpi_card()` | Shape composite | Single metric highlight with trend arrow | number, label, trend, trend_up |
+| `highlight_cards()` | Shape composite | Multi-metric card row | cards: [(title, desc, accent_color)] |
+
+**Chart selection guide:**
+- Standard bar/line/pie/area/scatter with real data → `native_chart()` (editable, accurate axes, gridlines)
+- Custom visual: rounded progress bars, icon bars, gauge, waffle → `bar_chart()` / Shape组合
+- Simple donut/pie with multiple sectors → `native_chart(chart_type='doughnut')` or `donut_chart(native=True)`
+- Custom donut with center KPI number, brand decorations → `donut_chart(native=False)`
+- Before/after comparison with custom styling → `comparison_bars()`
+- Before/after with standard axes → `native_chart(chart_type='bar_horizontal_stacked')`
+
+#### `native_chart()` — Native PowerPoint Chart
+
+```python
+native_chart(slide, left, top, width, height, chart_type,
+             categories=None, series=None, style=None, C=None)
+```
+
+**chart_type** (24 types):
+| Category | Types |
+|----------|-------|
+| Column | `bar`, `bar_stacked`, `bar_100`, `bar_3d` (falls back to 2D) |
+| Bar (horizontal) | `bar_horizontal`, `bar_horizontal_stacked`, `bar_horizontal_100` |
+| Line | `line`, `line_markers`, `line_stacked`, `line_stacked_100` |
+| Pie | `pie`, `pie_3d` (falls back to 2D), `pie_exploded` |
+| Doughnut | `doughnut`, `doughnut_exploded` |
+| Area | `area`, `area_stacked`, `area_stacked_100` |
+| Scatter | `scatter`, `scatter_lines`, `scatter_smooth` |
+| Radar | `radar`, `radar_markers` |
+| Bubble | `bubble` |
+| Stock | `stock_hlc`, `stock_ohlc` |
+
+**series** format:
+- Category charts: `[{'name': 'Revenue', 'values': [30, 45, 60, 75]}, ...]`
+- Scatter: `[{'name': 'Data', 'values': [[1, 10], [2, 25], [3, 18]]}]`
+- Bubble: `[{'name': 'Data', 'values': [[1, 10, 5], [2, 25, 8]]}]`
+
+**style** dict (all optional):
+| Key | Default | Description |
+|-----|---------|-------------|
+| `show_legend` | `True` | Show/hide legend |
+| `legend_position` | `'bottom'` | `'bottom'`/`'top'`/`'left'`/`'right'` |
+| `show_labels` | `False` | Show data labels on points |
+| `show_value` | `True` | Show numeric value in label |
+| `show_percentage` | `False` (pie: `True`) | Show percentage in label |
+| `show_category_name` | `False` | Show category name in label |
+| `label_font_size` | `9` | Data label font size (pt) |
+| `label_position` | `'outside_end'` | `'center'`/`'inside_end'`/`'outside_end'`/`'best_fit'` |
+| `number_format` | — | e.g. `'#,##0'`, `'0.0%'`, `'$#,##0'` |
+| `color_scheme` | `'brand'` | `'brand'`/`'auto'`/`['#hex', ...]` |
+| `title` | — | Chart title text |
+| `value_axis_title` | — | Y-axis title |
+| `category_axis_title` | — | X-axis title |
+| `gridlines` | `'major_y'` | `'none'`/`'major_y'`/`'major_x'`/`'major_xy'` |
+| `tick_number_format` | — | Axis tick format |
+| `chart_style` | — | 1-48 built-in PowerPoint chart style |
+
+**Example:**
+```python
+native_chart(slide, 1.0, 1.5, 7.0, 4.5, 'bar',
+    categories=['Q1', 'Q2', 'Q3', 'Q4'],
+    series=[{'name': 'Revenue', 'values': [30, 45, 60, 75]},
+            {'name': 'Cost', 'values': [20, 30, 35, 40]}],
+    style={'show_legend': True, 'show_labels': True,
+           'value_axis_title': 'Revenue ($M)',
+           'gridlines': 'major_y', 'color_scheme': 'brand'},
+    C=C)
+```
+
+#### `bar_chart()` — Shape-Based Horizontal Bars
+
+```python
+bar_chart(slide, left, top, data, max_width=5.0, bar_height=0.3, C=None, typo=None, spacing=None, grouped=True)
+```
+- data: `[(label, pct, val), ...]` — pct is 0.0-1.0 proportion, val is display string
+- Use for: rounded progress bars, custom-styled horizontal bars, icon bars
+
+#### `comparison_bars()` — Shape-Based Before/After
+
+```python
+comparison_bars(slide, left, top, metrics, max_width=4.0, C=None, typo=None, spacing=None, grouped=True)
+```
+- metrics: `[(label, v_old, v_new, pct_old, pct_new), ...]`
+- Use for: before/after, A/B test, old vs new with custom dual-bar layout
+
+#### `donut_chart()` — Hybrid Donut/Pie
+
+```python
+donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None, typo=None, grouped=True, native=True)
+```
+- sectors: `[(name, pct_str, color), ...]`
+- **native=True** (default): sectors>1 → auto-routes to `native_chart(chart_type='doughnut')` with accurate sector angles; sectors==1 → Shape composite
+- **native=False**: Always uses Shape composite (OVAL overlay) for maximum visual customization
 
 ### Functions — Text & Code
 
@@ -1098,6 +1192,7 @@ Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp 
 - **GradientFill**: use `GradientFill` + `GradientStop` for alpha gradients; `apply_gradient(shape, color1, color2)` does NOT support alpha
 - **layout_variant**: NOT a content.json field — use `--layout-variant` CLI param or `layout_variant=` kwarg in generate_ppt()
 - **animation**: NOT a content.json field — use `--motion` CLI param or `motion=` kwarg in generate_ppt()
+- **Chart selection**: `native_chart()` for standard data charts (bar/line/pie/area/scatter — editable, accurate axes); `bar_chart()`/`comparison_bars()`/`donut_chart(native=False)` for custom visuals (rounded bars, progress bars, gauge, waffle, icon bars). `donut_chart()` defaults to native=True for multi-sector accuracy. Choose based on data accuracy vs visual customization needs.
 
 ## CLI Quick Reference
 
