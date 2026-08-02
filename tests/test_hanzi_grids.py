@@ -182,6 +182,14 @@ class TestPinyinHanziBlock:
         texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
         assert 'yǒng' in texts
 
+    def test_tian_grid_type(self):
+        from ppt_pro_max.build_helpers import pinyin_hanzi_block, add_slide
+        prs = Presentation()
+        slide = add_slide(prs)
+        pinyin_hanzi_block(slide, 1.0, 0.5, 2.0, [('yǒng', '永')], grid_type='tian')
+        assert _count_connectors(slide) == 4 + 6
+        assert _count_textboxes(slide) == 2
+
 
 class TestGridVisualOutput:
 

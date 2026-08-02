@@ -729,7 +729,7 @@ def _transparent_textbox(slide, left, top, width, height, txt,
     tb.line.fill.background()
     bodyPr = tf._txBody.find('.//{http://schemas.openxmlformats.org/drawingml/2006/main}bodyPr')
     if anchor:
-        bodyPr.set('anchor', 'ctr' if anchor == 'ctr' else anchor)
+        bodyPr.set('anchor', anchor)
     bodyPr.set('marL', '0')
     bodyPr.set('marR', '0')
     bodyPr.set('marT', '0')
@@ -768,7 +768,7 @@ def mizi_grid(slide, left, top, size, char=None,
 
 def tian_grid(slide, left, top, size, char=None,
               border_color='#4CAF50', guide_color='#A0A0A0',
-              border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+              border_pt=2.5, guide_pt=1.0,
               font_size=160, font_name='SimSun', font_color='#000000'):
     """田字格 — cross guide lines only, no diagonals.
 
@@ -834,16 +834,23 @@ def hanzi_row(slide, left, top, size, chars, grid_type='mizi',
     grid_fn = mizi_grid if grid_type == 'mizi' else tian_grid
     for i, ch in enumerate(chars):
         x = left + i * (size + gap)
-        grid_fn(slide, x, top, size, char=ch,
-                border_color=border_color, guide_color=guide_color,
-                border_pt=border_pt, guide_pt=guide_pt,
-                diag_pt=diag_pt, font_size=font_size,
-                font_name=font_name, font_color=font_color)
+        if grid_type == 'mizi':
+            grid_fn(slide, x, top, size, char=ch,
+                    border_color=border_color, guide_color=guide_color,
+                    border_pt=border_pt, guide_pt=guide_pt,
+                    diag_pt=diag_pt, font_size=font_size,
+                    font_name=font_name, font_color=font_color)
+        else:
+            grid_fn(slide, x, top, size, char=ch,
+                    border_color=border_color, guide_color=guide_color,
+                    border_pt=border_pt, guide_pt=guide_pt,
+                    font_size=font_size,
+                    font_name=font_name, font_color=font_color)
     return slide
 
 
 def pinyin_hanzi_block(slide, left, top, size, items, gap=0.3,
-                       pinyin_line_spacing=0.3,
+                       grid_type='mizi', pinyin_line_spacing=0.3,
                        border_color='#4CAF50', guide_color='#A0A0A0',
                        border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
                        pinyin_light_color='#A0A0A0', pinyin_dark_color='#424242',
@@ -852,11 +859,13 @@ def pinyin_hanzi_block(slide, left, top, size, items, gap=0.3,
                        pinyin_font_size=36, pinyin_font_name='SimSun', pinyin_font_color='#000000'):
     """Draw pinyin grid + character grid as a paired block for each item.
 
+    grid_type: 'mizi' | 'tian'
     items: list of (pinyin, char) tuples; char can be None for empty grid
     Usage:  pinyin_hanzi_block(s, 1.0, 0.5, 2.0, [('yǒng','永'), ('hé','和'), (None, None)])
     """
     pinyin_height = pinyin_line_spacing * 4
     pinyin_gap = 0.15
+    grid_fn = mizi_grid if grid_type == 'mizi' else tian_grid
 
     for i, item in enumerate(items):
         py, ch = item if item else (None, None)
@@ -878,11 +887,18 @@ def pinyin_hanzi_block(slide, left, top, size, items, gap=0.3,
                         light_pt=pinyin_light_pt, dark_pt=pinyin_dark_pt)
 
         char_top = top + pinyin_height + pinyin_gap
-        mizi_grid(slide, x, char_top, size, char=ch,
-                  border_color=border_color, guide_color=guide_color,
-                  border_pt=border_pt, guide_pt=guide_pt, diag_pt=diag_pt,
-                  font_size=char_font_size, font_name=char_font_name,
-                  font_color=char_font_color)
+        if grid_type == 'mizi':
+            grid_fn(slide, x, char_top, size, char=ch,
+                    border_color=border_color, guide_color=guide_color,
+                    border_pt=border_pt, guide_pt=guide_pt, diag_pt=diag_pt,
+                    font_size=char_font_size, font_name=char_font_name,
+                    font_color=char_font_color)
+        else:
+            grid_fn(slide, x, char_top, size, char=ch,
+                    border_color=border_color, guide_color=guide_color,
+                    border_pt=border_pt, guide_pt=guide_pt,
+                    font_size=char_font_size, font_name=char_font_name,
+                    font_color=char_font_color)
     return slide
 
 

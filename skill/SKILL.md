@@ -1135,11 +1135,10 @@ mizi_grid(slide, left, top, size, char=None,
 ```python
 tian_grid(slide, left, top, size, char=None,
           border_color='#4CAF50', guide_color='#A0A0A0',
-          border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+          border_pt=2.5, guide_pt=1.0,
           font_size=160, font_name='SimSun', font_color='#000000')
 ```
 - **6 lines**: 4 border (solid, green) + 2 cross (dashed, gray) — no diagonals
-- Same params as `mizi_grid` (diag_pt accepted but unused)
 
 #### `pinyin_grid()` — 四线格/拼音格
 
@@ -1166,9 +1165,10 @@ hanzi_row(slide, left, top, size, chars, grid_type='mizi', gap=0.3, ...)
 #### `pinyin_hanzi_block()` — Pinyin + Character Paired Block
 
 ```python
-pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, ...)
+pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...)
 ```
 - `items`: list of `(pinyin, char)` tuples; use `None` for empty
+- `grid_type`: `'mizi'` or `'tian'` — controls character grid style
 - Draws pinyin grid above + character grid below for each item
 - Example: `pinyin_hanzi_block(s, 0.5, 0.5, 2.0, [('yǒng','永'), ('hé','和'), (None, None)])`
 
