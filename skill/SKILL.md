@@ -1108,6 +1108,70 @@ donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None, typo=None, gro
 - **native=True** (default): sectors>1 → auto-routes to `native_chart(chart_type='doughnut')` with accurate sector angles; sectors==1 → Shape composite
 - **native=False**: Always uses Shape composite (OVAL overlay) for maximum visual customization
 
+### Functions — Chinese Character Writing Grids (汉字教学)
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `mizi_grid()` | 米字格 (cross + diagonal) | size, char, border_color, guide_color |
+| `tian_grid()` | 田字格 (cross only, no diagonals) | size, char, border_color, guide_color |
+| `pinyin_grid()` | 四线格/拼音格 (4-line pinyin) | width, pinyin, baseline_y, line_spacing |
+| `hanzi_row()` | Row of character grids | chars: list, grid_type: 'mizi'/'tian' |
+| `pinyin_hanzi_block()` | Pinyin grid + character grid paired | items: [(pinyin, char), ...] |
+
+#### `mizi_grid()` — 米字格
+
+```python
+mizi_grid(slide, left, top, size, char=None,
+          border_color='#4CAF50', guide_color='#A0A0A0',
+          border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+          font_size=160, font_name='SimSun', font_color='#000000')
+```
+- **8 lines**: 4 border (solid, green) + 2 cross (dashed, gray) + 2 diagonal (dashed, gray)
+- `char`: optional character overlay in transparent textbox (SimSun 160pt, anchor=center, zero margins)
+- Example: `mizi_grid(s, 1.0, 1.5, 2.5, char='永')`
+
+#### `tian_grid()` — 田字格
+
+```python
+tian_grid(slide, left, top, size, char=None,
+          border_color='#4CAF50', guide_color='#A0A0A0',
+          border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+          font_size=160, font_name='SimSun', font_color='#000000')
+```
+- **6 lines**: 4 border (solid, green) + 2 cross (dashed, gray) — no diagonals
+- Same params as `mizi_grid` (diag_pt accepted but unused)
+
+#### `pinyin_grid()` — 四线格/拼音格
+
+```python
+pinyin_grid(slide, left, top, width, pinyin=None,
+            baseline_y=None, line_spacing=0.3,
+            light_color='#A0A0A0', dark_color='#424242',
+            light_pt=0.75, dark_pt=1.5,
+            font_size=36, font_name='SimSun', font_color='#000000')
+```
+- **4 lines**: line1 (light), line2 (dark), line3/baseline (dark), line4 (light)
+- `baseline_y`: Y position of the baseline (line3); defaults to `top + line_spacing * 2`
+- `pinyin`: optional pinyin text in transparent textbox aligned to baseline
+
+#### `hanzi_row()` — Character Grid Row
+
+```python
+hanzi_row(slide, left, top, size, chars, grid_type='mizi', gap=0.3, ...)
+```
+- `chars`: list of characters; `None` entries draw empty grids
+- `grid_type`: `'mizi'` or `'tian'`
+- Example: `hanzi_row(s, 1.0, 1.5, 2.0, ['永', None, '和'], grid_type='mizi')`
+
+#### `pinyin_hanzi_block()` — Pinyin + Character Paired Block
+
+```python
+pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, ...)
+```
+- `items`: list of `(pinyin, char)` tuples; use `None` for empty
+- Draws pinyin grid above + character grid below for each item
+- Example: `pinyin_hanzi_block(s, 0.5, 0.5, 2.0, [('yǒng','永'), ('hé','和'), (None, None)])`
+
 ### Functions — Text & Code
 
 | Function | Purpose | Key Params |

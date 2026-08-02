@@ -698,6 +698,194 @@ def native_chart(slide, left, top, width, height, chart_type,
     return builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
 
 
+def _draw_connector(slide, x1, y1, x2, y2, width_pt=1.0, color='#A0A0A0', dash=False):
+    from pptx.enum.shapes import MSO_CONNECTOR_TYPE
+    c = slide.shapes.add_connector(
+        MSO_CONNECTOR_TYPE.STRAIGHT,
+        Inches(x1), Inches(y1), Inches(x2), Inches(y2)
+    )
+    c.line.width = Pt(width_pt)
+    c.line.color.rgb = _rgb(color)
+    if dash:
+        c.line.dash_style = 2
+    return c
+
+
+def _transparent_textbox(slide, left, top, width, height, txt,
+                         font_size=160, font_name='SimSun', color='#000000',
+                         bold=False, anchor='ctr'):
+    tb = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                   Inches(width), Inches(height))
+    tf = tb.text_frame
+    tf.word_wrap = False
+    p = tf.paragraphs[0]
+    p.text = txt
+    p.font.size = Pt(font_size)
+    p.font.name = font_name
+    p.font.color.rgb = _rgb(color)
+    p.font.bold = bold
+    p.alignment = PP_ALIGN.CENTER
+    tb.fill.background()
+    tb.line.fill.background()
+    bodyPr = tf._txBody.find('.//{http://schemas.openxmlformats.org/drawingml/2006/main}bodyPr')
+    if anchor:
+        bodyPr.set('anchor', 'ctr' if anchor == 'ctr' else anchor)
+    bodyPr.set('marL', '0')
+    bodyPr.set('marR', '0')
+    bodyPr.set('marT', '0')
+    bodyPr.set('marB', '0')
+    return tb
+
+
+def mizi_grid(slide, left, top, size, char=None,
+              border_color='#4CAF50', guide_color='#A0A0A0',
+              border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+              font_size=160, font_name='SimSun', font_color='#000000'):
+    """米字格 — cross + diagonal guide lines with optional character overlay.
+
+    Layout:  border (solid, green), cross (dashed, gray), diagonals (dashed, gray)
+    Usage:   mizi_grid(s, 1.0, 1.5, 2.5, char='永')
+    """
+    x1, y1, x2, y2 = left, top, left + size, top + size
+
+    _draw_connector(slide, x1, y1, x2, y1, border_pt, border_color)
+    _draw_connector(slide, x1, y2, x2, y2, border_pt, border_color)
+    _draw_connector(slide, x1, y1, x1, y2, border_pt, border_color)
+    _draw_connector(slide, x2, y1, x2, y2, border_pt, border_color)
+
+    cx, cy = left + size / 2, top + size / 2
+    _draw_connector(slide, x1, cy, x2, cy, guide_pt, guide_color, dash=True)
+    _draw_connector(slide, cx, y1, cx, y2, guide_pt, guide_color, dash=True)
+
+    _draw_connector(slide, x1, y1, x2, y2, diag_pt, guide_color, dash=True)
+    _draw_connector(slide, x2, y1, x1, y2, diag_pt, guide_color, dash=True)
+
+    if char:
+        _transparent_textbox(slide, left, top, size, size, char,
+                             font_size=font_size, font_name=font_name, color=font_color)
+    return slide
+
+
+def tian_grid(slide, left, top, size, char=None,
+              border_color='#4CAF50', guide_color='#A0A0A0',
+              border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+              font_size=160, font_name='SimSun', font_color='#000000'):
+    """田字格 — cross guide lines only, no diagonals.
+
+    Layout:  border (solid, green), cross (dashed, gray)
+    Usage:   tian_grid(s, 1.0, 1.5, 2.5, char='永')
+    """
+    x1, y1, x2, y2 = left, top, left + size, top + size
+
+    _draw_connector(slide, x1, y1, x2, y1, border_pt, border_color)
+    _draw_connector(slide, x1, y2, x2, y2, border_pt, border_color)
+    _draw_connector(slide, x1, y1, x1, y2, border_pt, border_color)
+    _draw_connector(slide, x2, y1, x2, y2, border_pt, border_color)
+
+    cx, cy = left + size / 2, top + size / 2
+    _draw_connector(slide, x1, cy, x2, cy, guide_pt, guide_color, dash=True)
+    _draw_connector(slide, cx, y1, cx, y2, guide_pt, guide_color, dash=True)
+
+    if char:
+        _transparent_textbox(slide, left, top, size, size, char,
+                             font_size=font_size, font_name=font_name, color=font_color)
+    return slide
+
+
+def pinyin_grid(slide, left, top, width, pinyin=None,
+                baseline_y=None, line_spacing=0.3,
+                light_color='#A0A0A0', dark_color='#424242',
+                light_pt=0.75, dark_pt=1.5,
+                font_size=36, font_name='SimSun', font_color='#000000'):
+    """四线格（拼音格）— 4 horizontal lines for pinyin writing.
+
+    Layout:  line1 (light), line2 (dark), line3/baseline (dark), line4 (light)
+    If pinyin given, a transparent textbox is placed with baseline aligned to line3.
+    Usage:   pinyin_grid(s, 1.0, 2.0, 3.0, pinyin='yǒng')
+    """
+    if baseline_y is None:
+        baseline_y = top + line_spacing * 2
+
+    x1, x2 = left, left + width
+
+    _draw_connector(slide, x1, baseline_y - line_spacing * 2, x2, baseline_y - line_spacing * 2, light_pt, light_color)
+    _draw_connector(slide, x1, baseline_y - line_spacing, x2, baseline_y - line_spacing, dark_pt, dark_color)
+    _draw_connector(slide, x1, baseline_y, x2, baseline_y, dark_pt, dark_color)
+    _draw_connector(slide, x1, baseline_y + line_spacing, x2, baseline_y + line_spacing, light_pt, light_color)
+
+    if pinyin:
+        grid_h = line_spacing * 4
+        tb_top = baseline_y - line_spacing * 2
+        _transparent_textbox(slide, left, tb_top, width, grid_h, pinyin,
+                             font_size=font_size, font_name=font_name, color=font_color)
+    return slide
+
+
+def hanzi_row(slide, left, top, size, chars, grid_type='mizi',
+              gap=0.3, border_color='#4CAF50', guide_color='#A0A0A0',
+              border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+              font_size=160, font_name='SimSun', font_color='#000000'):
+    """Draw a row of character grids — convenience function for multiple grids.
+
+    grid_type: 'mizi' | 'tian'
+    chars: list of characters; None entries draw empty grids
+    Usage:   hanzi_row(s, 1.0, 1.5, 2.0, ['永', None, '和'], grid_type='mizi')
+    """
+    grid_fn = mizi_grid if grid_type == 'mizi' else tian_grid
+    for i, ch in enumerate(chars):
+        x = left + i * (size + gap)
+        grid_fn(slide, x, top, size, char=ch,
+                border_color=border_color, guide_color=guide_color,
+                border_pt=border_pt, guide_pt=guide_pt,
+                diag_pt=diag_pt, font_size=font_size,
+                font_name=font_name, font_color=font_color)
+    return slide
+
+
+def pinyin_hanzi_block(slide, left, top, size, items, gap=0.3,
+                       pinyin_line_spacing=0.3,
+                       border_color='#4CAF50', guide_color='#A0A0A0',
+                       border_pt=2.5, guide_pt=1.0, diag_pt=0.75,
+                       pinyin_light_color='#A0A0A0', pinyin_dark_color='#424242',
+                       pinyin_light_pt=0.75, pinyin_dark_pt=1.5,
+                       char_font_size=160, char_font_name='SimSun', char_font_color='#000000',
+                       pinyin_font_size=36, pinyin_font_name='SimSun', pinyin_font_color='#000000'):
+    """Draw pinyin grid + character grid as a paired block for each item.
+
+    items: list of (pinyin, char) tuples; char can be None for empty grid
+    Usage:  pinyin_hanzi_block(s, 1.0, 0.5, 2.0, [('yǒng','永'), ('hé','和'), (None, None)])
+    """
+    pinyin_height = pinyin_line_spacing * 4
+    pinyin_gap = 0.15
+
+    for i, item in enumerate(items):
+        py, ch = item if item else (None, None)
+        x = left + i * (size + gap)
+
+        if py:
+            baseline_y = top + pinyin_line_spacing * 2
+            pinyin_grid(slide, x, top, size, pinyin=py,
+                        baseline_y=baseline_y, line_spacing=pinyin_line_spacing,
+                        light_color=pinyin_light_color, dark_color=pinyin_dark_color,
+                        light_pt=pinyin_light_pt, dark_pt=pinyin_dark_pt,
+                        font_size=pinyin_font_size, font_name=pinyin_font_name,
+                        font_color=pinyin_font_color)
+        else:
+            baseline_y = top + pinyin_line_spacing * 2
+            pinyin_grid(slide, x, top, size,
+                        baseline_y=baseline_y, line_spacing=pinyin_line_spacing,
+                        light_color=pinyin_light_color, dark_color=pinyin_dark_color,
+                        light_pt=pinyin_light_pt, dark_pt=pinyin_dark_pt)
+
+        char_top = top + pinyin_height + pinyin_gap
+        mizi_grid(slide, x, char_top, size, char=ch,
+                  border_color=border_color, guide_color=guide_color,
+                  border_pt=border_pt, guide_pt=guide_pt, diag_pt=diag_pt,
+                  font_size=char_font_size, font_name=char_font_name,
+                  font_color=char_font_color)
+    return slide
+
+
 def highlight_cards(slide, left, top, cards, total_width=12.0, C=None,
                     typo=None, spacing=None, grouped=True):
     C = C or {}
