@@ -537,7 +537,7 @@ def apply_pattern_fill(shape, pattern_type: str, fg_color: str, bg_color: str,
     bg_srgb.set("val", bg_color.lstrip("#"))
 
 
-def apply_frosted_glass(shape, tint_color: str = "#FFFFFF", tint_alpha: int = 15,
+def apply_frosted_glass(shape, tint_color: str = "#FFFFFF", tint_alpha: int = 50,
                         soft_edge: float = 8) -> None:
     spPr = shape._element.find(qn("p:spPr"))
     if spPr is None:

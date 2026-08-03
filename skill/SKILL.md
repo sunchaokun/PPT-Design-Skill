@@ -1039,8 +1039,11 @@ C = {
     'divider': '#CCCCCC',
     'font_heading': ux_typo.get('heading', 'Calibri'),
     'font_body': ux_typo.get('body', 'Calibri'),
+    'font_cjk': '微软雅黑',  # REQUIRED for Chinese content — auto-sets a:ea/a:cs typeface
 }
 ```
+
+**⚠️ CJK font rule**: If ANY slide text contains Chinese/Japanese/Korean characters, you MUST set `'font_cjk'` in the C dict. Without it, CJK characters fall back to SimSun (宋体) which looks unprofessional. Recommended CJK fonts: `微软雅黑`, `思源黑体`, `PingFang SC`, `Noto Sans CJK`.
 
 **Step 3: Use anti-patterns to avoid mistakes**:
 - If `ux_anti` says "Heavy chrome" → avoid thick borders, heavy shadows
@@ -1096,6 +1099,11 @@ C = {
 | `'creative'` | hero=44, h1=28, h2=22, h3=18, body=13 | margin=0.8, card_gap=0.4 | Creative, playful, approachable |
 | `'professional'` | hero=44, h1=28, h2=20, h3=16, body=12 | margin=0.65, card_gap=0.35 | Corporate, general business |
 | `'minimal'` | hero=40, h1=24, h2=18, h3=14, body=11 | margin=1.0, card_gap=0.5 | Minimalist, breathing room |
+| `'cjk_mckinsey'` | hero=44, h1=30, h2=22, h3=18, body=14 | margin=0.65, card_gap=0.35 | **Chinese/Japanese/Korean** — body+2pt for CJK readability |
+| `'cjk_professional'` | hero=44, h1=30, h2=22, h3=18, body=14 | margin=0.65, card_gap=0.35 | **CJK corporate** — same as cjk_mckinsey |
+| `'cjk_creative'` | hero=44, h1=30, h2=24, h3=20, body=15 | margin=0.8, card_gap=0.4 | **CJK creative** — larger body for comfort |
+
+⚠️ **CJK font size rule**: Chinese/Japanese/Korean characters visually appear ~30% smaller than Latin at the same pt value. Always use `cjk_*` presets (body=14-15) for CJK content instead of Latin presets (body=11-12).
 
 Usage: `t = TYPOGRAPHY['mckinsey']` then `font_size=t.h1`. Same pattern for `sp = SPACING['mckinsey']`.
 
@@ -1304,10 +1312,18 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
+| `cover_image(slide, left, top, width, height, image_path)` | **Cover-fit image** (crop to fill, no stretch) | **PREFERRED** over add_picture — Pillow pre-crops to exact aspect ratio |
 | `circle_image(slide, cx, cy, radius, image_path, border_color)` | Circle-cropped image | Center x/y + radius |
 | `soft_edge_image(slide, left, top, width, height, image_path, soft_radius)` | Soft-edge faded image | Feathered edge effect |
 | `duotone_image(slide, left, top, width, height, image_path, color1, color2)` | Duotone image | Two-color mapping |
 | `artistic_image(slide, left, top, width, height, image_path, effect, params)` | Artistic effect image | 22 effects: watercolor_sponge, etc. |
+
+### Functions — Accessibility
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `check_contrast(color1, color2, min_ratio=3.0)` | WCAG contrast ratio check | Returns `(ratio, ok)`; min_ratio: 4.5=body text AA, 3.0=large text AA |
+| `contrast_text(bg_color, min_ratio=4.5)` | Auto-select white or dark text | Returns `'#FFFFFF'` or `'#1A1A1A'` based on best contrast |
 
 ### Functions — Decorations
 
@@ -1362,6 +1378,8 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 - **layout_variant**: NOT a content.json field — use `--layout-variant` CLI param or `layout_variant=` kwarg in generate_ppt()
 - **animation**: NOT a content.json field — use `--motion` CLI param or `motion=` kwarg in generate_ppt()
 - **Chart selection**: `native_chart()` for standard data charts (bar/line/pie/area/scatter — editable, accurate axes); `bar_chart()`/`comparison_bars()`/`donut_chart(native=False)` for custom visuals (rounded bars, progress bars, gauge, waffle, icon bars). `donut_chart()` defaults to native=True for multi-sector accuracy. Choose based on data accuracy vs visual customization needs.
+- **⚠️ Pie/doughnut chart colors**: In python-pptx, pie/doughnut colors MUST be set at the **point level** (`series.points[i].format.fill`), NOT at the series level (`series.format.fill`). Setting colors at series level makes all sectors the same color. `native_chart()` and `donut_chart(native=True)` handle this automatically — but if writing raw python-pptx code, you MUST iterate `series.points` and set each point's fill individually.
+- **⚠️ Cover-fit images**: Always use `cover_image()` to add images — it Pillow-pre-crops to exact aspect ratio. NEVER use `slide.shapes.add_picture()` with stretch — it distorts images. `cover_image()` is the correct replacement for the internal `_add_picture_cover()` method.
 
 ## CLI Quick Reference
 

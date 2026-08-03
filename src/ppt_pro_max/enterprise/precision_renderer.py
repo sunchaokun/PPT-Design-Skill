@@ -339,7 +339,7 @@ class PrecisionRenderer:
         return sh
 
     def add_frosted_panel(self, slide, x: float, y: float, w: float, h: float,
-                          tint_color: str = "#FFFFFF", tint_alpha: int = 15,
+                          tint_color: str = "#FFFFFF", tint_alpha: int = 50,
                           soft_edge: float = 8) -> object:
         sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y),
                                     Inches(w), Inches(h))

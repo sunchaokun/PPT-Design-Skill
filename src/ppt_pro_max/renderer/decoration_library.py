@@ -245,7 +245,7 @@ def add_grid_background(
 
 def add_glass_panel(
     slide, x: float, y: float, w: float, h: float,
-    tint: str = "#FFFFFF", alpha: int = 15, soft_edge: float = 8,
+    tint: str = "#FFFFFF", alpha: int = 50, soft_edge: float = 8,
 ) -> object:
     sh = slide.shapes.add_shape(
         MSO_SHAPE.RECTANGLE,

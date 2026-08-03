@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 
+from lxml import etree
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
@@ -58,6 +59,25 @@ def _rgb(hex_str):
     return RGBColor.from_string(hex_str.lstrip('#'))
 
 
+def _set_cjk_font(run, font_name):
+    if not font_name:
+        return
+    rPr = run._r.find(
+        '{http://schemas.openxmlformats.org/drawingml/2006/main}rPr'
+    )
+    if rPr is None:
+        return
+    ns = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    ea = rPr.find(f'{{{ns}}}ea')
+    if ea is None:
+        ea = etree.SubElement(rPr, f'{{{ns}}}ea')
+    ea.set('typeface', font_name)
+    cs = rPr.find(f'{{{ns}}}cs')
+    if cs is None:
+        cs = etree.SubElement(rPr, f'{{{ns}}}cs')
+    cs.set('typeface', font_name)
+
+
 def _set_run(paragraph, txt, font_size=12, color='text_body', bold=False,
              font_name=None, C=None):
     run = paragraph.add_run()
@@ -67,6 +87,9 @@ def _set_run(paragraph, txt, font_size=12, color='text_body', bold=False,
     run.font.bold = bold
     if font_name:
         run.font.name = font_name
+    cjk_font = (C or {}).get('font_cjk') or (C or {}).get('font_body')
+    if cjk_font:
+        _set_cjk_font(run, cjk_font)
     return run
 
 
@@ -122,6 +145,9 @@ TYPOGRAPHY = {
     'creative': Typography(hero=44, h1=28, h2=22, h3=18, body=13, caption=11, micro=9),
     'professional': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=8),
     'minimal': Typography(hero=40, h1=24, h2=18, h3=14, body=11, caption=9, micro=7),
+    'cjk_mckinsey': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=10),
+    'cjk_professional': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=10),
+    'cjk_creative': Typography(hero=44, h1=30, h2=24, h3=20, body=15, caption=13, micro=11),
 }
 
 SPACING = {
@@ -1116,9 +1142,9 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
 
 def gradient_text(slide, left, top, width, height, txt, preset='gold-shine',
                   stops=None, font_size=44, bold=False, font_name=None,
-                  align='left'):
+                  cjk_font=None, align='left'):
     txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
-                                     Inches(width), Inches(height))
+                                      Inches(width), Inches(height))
     tf = txBox.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
@@ -1130,6 +1156,8 @@ def gradient_text(slide, left, top, width, height, txt, preset='gold-shine',
     run.font.bold = bold
     if font_name:
         run.font.name = font_name
+    if cjk_font:
+        _set_cjk_font(run, cjk_font)
     if stops:
         apply_text_gradient(run, stops)
     else:
@@ -1168,6 +1196,79 @@ def seal_stamp(slide, left, top, size, txt, fill_hex='#C41E3A',
                     border_width_pt=border_width_pt)
     sh = slide.shapes[-1]
     return sh
+
+
+def check_contrast(color1, color2, min_ratio=3.0):
+    """Check WCAG contrast ratio between two hex colors.
+
+    Returns (ratio, ok). For body text: min_ratio=4.5 (AA),
+    for large text: min_ratio=3.0 (AA). Returns (0, False) on parse error.
+    """
+    def _lum(h):
+        h = h.lstrip('#')
+        if len(h) != 6:
+            return 0
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        def _lin(c):
+            c = c / 255
+            return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b)
+    l1, l2 = _lum(color1), _lum(color2)
+    if l1 == 0 and l2 == 0:
+        return (0, False)
+    lighter, darker = max(l1, l2), min(l1, l2)
+    ratio = (lighter + 0.05) / (darker + 0.05)
+    return (round(ratio, 1), ratio >= min_ratio)
+
+
+def contrast_text(bg_color, min_ratio=4.5):
+    """Return '#FFFFFF' or '#1A1A1A' depending on which has better contrast against bg_color."""
+    w_ratio, w_ok = check_contrast(bg_color, '#FFFFFF', min_ratio)
+    d_ratio, d_ok = check_contrast(bg_color, '#1A1A1A', min_ratio)
+    if w_ratio >= d_ratio:
+        return '#FFFFFF'
+    return '#1A1A1A'
+
+
+def cover_image(slide, left, top, width, height, image_path):
+    """Add image with cover-fit (crop to fill, no stretch).
+
+    Uses Pillow to pre-crop the image to the exact aspect ratio,
+    then places it at the specified position. This is the correct
+    way to add images to PPT — never use add_picture with stretch.
+    """
+    import os as _os
+    import tempfile
+    import hashlib
+    if not _os.path.isfile(image_path):
+        return None
+    from PIL import Image as PILImage
+    img = PILImage.open(image_path)
+    img_w, img_h = img.size
+    box_ratio = width / height
+    img_ratio = img_w / img_h
+    if img_ratio > box_ratio:
+        crop_w = int(img_h * box_ratio)
+        crop_h = img_h
+        cleft = (img_w - crop_w) // 2
+        ctop = 0
+    else:
+        crop_w = img_w
+        crop_h = int(img_w / box_ratio)
+        cleft = 0
+        ctop = (img_h - crop_h) // 2
+    cropped = img.crop((cleft, ctop, cleft + crop_w, ctop + crop_h))
+    cache_dir = _os.path.join(tempfile.gettempdir(), "ppt-cropped")
+    _os.makedirs(cache_dir, exist_ok=True)
+    crop_key = f"crop:{image_path}:{width}x{height}"
+    crop_hash = hashlib.md5(crop_key.encode()).hexdigest()
+    cropped_path = _os.path.join(cache_dir, f"{crop_hash}.png")
+    if not _os.path.exists(cropped_path):
+        cropped.save(cropped_path, "PNG")
+    return slide.shapes.add_picture(
+        cropped_path, Inches(left), Inches(top),
+        Inches(width), Inches(height),
+    )
 
 
 def circle_image(slide, cx, cy, radius, image_path, border_color=None):
@@ -1230,7 +1331,7 @@ def pattern_fill(slide, left, top, width, height, pattern_type, fg_color,
 
 
 def frosted_panel(slide, left, top, width, height, tint='#FFFFFF',
-                  alpha=15, soft_edge=8):
+                  alpha=50, soft_edge=8):
     sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left), Inches(top),
                                 Inches(width), Inches(height))
     apply_frosted_glass(sh, tint_color=tint, tint_alpha=alpha,
@@ -1248,7 +1349,7 @@ def neon_border(slide, left, top, width, height, color='#8B5CF6', radius=0.1):
                             radius=radius)
 
 
-def glass_panel(slide, left, top, width, height, tint='#FFFFFF', alpha=15,
+def glass_panel(slide, left, top, width, height, tint='#FFFFFF', alpha=50,
                 soft_edge=8):
     return _add_glass_panel(slide, left, top, width, height, tint=tint,
                             alpha=alpha, soft_edge=soft_edge)
