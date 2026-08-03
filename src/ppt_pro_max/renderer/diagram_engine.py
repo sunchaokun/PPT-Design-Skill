@@ -84,10 +84,11 @@ class DiagramEngine:
                 p = tf.paragraphs[0]
             else:
                 p = tf.add_paragraph()
-            p.text = f"• {item}"
+            run = p.add_run()
+            run.text = f"• {item}"
             font_color = style.resolve_color(style.node_font_color)
-            p.font.size = Pt(style.node_font_size_pt)
-            p.font.color.rgb = RGBColor.from_string(font_color.lstrip("#"))
+            run.font.size = Pt(style.node_font_size_pt)
+            run.font.color.rgb = RGBColor.from_string(font_color.lstrip("#"))
 
 
 def _auto_register():

@@ -9,6 +9,18 @@ from pptx import Presentation
 from pptx.util import Inches
 
 
+def _all_texts(slide):
+    texts = []
+    for s in slide.shapes:
+        if s.has_text_frame:
+            texts.append(s.text_frame.text)
+        elif s.shape_type == 6:
+            for child in s.shapes:
+                if child.has_text_frame:
+                    texts.append(child.text_frame.text)
+    return texts
+
+
 @pytest.fixture
 def build_env():
     from ppt_pro_max.build_helpers import (
@@ -90,7 +102,7 @@ class TestKpiCard:
     def test_kpi_card_renders(self, build_env):
         slide = build_env['add_slide'](build_env['prs'])
         build_env['kpi_card'](slide, 1.0, 1.5, 3.0, 1.35, '12.8亿', '年度产值', '+8.3%', C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert '12.8亿' in texts
         assert '年度产值' in texts
         assert '+8.3%' in texts
@@ -98,7 +110,7 @@ class TestKpiCard:
     def test_kpi_card_without_trend(self, build_env):
         slide = build_env['add_slide'](build_env['prs'])
         build_env['kpi_card'](slide, 1.0, 1.5, 3.0, 1.35, '99.9%', '可用率', C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert '99.9%' in texts
 
     def test_multiple_kpi_cards(self, build_env):
@@ -106,7 +118,7 @@ class TestKpiCard:
         metrics = [('12.8亿', '产值', '+8.3%'), ('99.9%', '可用率', '+0.1%'), ('5.2M', '用户', '+15%')]
         for i, (num, label, trend) in enumerate(metrics):
             build_env['kpi_card'](slide, 0.65 + i * 4.1, 1.5, 3.8, 1.35, num, label, trend, C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert '12.8亿' in texts
         assert '99.9%' in texts
         assert '5.2M' in texts
@@ -117,7 +129,7 @@ class TestBarChart:
         slide = build_env['add_slide'](build_env['prs'])
         data = [('Revenue', 0.8, '$12.8B'), ('Growth', 0.6, '+8.3%'), ('Users', 0.45, '5.2M')]
         build_env['bar_chart'](slide, 1.5, 1.8, data, C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert 'Revenue' in texts
         assert '$12.8B' in texts
 
@@ -130,7 +142,7 @@ class TestComparisonBars:
             ('Users', '3M', '5.2M', 0.3, 0.52),
         ]
         build_env['comparison_bars'](slide, 2.0, 1.8, metrics, C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert 'Revenue' in texts
         assert '$10B' in texts
         assert '$12.8B' in texts
@@ -163,7 +175,7 @@ class TestHighlightCards:
             ('Integration', 'Seamless API connection', '#81C784'),
         ]
         build_env['highlight_cards'](slide, 0.65, 1.8, cards, C=build_env['C'])
-        texts = [s.text_frame.text for s in slide.shapes if s.has_text_frame]
+        texts = _all_texts(slide)
         assert 'AI Engine' in texts
         assert 'Live Dashboard' in texts
         assert 'Integration' in texts

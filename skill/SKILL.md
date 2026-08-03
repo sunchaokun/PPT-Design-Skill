@@ -1,8 +1,8 @@
 ---
 name: ppt-design-skill
-version: 0.13.0
-description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: FreeStyle + Build + VI Build. 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, proposal preview, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
-argument-hint: "[topic] [--style style-description] [--fetch-images] [--proposal]"
+version: 0.14.0
+description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: Build (default) + VI Build + FreeStyle (quick draft). 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, 3 structurally-different build.py proposals, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+argument-hint: "[topic] [--style style-description] [--fetch-images]"
 license: MIT
 metadata:
   author: sunchaokun
@@ -14,7 +14,7 @@ metadata:
 
 **⚠️ READ BEFORE coding: [`src/ppt_pro_max/docs/python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — 170+ shape types, 73 chart types, tables, connectors, freeform, hyperlinks, media, effects, 3D, OOXML. python-pptx has far more capabilities than rect/oval/textbox.
 
-AI-powered PPT generation — three-mode engine, 40,000+ style combos, 10 diagram types, brand compliance, version control, fully editable .pptx.
+AI-powered PPT generation — three-mode engine (Build default + VI Build + FreeStyle quick draft), 40,000+ style combos, 10 diagram types, brand compliance, version control, fully editable .pptx.
 
 ## ⚠️ Non-Negotiable Sections (DO NOT compress or remove)
 
@@ -22,15 +22,16 @@ These sections are the LLM's only reference for writing correct output:
 1. **content.json Format** — LLM must know the exact schema to write valid content
 2. **brand.json Format** — LLM must know brand spec structure for VI Build mode
 3. **Build Helpers API** — LLM must know function signatures to write build.py
-4. **Content Design Rules** — LLM must know which content patterns trigger which rendering
-5. **Key Constraints** — LLM must know API signatures to write correct python-pptx code
-6. **generate_ppt() signature** — LLM must know valid parameters to call the pipeline
+4. **UX Intelligence API** — LLM must know how to query ui-ux-pro-max for design decisions
+5. **Content Design Rules** — LLM must know which content patterns trigger which rendering
+6. **Key Constraints** — LLM must know API signatures to write correct python-pptx code
+7. **generate_ppt() signature** — LLM must know valid parameters to call the pipeline
 
 ## Execution Workflow
 
 ALWAYS follow this 5-step workflow. Each step requires user confirmation before proceeding. Do NOT skip steps or generate final PPT directly — rework is extremely costly.
 
-**Mode selection rule**: If user explicitly requests Build mode or VI Build mode, follow the Build/VI Build path. Otherwise default to FreeStyle. When in doubt, ask the user.
+**Mode selection rule**: ALWAYS use Build Mode for proposal generation. FreeStyle is only for quick one-command drafts when user explicitly says "just a quick draft" or "freestyle". When in doubt, use Build Mode.
 
 ### Step 1: Requirements & Framework (All Modes)
 
@@ -41,9 +42,9 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 - **Domain detection**: identify the presentation domain from topic/keywords (see Domain-Specific Design Paradigms below). This determines the entire visual language, content structure, and anti-patterns — MUST be detected before Design Read
 - **Design Read**: declare VARIANCE (1-10), MOTION (1-10), DENSITY (1-10) based on audience and scenario
 - **Mode decision**: determine which mode to use based on user request and quality requirements
-  - Build Mode: user explicitly requests "build mode" / "pixel-perfect" / "delivery-grade" / "手写build.py"
+  - Build Mode: **DEFAULT** — always use for proposal generation and delivery-grade output
   - VI Build Mode: user provides enterprise template (template.pptx) + requests brand compliance
-  - FreeStyle: default, quick exploration, prototyping
+  - FreeStyle: ONLY when user explicitly says "quick draft" / "freestyle" / "just explore" — NO proposals, one-shot output
 - Present to user as text outline (including domain + mode choice), confirm before proceeding
 
 **Dial → Action Map (V/M/D → LLM decisions):**
@@ -66,11 +67,11 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 | 4-7 | 3-5 bullets; mix densities | `SPACING['mckinsey']`; mix KPI cards with bullet pages |
 | 8-10 | 6+ bullets; `component_type:"group"` + `component_category:"infographic"` | `SPACING['cyberpunk']`; dense dashboards; `kpi_card()` grids; `bar_chart()` stacks |
 
-### Step 2: Visual Proposals (3 styles) — Build/VI Build Mode
+### Step 2: Visual Proposals (3 structurally-different build.py) — MANDATORY
 
-**⚠️ This is the PRIMARY path when user requests Build or VI Build mode. Do NOT fall back to FreeStyle proposals.**
+**⚠️ ALWAYS generate 3 structurally-different build.py proposals. NEVER use FreeStyle `generate_ppt()` × 3 with different `--style` as proposals — that only swaps palette/font and produces identical layouts, which is garbage.**
 
-Build mode proposals differ fundamentally from FreeStyle proposals: each proposal has a **completely different page structure, layout strategy, and visual language** — not just a palette/font swap. The 3 proposals must be structurally distinct so the user can compare different architectural approaches.
+Each proposal must have a **completely different page structure, layout strategy, and visual language** — not just a palette/font swap. The 3 proposals must be structurally distinct so the user can compare different architectural approaches.
 
 #### Build Mode Proposals (No Template)
 
@@ -96,29 +97,69 @@ Generate 3 lightweight `build.py` scripts (proposal_A.py, proposal_B.py, proposa
 
 **Proposal generation workflow:**
 
-1. Write 3 build.py files (proposal_A.py, proposal_B.py, proposal_C.py) with:
-   - Different `C` color dict (3 distinct palettes)
-   - Different `TYPOGRAPHY[...]` and `SPACING[...]` selections
+1. **UX Intelligence Query** — BEFORE writing any build.py, query ui-ux-pro-max for domain-specific design knowledge:
+   ```python
+   from ppt_pro_max.adapters.ui_ux_adapter import (
+       is_available, get_design_system, search_design,
+       search_style, search_color, search_typography,
+   )
+   
+   if is_available():
+       ds = get_design_system("your query", variance=V, motion=M, density=D)
+       ux_colors = ds.get('colors', {})          # e.g. {'primary': '#7C3AED', 'background': '#FAF5FF', ...}
+       ux_typo = ds.get('typography', {})         # e.g. {'heading': 'Inter', 'body': 'Inter', ...}
+       ux_style = ds.get('style_name', '')        # e.g. 'AI-Native UI'
+       ux_effects = ds.get('style_effects', '')   # e.g. 'Glassmorphism + micro-interactions'
+       ux_anti = ds.get('anti_patterns', '')      # e.g. 'Heavy chrome + Slow response feedback'
+       ux_pattern = ds.get('pattern_name', '')    # e.g. 'SaaS Landing'
+       ux_dials = ds.get('dials', {})             # variance/motion/density recommendations
+       
+       # Enrich with style/color/typography searches
+       style_results = search_style("professional consulting", 2)
+       color_results = search_color("dark tech", 2)
+       typo_results = search_typography("modern sans", 2)
+   ```
+   Use `ux_colors` as the **primary source** for the `C` dict instead of hardcoding colors. Use `ux_anti` to avoid known anti-patterns. Use `ux_effects` to guide decoration/animation choices.
+
+2. Write 3 build.py files (proposal_A.py, proposal_B.py, proposal_C.py) with:
+   - Different `C` color dict derived from ui-ux-pro-max search results (3 distinct palettes)
+   - Different `TYPOGRAPHY[...]` and `SPACING[...]` selections informed by ux_typo
    - Different page structure and component choices per page
    - Same framework content (titles + placeholder data) so user compares structure, not content
-2. Run each: `python proposal_A.py`, `python proposal_B.py`, `python proposal_C.py`
-3. Present 3 output PPTs to user with descriptions:
+3. Run each: `python proposal_A.py`, `python proposal_B.py`, `python proposal_C.py`
+4. Present 3 output PPTs to user with descriptions:
    - **A**: "Sidebar + table layout — consulting style, structured and data-driven"
    - **B**: "Grid dashboard — tech-forward, KPI-focused, information-dense"
    - **C**: "Creative circles — visual storytelling, emoji-accented, approachable"
-4. User picks one direction (A/B/C) or requests adjustments
-5. Low rework cost: only structural parameters change, content is placeholder
+5. User picks one direction (A/B/C) or requests adjustments
+6. Low rework cost: only structural parameters change, content is placeholder
 
-**Example proposal_A.py (McKinsey-style skeleton):**
+**Example proposal_A.py (McKinsey-style skeleton with UX intelligence):**
 
 ```python
 from ppt_pro_max.build_helpers import *
+from ppt_pro_max.adapters.ui_ux_adapter import get_design_system, search_color, search_typography
 
-C = {'primary': '#2E6504', 'accent': '#7DA92F', 'muted': '#81C784',
-     'light': '#C8E6C9', 'white': '#FFFFFF', 'background': '#FFFFFF',
-     'card_bg': '#F9F9F9', 'text_dark': '#1A1A1A', 'text_body': '#333333',
-     'text_muted': '#666666', 'divider': '#CCCCCC',
-     'font_heading': 'Georgia', 'font_body': 'Calibri'}
+# Step 1: Query UX intelligence for design decisions
+ds = get_design_system('investor pitch', variance=5, motion=3, density=5)
+ux_colors = ds.get('colors', {})
+ux_anti = ds.get('anti_patterns', '')  # Use to avoid bad patterns
+
+# Step 2: Build C dict from UX intelligence (not hardcoded)
+C = {
+    'primary': ux_colors.get('primary', '#2E6504'),
+    'accent': ux_colors.get('accent', '#7DA92F'),
+    'muted': ux_colors.get('muted', '#81C784'),
+    'light': ux_colors.get('border', '#C8E6C9'),
+    'white': '#FFFFFF',
+    'background': ux_colors.get('background', '#FFFFFF'),
+    'card_bg': '#F9F9F9',
+    'text_dark': ux_colors.get('foreground', '#1A1A1A'),
+    'text_body': ux_colors.get('text', '#333333'),
+    'text_muted': '#666666',
+    'divider': '#CCCCCC',
+    'font_heading': 'Georgia', 'font_body': 'Calibri',
+}
 t = TYPOGRAPHY['mckinsey']
 sp = SPACING['mckinsey']
 
@@ -165,17 +206,6 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 | B | Full-width + section dividers | bar_chart + comparison_bars | Narrative, story-driven |
 | C | Grid 2x2 + cards | donut_chart + highlight_cards | Dashboard, data-centric |
 
-### Step 2: Visual Proposals (3 styles) — FreeStyle Mode
-
-**Use this path ONLY when user does NOT request Build/VI Build mode.**
-
-- Generate 3 preview PPTs with different styles but same framework content
-- Write a lightweight content.json (framework-level titles + short placeholder bullets) to a temp file, then call pipeline 3 times with different `--style`
-- Example: `generate_ppt(query, content_file=temp_json_path, style="dark cyberpunk")` × 3 styles
-- Note: current ProposalGenerator uses hardcoded 4-page preview; when `content_file` is passed, the freestyle path is used instead
-- User picks one style direction (A/B/C) or requests adjustments
-- Low rework cost: only style parameters change
-
 ### Step 3: Detailed Content (All Modes)
 
 **Build/VI Build Mode:**
@@ -186,12 +216,10 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 - Present key content to user for review before final generation
 - User confirms content accuracy before proceeding
 
-**FreeStyle Mode:**
-- Write full content for every page: titles, subtitles, bullets, cards, code, exercise, chart data
-- MUST be query-specific and domain-accurate — NEVER use generic template content
-- MUST follow the Content Design Rules below to trigger design capabilities
-- Save as content.json, present key content to user for review
-- User confirms content accuracy before proceeding
+**FreeStyle Mode (quick draft only):**
+- Generate full PPT: `generate_ppt(query, content_file=..., style=..., fetch_images=True, ...)`
+- No proposal step — one-shot output
+- For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
 
 ### Step 4: Draft Generation & Revision (All Modes)
 
@@ -201,7 +229,7 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 - For revisions: modify build.py and re-run (build.py is the single source of truth)
 - Version control: save output to `output/v1/`, increment on revisions
 
-**FreeStyle Mode:**
+**FreeStyle Mode (quick draft only):**
 - Generate full PPT: `generate_ppt(query, content_file=..., style=confirmed_style, fetch_images=True, ...)`
 - Verify output: check page count, file size, content rendering
 - For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
@@ -269,32 +297,32 @@ When writing content (content.json for FreeStyle, or hardcoded text in build.py 
 - User wants **brand-compliant** presentations with template + version control
 - User wants **page-level CRUD** on existing PPT (add/delete/swap/move pages)
 - User wants **diagrams** in PPT (flowchart, funnel, timeline, SWOT, etc.)
-- User explicitly requests **build mode** / **pixel-perfect** / **delivery-grade** output
 - User provides a **template.pptx** and wants enterprise VI compliance
 - User wants **scientific/academic** presentation (gene, protein, thesis, dissertation, 论文, 答辩, 实验)
 - User wants **medical/clinical** presentation (diagnosis, treatment, clinical trial, 诊断, 临床)
+- **Default**: Build Mode is always used unless user explicitly says "quick draft" / "freestyle"
 
 ## Three-Mode Architecture
 
 | | **Build Script** | **VI Build** | FreeStyle |
 |---|---|---|---|
-| **Use case** | Delivery-grade, no template | **Enterprise VI compliance** | Quick exploration, prototyping |
-| **Trigger** | User requests "build mode" / "pixel-perfect" / "delivery-grade" | User provides template.pptx + requests brand compliance | Default (no explicit mode request) |
+| **Use case** | Delivery-grade, no template | **Enterprise VI compliance** | Quick draft only (NO proposals) |
+| **Trigger** | **DEFAULT** — always use unless user says "quick draft" | User provides template.pptx + requests brand compliance | User explicitly says "quick draft" / "freestyle" |
 | **Content source** | Hardcoded per page in build.py | LLM reads template analysis, generates build.py | AI auto-generates via content.json |
 | **Brand compliance** | Design Token dict `C` | **Extracted VI Token from template** | Style atom combos |
 | **Layout control** | **Per-element x/y/w/h** | **Preserve framework pages + build_helpers for new** | Auto-match goal type |
 | **Font control** | **Run-level per character** | **Run-level + template font inheritance** | Theme-level |
 | **Template reuse** | None | **Framework pages preserved + decorations/LOGO copied** | None |
-| **Proposal type** | 3 build.py (structural differentiation) | 3 build.py (layout strategy differentiation, same VI Token) | 3 style previews (palette/mood swap) |
-| **Quality ceiling** | ★★★★★ | ★★★★★ | ★★★ |
+| **Proposal type** | 3 build.py (structural differentiation) | 3 build.py (layout strategy differentiation, same VI Token) | **NO proposals** — one-shot output only |
+| **Quality ceiling** | ★★★★★ | ★★★★★ | ★★ (no structural control) |
 
-> **Recommended workflow**: FreeStyle prototype → VI Build (with enterprise template) or Build Script (no template) for precision delivery.
+> **Mandatory workflow**: ALWAYS use Build Mode for proposals (3 structurally-different build.py). FreeStyle is for quick one-shot drafts only — NEVER use FreeStyle for proposal generation.
 
-### Build Mode (Pixel-Perfect Delivery) — PRIMARY DELIVERY MODE
+### Build Mode (Pixel-Perfect Delivery) — DEFAULT & PRIMARY DELIVERY MODE
 
 LLM writes `build.py` scripts from blank canvas, using build_helpers for maximum per-element control. This is the highest-quality output mode with full control over every shape's position, size, color, and typography.
 
-**When to use**: User explicitly requests build mode, or when delivery-grade quality is needed (investor deck, board presentation, client deliverable).
+**When to use**: ALWAYS the default mode. Use for all proposal generation and delivery-grade output (investor deck, board presentation, client deliverable). Only fall back to FreeStyle when user explicitly says "quick draft".
 
 ```bash
 # LLM generates build.py, then:
@@ -360,11 +388,11 @@ prs.save('output.pptx')
 - Use `copy_decorations()` / `copy_logo()` to maintain VI consistency
 - VI Token (`C` dict) extracted from `analyze_template.py` output, not hand-written
 
-### FreeStyle Mode (Quick Exploration)
+### FreeStyle Mode (Quick Draft Only — NO Proposals)
 
-One command, AI generates everything — content, design, images. Best for rapid prototyping and early-stage ideation.
+One command, AI generates everything — content, design, images. **NO proposal step** — one-shot output only. Use ONLY when user explicitly says "quick draft" / "freestyle" / "just explore".
 
-**When to use**: Default mode when user does not specify a mode. Good for quick drafts, brainstorming, style exploration.
+**⚠️ NEVER use FreeStyle for proposal generation.** Calling `generate_ppt()` × 3 with different `--style` only swaps palette/font and produces identical layouts — this is NOT a valid proposal.
 
 ```bash
 python -m ppt_pro_max "AI startup investor pitch"
@@ -696,7 +724,8 @@ result = generate_ppt("pitch", content_file="content.json", style="warm fintech"
 result = generate_ppt("pitch", content_file="content.json", style="professional",
                       layout_variant="sidebar-left", motion=5, density=6, variance=7)
 
-# Proposal flow (FreeStyle only — Build mode uses build.py proposals)
+# Proposal flow (DEPRECATED for proposals — use Build Mode build.py instead)
+# This only swaps palette/mood, NOT layout structure. Use build.py proposals for structural differentiation.
 result = generate_ppt("pitch", proposal=True, style="dark cyberpunk")
 
 # Standalone image generation
@@ -704,7 +733,7 @@ img = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream"
 print(img["path"])
 ```
 
-**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, `proposal`, `confirmed_proposal`, `materials_dir`, `beautify`, `component_library`, `palette`, `fonts`, `decoration`, `mood`, `llm_provider`, `llm_api_key`, `pages`
+**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, ~~`proposal`~~ (deprecated — use build.py), ~~`confirmed_proposal`~~ (deprecated), `materials_dir`, `beautify`, `component_library`, `palette`, `fonts`, `decoration`, `mood`, `llm_provider`, `llm_api_key`, `pages`
 
 ## 4-Phase Pipeline
 
@@ -958,6 +987,82 @@ Matching logic: exact match (type+category+node_count) → fuzzy match (closest 
 | Bullet list (2-5 items) | Built-in bullet renderer | Simpler = better |
 
 **Node count matching:** node_count = number of text items (4 steps → node_count=4). Prefer exact match; if between two, choose larger.
+
+## UX Intelligence API (ui-ux-pro-max — MANDATORY for Build Mode)
+
+**⚠️ BEFORE writing any build.py, you MUST query ui-ux-pro-max for domain-specific design intelligence.** This is the single biggest quality differentiator — without it, you're guessing colors/fonts/styles; with it, you get professional-grade design decisions backed by a searchable database of real-world patterns.
+
+Import: `from ppt_pro_max.adapters.ui_ux_adapter import is_available, get_design_system, search_design, search_style, search_color, search_typography, search_reasoning`
+
+### API Reference
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `is_available()` | Check if ui-ux-pro-max is installed | `bool` |
+| `get_design_system(query, variance=None, motion=None, density=None)` | Full design system for a project | `dict` with colors, typography, style, pattern, anti_patterns, decision_rules, dials |
+| `search_design(query, domain=None, max_results=3)` | Search product/UX patterns | `list[dict]` with Product Type, Keywords, Primary Style Recommendation, Landing Page Pattern |
+| `search_style(query, max_results=3)` | Search visual style patterns | `list[dict]` with Style Category, Effects & Animation, Dark Mode, Light Mode |
+| `search_color(query, max_results=2)` | Search color palettes | `list[dict]` with palette recommendations |
+| `search_typography(query, max_results=2)` | Search font pairings | `list[dict]` with heading/body font recommendations |
+| `search_reasoning(category)` | Get reasoning rules for a domain | `dict` with decision rules |
+
+### How to Use in Build Mode
+
+**Step 1: Query design intelligence** (before writing C dict):
+```python
+from ppt_pro_max.adapters.ui_ux_adapter import is_available, get_design_system, search_color, search_style
+
+if is_available():
+    ds = get_design_system('AI startup investor pitch', variance=5, motion=3, density=5)
+    ux_colors = ds.get('colors', {})       # → {'primary': '#7C3AED', 'accent': '#EC4899', ...}
+    ux_typo = ds.get('typography', {})     # → {'heading': 'Inter', 'body': 'Inter', ...}
+    ux_style = ds.get('style_name', '')    # → 'AI-Native UI'
+    ux_effects = ds.get('style_effects', '')  # → 'Glassmorphism + micro-interactions'
+    ux_anti = ds.get('anti_patterns', '')  # → 'Heavy chrome + Slow response feedback'
+    ux_pattern = ds.get('pattern_name', '')   # → 'SaaS Landing'
+    ux_dials = ds.get('dials', {})         # → {'variance': 7, 'motion': 4, ...}
+```
+
+**Step 2: Build C dict from UX intelligence** (not hardcoded):
+```python
+C = {
+    'primary': ux_colors.get('primary', '#2E6504'),
+    'accent': ux_colors.get('accent', '#7DA92F'),
+    'muted': ux_colors.get('muted', '#81C784'),
+    'light': ux_colors.get('border', '#C8E6C9'),
+    'white': '#FFFFFF',
+    'background': ux_colors.get('background', '#FFFFFF'),
+    'card_bg': '#F9F9F9',
+    'text_dark': ux_colors.get('foreground', '#1A1A1A'),
+    'text_body': ux_colors.get('text', '#333333'),
+    'text_muted': '#666666',
+    'divider': '#CCCCCC',
+    'font_heading': ux_typo.get('heading', 'Calibri'),
+    'font_body': ux_typo.get('body', 'Calibri'),
+}
+```
+
+**Step 3: Use anti-patterns to avoid mistakes**:
+- If `ux_anti` says "Heavy chrome" → avoid thick borders, heavy shadows
+- If `ux_anti` says "Slow response feedback" → add subtle entrance animations
+- If `ux_anti` says "Wall of text" → use cards, KPI grids, not bullet lists
+
+**Step 4: Use style effects for decoration choices**:
+- `ux_effects` = "Glassmorphism" → use `add_glass_panel()`, frosted glass
+- `ux_effects` = "Neon + glow" → use `add_neon_border()`, `apply_glow()`
+- `ux_effects` = "Minimal clean" → use `top_bar()` only, no decorations
+
+### Proposal Differentiation with UX Search
+
+For 3 proposals, search 3 different style/color/typography combinations:
+```python
+# Proposal A: Style closest to user's description
+ds_a = get_design_system(query, variance=5, motion=3, density=5)
+# Proposal B: Alternative style direction
+style_b = search_style("tech dashboard", 1)  # Different style query
+# Proposal C: Radical departure
+color_c = search_color("vibrant neon", 1)    # Different color query
+```
 
 ## Build Helpers API (for Build/VI Build mode)
 
@@ -1261,7 +1366,7 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 ## CLI Quick Reference
 
 ```
-python -m ppt_pro_max "query" [--style STYLE] [--layout-variant VARIANT] [--motion 1-10] [--density 1-10] [--variance 1-10] [--content FILE] [--fetch-images] [--proposal] [-o PATH]
+python -m ppt_pro_max "query" [--style STYLE] [--layout-variant VARIANT] [--motion 1-10] [--density 1-10] [--variance 1-10] [--content FILE] [--fetch-images] [-o PATH]
 python -m ppt_pro_max image "keywords" [--llm-provider PROV] [--llm-api-key KEY] [--image-mode MODE] [-v]
 ```
 
@@ -1270,4 +1375,4 @@ python -m ppt_pro_max image "keywords" [--llm-provider PROV] [--llm-api-key KEY]
 - python-pptx >= 1.0.2 (required)
 - Pillow >= 10.0 (required)
 - python-dotenv >= 1.0 (optional, for .env support)
-- ui-ux-pro-max >= 1.0.0 (required)
+- **ui-ux-pro-max >= 1.0.0 (required)** — provides design intelligence (colors, typography, styles, anti-patterns) for Build Mode proposals. Without it, proposals use hardcoded defaults instead of domain-specific UX knowledge.

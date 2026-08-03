@@ -58,6 +58,18 @@ def _rgb(hex_str):
     return RGBColor.from_string(hex_str.lstrip('#'))
 
 
+def _set_run(paragraph, txt, font_size=12, color='text_body', bold=False,
+             font_name=None, C=None):
+    run = paragraph.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.color.rgb = _rgb(_resolve_color(color, C))
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    return run
+
+
 def _lighten(hex_color, amount=30):
     h = hex_color.lstrip('#')
     r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
@@ -190,12 +202,8 @@ def text(slide, left, top, width, height, txt, font_size=12,
         except Exception:
             pass
     p = tf.paragraphs[0]
-    p.text = txt
-    p.font.size = Pt(font_size)
-    p.font.color.rgb = _rgb(_resolve_color(color, C))
-    p.font.bold = bold
-    if font_name:
-        p.font.name = font_name
+    _set_run(p, txt, font_size=font_size, color=color, bold=bold,
+             font_name=font_name, C=C)
     p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
                    'right': PP_ALIGN.RIGHT}[align]
     return txBox
@@ -208,15 +216,10 @@ def multiline(slide, left, top, width, height, lines, font_size=12,
                                       Inches(width), Inches(height))
     tf = txBox.text_frame
     tf.word_wrap = True
-    color_val = _resolve_color(color, C)
     for i, line in enumerate(lines):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.text = line
-        p.font.size = Pt(font_size)
-        p.font.color.rgb = _rgb(color_val)
-        p.font.bold = bold
-        if font_name:
-            p.font.name = font_name
+        _set_run(p, line, font_size=font_size, color=color, bold=bold,
+                 font_name=font_name, C=C)
         p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
                        'right': PP_ALIGN.RIGHT}[align]
         if line_spacing:
@@ -306,33 +309,22 @@ def kpi_card(slide, left, top, width, height, number, label,
         num_box = gs.add_textbox(Inches(left + pad), Inches(top + 0.25),
                                  Inches(width - 2 * pad), Inches(0.5))
         p = num_box.text_frame.paragraphs[0]
-        p.text = number
-        p.font.size = Pt(t.h1)
-        p.font.color.rgb = _rgb(C.get('primary', '#1B5E20'))
-        p.font.bold = True
-        if C.get('font_heading'):
-            p.font.name = C['font_heading']
+        _set_run(p, number, font_size=t.h1, color=C.get('primary', '#1B5E20'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
 
         lbl_box = gs.add_textbox(Inches(left + pad), Inches(top + 0.75),
                                  Inches(width - 2 * pad), Inches(0.3))
         p2 = lbl_box.text_frame.paragraphs[0]
-        p2.text = label
-        p2.font.size = Pt(t.caption)
-        p2.font.color.rgb = _rgb(C.get('text_muted', '#666666'))
-        if C.get('font_body'):
-            p2.font.name = C['font_body']
+        _set_run(p2, label, font_size=t.caption, color=C.get('text_muted', '#666666'),
+                 font_name=C.get('font_body'), C=C)
 
         if trend:
             tc = C.get('primary', '#1B5E20') if trend_up else '#C53030'
             trend_box = gs.add_textbox(Inches(left + pad), Inches(top + 1.05),
                                        Inches(width - 2 * pad), Inches(0.25))
             p3 = trend_box.text_frame.paragraphs[0]
-            p3.text = trend
-            p3.font.size = Pt(t.micro)
-            p3.font.color.rgb = _rgb(tc)
-            p3.font.bold = True
-            if C.get('font_body'):
-                p3.font.name = C['font_body']
+            _set_run(p3, trend, font_size=t.micro, color=tc, bold=True,
+                     font_name=C.get('font_body'), C=C)
 
         return group
     else:
@@ -387,22 +379,15 @@ def bar_chart(slide, left, top, data, max_width=5.0, bar_height=0.3, C=None,
             lbl_box = gs.add_textbox(Inches(left - 0.9), Inches(y - 0.03),
                                      Inches(0.85), Inches(bar_height))
             p = lbl_box.text_frame.paragraphs[0]
-            p.text = label
-            p.font.size = Pt(t.caption)
-            p.font.color.rgb = _rgb(C.get('text_body', '#333333'))
+            _set_run(p, label, font_size=t.caption, color=C.get('text_body', '#333333'),
+                     font_name=C.get('font_body'), C=C)
             p.alignment = PP_ALIGN.RIGHT
-            if C.get('font_body'):
-                p.font.name = C['font_body']
 
             val_box = gs.add_textbox(Inches(left + max_width + 0.08), Inches(y - 0.03),
                                      Inches(0.6), Inches(bar_height))
             p2 = val_box.text_frame.paragraphs[0]
-            p2.text = val
-            p2.font.size = Pt(t.caption)
-            p2.font.color.rgb = _rgb(C.get('text_dark', '#000000'))
-            p2.font.bold = True
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, val, font_size=t.caption, color=C.get('text_dark', '#000000'),
+                     bold=True, font_name=C.get('font_body'), C=C)
 
         return group
     else:
@@ -438,13 +423,9 @@ def comparison_bars(slide, left, top, metrics, max_width=4.0, C=None,
             lbl_box = gs.add_textbox(Inches(left - 1.1), Inches(y - 0.02),
                                      Inches(1.0), Inches(0.2))
             p = lbl_box.text_frame.paragraphs[0]
-            p.text = label
-            p.font.size = Pt(t.caption)
-            p.font.color.rgb = _rgb(C.get('text_body', '#333333'))
-            p.font.bold = True
+            _set_run(p, label, font_size=t.caption, color=C.get('text_body', '#333333'),
+                     bold=True, font_name=C.get('font_body'), C=C)
             p.alignment = PP_ALIGN.RIGHT
-            if C.get('font_body'):
-                p.font.name = C['font_body']
 
             bg1 = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
                                Inches(left), Inches(y),
@@ -481,21 +462,14 @@ def comparison_bars(slide, left, top, metrics, max_width=4.0, C=None,
             old_box = gs.add_textbox(Inches(left + max_width + 0.1), Inches(y - 0.03),
                                      Inches(0.8), Inches(0.2))
             p2 = old_box.text_frame.paragraphs[0]
-            p2.text = v_old
-            p2.font.size = Pt(t.micro)
-            p2.font.color.rgb = _rgb(C.get('text_muted', '#666666'))
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, v_old, font_size=t.micro, color=C.get('text_muted', '#666666'),
+                     font_name=C.get('font_body'), C=C)
 
             new_box = gs.add_textbox(Inches(left + max_width + 0.1), Inches(y + 0.19),
                                      Inches(0.8), Inches(0.2))
             p3 = new_box.text_frame.paragraphs[0]
-            p3.text = v_new
-            p3.font.size = Pt(t.micro)
-            p3.font.color.rgb = _rgb(C.get('text_dark', '#000000'))
-            p3.font.bold = True
-            if C.get('font_body'):
-                p3.font.name = C['font_body']
+            _set_run(p3, v_new, font_size=t.micro, color=C.get('text_dark', '#000000'),
+                     bold=True, font_name=C.get('font_body'), C=C)
 
         return group
     else:
@@ -585,13 +559,9 @@ def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
             Inches(cx - 0.5), Inches(cy - 0.2),
             Inches(1.0), Inches(0.4))
         p = center_box.text_frame.paragraphs[0]
-        p.text = '100%'
-        p.font.size = Pt(t.h2)
-        p.font.color.rgb = _rgb(C.get('primary', '#1B5E20'))
-        p.font.bold = True
+        _set_run(p, '100%', font_size=t.h2, color=C.get('primary', '#1B5E20'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
         p.alignment = PP_ALIGN.CENTER
-        if C.get('font_heading'):
-            p.font.name = C['font_heading']
 
         ly = cy - radius
         lx = cx + radius + 0.5
@@ -606,11 +576,9 @@ def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
             lbl = gs.add_textbox(Inches(lx + 0.3), Inches(ly - 0.02),
                                  Inches(1.5), Inches(0.25))
             p2 = lbl.text_frame.paragraphs[0]
-            p2.text = f'{name}  {pct_str}'
-            p2.font.size = Pt(t.caption)
-            p2.font.color.rgb = _rgb(C.get('text_body', '#333333'))
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, f'{name}  {pct_str}', font_size=t.caption,
+                     color=C.get('text_body', '#333333'),
+                     font_name=C.get('font_body'), C=C)
             ly += 0.35
 
         return group
@@ -719,11 +687,12 @@ def _transparent_textbox(slide, left, top, width, height, txt,
     tf = tb.text_frame
     tf.word_wrap = False
     p = tf.paragraphs[0]
-    p.text = txt
-    p.font.size = Pt(font_size)
-    p.font.name = font_name
-    p.font.color.rgb = _rgb(color)
-    p.font.bold = bold
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.name = font_name
+    run.font.color.rgb = _rgb(color)
+    run.font.bold = bold
     p.alignment = PP_ALIGN.CENTER
     tb.fill.background()
     tb.line.fill.background()
@@ -938,21 +907,14 @@ def highlight_cards(slide, left, top, cards, total_width=12.0, C=None,
             title_box = gs.add_textbox(Inches(x + pad), Inches(top + 0.18),
                                        Inches(card_w - 2 * pad), Inches(0.3))
             p = title_box.text_frame.paragraphs[0]
-            p.text = title
-            p.font.size = Pt(t.h3)
-            p.font.color.rgb = _rgb(C.get('text_dark', '#000000'))
-            p.font.bold = True
-            if C.get('font_heading'):
-                p.font.name = C['font_heading']
+            _set_run(p, title, font_size=t.h3, color=C.get('text_dark', '#000000'),
+                     bold=True, font_name=C.get('font_heading'), C=C)
 
             desc_box = gs.add_textbox(Inches(x + pad), Inches(top + 0.52),
                                       Inches(card_w - 2 * pad), Inches(0.7))
             p2 = desc_box.text_frame.paragraphs[0]
-            p2.text = desc
-            p2.font.size = Pt(t.caption)
-            p2.font.color.rgb = _rgb(C.get('text_muted', '#666666'))
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, desc, font_size=t.caption, color=C.get('text_muted', '#666666'),
+                     font_name=C.get('font_body'), C=C)
 
         return group
     else:
@@ -996,12 +958,8 @@ def code_block(slide, left, top, width, height, lines, language='python',
         badge_txt = gs.add_textbox(Inches(left + 0.15), Inches(top - 0.28),
                                    Inches(badge_w - 0.1), Inches(0.25))
         p = badge_txt.text_frame.paragraphs[0]
-        p.text = language
-        p.font.size = Pt(t.micro)
-        p.font.color.rgb = _rgb(C.get('white', '#FFFFFF'))
-        p.font.bold = True
-        if C.get('font_body'):
-            p.font.name = C['font_body']
+        _set_run(p, language, font_size=t.micro, color=C.get('white', '#FFFFFF'),
+                 bold=True, font_name=C.get('font_body'), C=C)
 
         code_box = gs.add_textbox(Inches(left + 0.2), Inches(top + 0.15),
                                   Inches(width - 0.4), Inches(height - 0.3))
@@ -1009,10 +967,11 @@ def code_block(slide, left, top, width, height, lines, language='python',
         tf.word_wrap = True
         for i, line in enumerate(lines):
             p2 = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-            p2.text = line
-            p2.font.size = Pt(t.body)
-            p2.font.color.rgb = _rgb('#D4D4D4')
-            p2.font.name = 'Consolas'
+            run = p2.add_run()
+            run.text = line
+            run.font.size = Pt(t.body)
+            run.font.color.rgb = _rgb('#D4D4D4')
+            run.font.name = 'Consolas'
             p2.space_before = Pt(3)
             p2.space_after = Pt(3)
 
@@ -1047,12 +1006,8 @@ def section_divider(slide, number, title, C=None, typo=None, grouped=True):
         num_box = gs.add_textbox(Inches(1.2), Inches(1.5),
                                  Inches(3.0), Inches(2.0))
         p = num_box.text_frame.paragraphs[0]
-        p.text = str(number).zfill(2)
-        p.font.size = Pt(72)
-        p.font.color.rgb = _rgb(C.get('light', '#C8E6C9'))
-        p.font.bold = True
-        if C.get('font_heading'):
-            p.font.name = C['font_heading']
+        _set_run(p, str(number).zfill(2), font_size=72, color=C.get('light', '#C8E6C9'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
 
         line = gs.add_shape(MSO_SHAPE.RECTANGLE,
                             Inches(1.2), Inches(3.6),
@@ -1064,12 +1019,8 @@ def section_divider(slide, number, title, C=None, typo=None, grouped=True):
         title_box = gs.add_textbox(Inches(1.2), Inches(3.9),
                                    Inches(10.0), Inches(1.5))
         p2 = title_box.text_frame.paragraphs[0]
-        p2.text = title
-        p2.font.size = Pt(t.hero)
-        p2.font.color.rgb = _rgb(C.get('white', '#FFFFFF'))
-        p2.font.bold = True
-        if C.get('font_heading'):
-            p2.font.name = C['font_heading']
+        _set_run(p2, title, font_size=t.hero, color=C.get('white', '#FFFFFF'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
 
         return group
     else:
@@ -1101,22 +1052,15 @@ def hero_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
         title_box = gs.add_textbox(Inches(1.2), Inches(2.0),
                                    Inches(10.0), Inches(1.5))
         p = title_box.text_frame.paragraphs[0]
-        p.text = title
-        p.font.size = Pt(t.hero)
-        p.font.color.rgb = _rgb(C.get('white', '#FFFFFF'))
-        p.font.bold = True
-        if C.get('font_heading'):
-            p.font.name = C['font_heading']
+        _set_run(p, title, font_size=t.hero, color=C.get('white', '#FFFFFF'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
 
         if subtitle:
             sub_box = gs.add_textbox(Inches(1.2), Inches(3.6),
                                      Inches(10.0), Inches(0.5))
             p2 = sub_box.text_frame.paragraphs[0]
-            p2.text = subtitle
-            p2.font.size = Pt(t.h2)
-            p2.font.color.rgb = _rgb(C.get('light', '#C8E6C9'))
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, subtitle, font_size=t.h2, color=C.get('light', '#C8E6C9'),
+                     font_name=C.get('font_body'), C=C)
 
         return group
     else:
@@ -1148,22 +1092,15 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
         title_box = gs.add_textbox(Inches(1.2), Inches(2.5),
                                    Inches(10.0), Inches(1.5))
         p = title_box.text_frame.paragraphs[0]
-        p.text = title
-        p.font.size = Pt(t.h1 + 12)
-        p.font.color.rgb = _rgb(C.get('white', '#FFFFFF'))
-        p.font.bold = True
-        if C.get('font_heading'):
-            p.font.name = C['font_heading']
+        _set_run(p, title, font_size=t.h1 + 12, color=C.get('white', '#FFFFFF'),
+                 bold=True, font_name=C.get('font_heading'), C=C)
 
         if subtitle:
             sub_box = gs.add_textbox(Inches(1.2), Inches(4.0),
                                      Inches(10.0), Inches(0.5))
             p2 = sub_box.text_frame.paragraphs[0]
-            p2.text = subtitle
-            p2.font.size = Pt(t.h3)
-            p2.font.color.rgb = _rgb(C.get('light', '#C8E6C9'))
-            if C.get('font_body'):
-                p2.font.name = C['font_body']
+            _set_run(p2, subtitle, font_size=t.h3, color=C.get('light', '#C8E6C9'),
+                     font_name=C.get('font_body'), C=C)
 
         return group
     else:

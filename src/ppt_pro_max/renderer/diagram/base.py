@@ -97,15 +97,16 @@ class BaseDiagram(ABC):
                 tf = shape.text_frame
                 tf.word_wrap = True
                 p = tf.paragraphs[0]
-                p.text = label
-                p.font.size = Pt(node.get("font_size_pt", self.style.node_font_size_pt))
+                run = p.add_run()
+                run.text = label
+                run.font.size = Pt(node.get("font_size_pt", self.style.node_font_size_pt))
                 p.alignment = self._resolve_alignment()
 
                 font_color = self.style.resolve_color(node.get("font_color_role", self.style.node_font_color))
-                p.font.color.rgb = RGBColor.from_string(font_color.lstrip("#"))
+                run.font.color.rgb = RGBColor.from_string(font_color.lstrip("#"))
 
                 if node.get("font_weight", self.style.node_font_weight) == "bold":
-                    p.font.bold = True
+                    run.font.bold = True
 
     @staticmethod
     def _darken_color(hex_color: str, amount: int = 30) -> str:

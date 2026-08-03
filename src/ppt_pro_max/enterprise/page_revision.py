@@ -288,8 +288,9 @@ class PageRevisionEngine:
                 p = tf.paragraphs[0]
             else:
                 p = tf.add_paragraph()
-            p.text = text
-            p.font.size = Pt(11)
+            run = p.add_run()
+            run.text = text
+            run.font.size = Pt(11)
 
     def _save_as(self, prs: Presentation, path: str) -> None:
         out_dir = os.path.dirname(path)

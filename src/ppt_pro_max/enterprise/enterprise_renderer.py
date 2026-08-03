@@ -177,9 +177,10 @@ class EnterpriseRenderer:
                 txBox = slide.shapes.add_textbox(left, top, Inches(2.0), Inches(0.3))
                 tf = txBox.text_frame
                 p = tf.paragraphs[0]
-                p.text = page_text
-                p.font.size = Pt(font_size_pt)
-                p.font.color.rgb = muted_color
+                run = p.add_run()
+                run.text = page_text
+                run.font.size = Pt(font_size_pt)
+                run.font.color.rgb = muted_color
                 p.alignment = PP_ALIGN.RIGHT
 
             if show_footer_text and footer_text and not should_skip:
@@ -189,9 +190,10 @@ class EnterpriseRenderer:
                 txBox = slide.shapes.add_textbox(left, top, Inches(4.0), Inches(0.3))
                 tf = txBox.text_frame
                 p = tf.paragraphs[0]
-                p.text = footer_text
-                p.font.size = Pt(font_size_pt)
-                p.font.color.rgb = muted_color
+                run = p.add_run()
+                run.text = footer_text
+                run.font.size = Pt(font_size_pt)
+                run.font.color.rgb = muted_color
                 p.alignment = PP_ALIGN.CENTER
 
     def add_watermark(self, prs: Presentation, watermark_config: dict[str, Any], brand_spec=None) -> None:
@@ -223,10 +225,11 @@ class EnterpriseRenderer:
             )
             tf = txBox.text_frame
             p = tf.paragraphs[0]
-            p.text = text
-            p.font.size = Pt(font_size_pt)
-            p.font.color.rgb = RGBColor.from_string(muted_hex)
-            p.font.bold = True
+            run = p.add_run()
+            run.text = text
+            run.font.size = Pt(font_size_pt)
+            run.font.color.rgb = RGBColor.from_string(muted_hex)
+            run.font.bold = True
             p.alignment = PP_ALIGN.CENTER
 
             sp = txBox._element

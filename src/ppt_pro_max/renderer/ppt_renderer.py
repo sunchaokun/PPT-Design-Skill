@@ -379,9 +379,10 @@ class PPTRenderer:
         tf.margin_top = Inches(0.5)
 
         p = tf.paragraphs[0]
-        p.text = card_text
-        p.font.size = Pt(ph_def.get("font_size", 14))
-        p.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
+        run = p.add_run()
+        run.text = card_text
+        run.font.size = Pt(ph_def.get("font_size", 14))
+        run.font.color.rgb = RGBColor.from_string(fg_color.lstrip("#"))
         p.alignment = PP_ALIGN.LEFT
         p.space_after = Pt(6)
 
@@ -460,10 +461,11 @@ class PPTRenderer:
         tf = txBox.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
-        p.text = "\u201C"
-        p.font.size = Pt(72)
-        p.font.bold = True
-        p.font.color.rgb = RGBColor.from_string(accent.lstrip("#"))
+        run = p.add_run()
+        run.text = "\u201C"
+        run.font.size = Pt(72)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor.from_string(accent.lstrip("#"))
         p.alignment = PP_ALIGN.LEFT
 
     def _render_chart_placeholder(
@@ -485,9 +487,10 @@ class PPTRenderer:
             tf = placeholder.text_frame
             tf.word_wrap = True
             p = tf.paragraphs[0]
-            p.text = design.chart_type or "Chart"
-            p.font.size = Pt(14)
-            p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
+            run = p.add_run()
+            run.text = design.chart_type or "Chart"
+            run.font.size = Pt(14)
+            run.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
             p.alignment = PP_ALIGN.CENTER
             return
 
@@ -521,10 +524,11 @@ class PPTRenderer:
         tf = button.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
-        p.text = button_text
-        p.font.size = Pt(ph_def.get("font_size", 18))
-        p.font.bold = True
-        p.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+        run = p.add_run()
+        run.text = button_text
+        run.font.size = Pt(ph_def.get("font_size", 18))
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
         p.alignment = PP_ALIGN.CENTER
 
         self.effects.add_shadow(button, blur_pt=8, offset_pt=3, color="#000000", alpha=20)
@@ -586,9 +590,10 @@ class PPTRenderer:
         tf.word_wrap = True
         p = tf.paragraphs[0]
         hint = content.image_keywords if content.image_keywords else "Image"
-        p.text = hint
-        p.font.size = Pt(12)
-        p.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
+        run = p.add_run()
+        run.text = hint
+        run.font.size = Pt(12)
+        run.font.color.rgb = RGBColor.from_string(hint_color.lstrip("#"))
         p.alignment = PP_ALIGN.CENTER
 
     def _add_picture_cover(self, slide, image_path: str, ph_def: dict) -> None:
