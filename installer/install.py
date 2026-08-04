@@ -204,10 +204,10 @@ def install_to_dir(project_root: Path, dest_dir: Path, label: str,
 
 
 def install_python_package(project_root: Path) -> bool:
-    print("  Installing Python package...")
+    print("  Installing Python package (editable mode)...")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", str(project_root)],
+            [sys.executable, "-m", "pip", "install", "-e", str(project_root)],
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:

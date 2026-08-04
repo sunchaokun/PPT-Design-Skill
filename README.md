@@ -77,33 +77,19 @@ python install.py --platform opencode # 指定平台
 ### 作为 Python 包使用
 
 ```bash
-# 方式一：editable 安装（推荐，代码更新即时生效）
+# 安装（editable 模式，git pull 即更新）
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 pip install -e .
-
-# 方式二：静态安装（需重新安装才能更新）
-pip install .
-
-# 方式三：从 GitHub 直接安装（无需 clone）
-pip install git+https://github.com/sunchaokun/PPT-Design-Skill.git
 ```
 
-### 更新到最新版本
+### 更新
 
 ```bash
-# editable 安装的更新（推荐）
-cd PPT-Design-Skill
-git pull
-pip install -e .   # 重新链接（依赖变化时才需要）
-
-# GitHub 直接安装的更新
-pip install --upgrade git+https://github.com/sunchaokun/PPT-Design-Skill.git
-
-# 检查当前版本
-pip show ppt-design-skill
-python -c "import ppt_pro_max; print(ppt_pro_max.__version__)"
+cd PPT-Design-Skill && git pull
 ```
+
+> `pip install -e .` 是 editable 安装，代码目录直接链接到 Python 包路径，`git pull` 后立即生效，无需重新安装。
 
 ### 在 AI 编码工具中使用
 
