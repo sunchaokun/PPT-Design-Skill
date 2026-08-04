@@ -1299,14 +1299,64 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 
 | Function | Purpose | Key Params |
 |----------|---------|------------|
-| `rect(slide, left, top, width, height, fill, line, C)` | Rectangle | fill/line: role name or hex |
-| `rrect(slide, left, top, width, height, fill, line, C)` | Rounded rectangle | Same as rect |
-| `oval(slide, left, top, width, height, fill, line, C)` | Ellipse | Same as rect |
-| `top_bar(slide, color, width, height, C)` | Top accent bar | Brand color strip; width=13.333, height=0.08 |
-| `shape_3d(slide, left, top, width, height, depth, material, extrusion_color, shape_type)` | 3D extruded shape | depth_pt, material: 'powder'/'metal' |
-| `bevel_shape(slide, left, top, width, height, top_w, top_h, material, shape_type)` | Beveled shape | Bevel edge dimensions |
-| `pattern_fill(slide, left, top, width, height, pattern_type, fg_color, bg_color, fg_alpha, shape_type)` | Pattern-filled shape | 31 pattern types available |
-| `frosted_panel(slide, left, top, width, height, tint, alpha, soft_edge)` | Frosted glass panel | Semi-transparent overlay |
+| `rect`, `rrect`, `oval` | Basic shapes | (left, top, width, height, fill, line, C) |
+| `shape(slide, shape_type, left, top, width, height, fill, line, C)` | **Any MSO_SHAPE** | shape_type: enum or string name |
+| `hexagon`, `pentagon`, `octagon`, `diamond` | Polygon shapes | (cx, cy, size, fill, line, C) |
+| `triangle`, `right_triangle`, `parallelogram`, `trapezoid` | Triangle shapes | (left, top, width, height, fill, line, C) |
+| `star5`, `star6`, `star8`, `star10`, `star12` | N-point star | (cx, cy, size, fill, line, C) |
+| `donut`, `heart`, `cross`, `moon`, `sun`, `block_arc`, `gear`, `tear` | Special shapes | (cx, cy, size, fill, line, C); gear(teeth=6/9) |
+| `arrow`, `chevron`, `cloud`, `lightning`, `funnel`, `wave` | Directional shapes | (left, top, width, height, fill, line, C) |
+| `callout(slide, ..., style='rect')` | Callout bubble | style: 'rect'/'round'/'oval'/'cloud' |
+| `flow_process/decision/data/document/connector` | Flowchart shapes | Corner or center based |
+| `top_bar`, `shape_3d`, `bevel`, `pattern_fill`, `frosted_panel` | Effects shapes | See signatures above |
+
+**`shape()` string names** — most useful for PPT design:
+
+| Category | Names (pass as string, e.g. `shape(s, 'HEXAGON', ...)`) |
+|----------|---------|
+| Polygons | HEXAGON, PENTAGON, OCTAGON, DIAMOND, DECAGON, DODECAGON, HEPTAGON |
+| Stars | STAR_4_POINT, STAR_5_POINT, STAR_6_POINT, STAR_8_POINT, STAR_10_POINT, STAR_12_POINT |
+| Arrows | RIGHT_ARROW, LEFT_ARROW, UP_ARROW, DOWN_ARROW, BENT_ARROW, CHEVRON, NOTCHED_RIGHT_ARROW, U_TURN_ARROW, CIRCULAR_ARROW, QUAD_ARROW |
+| Flowchart | FLOWCHART_PROCESS, FLOWCHART_DECISION, FLOWCHART_DATA, FLOWCHART_DOCUMENT, FLOWCHART_CONNECTOR, FLOWCHART_TERMINATOR |
+| Callouts | RECTANGULAR_CALLOUT, ROUNDED_RECTANGULAR_CALLOUT, OVAL_CALLOUT, CLOUD_CALLOUT |
+| Special | HEART, LIGHTNING_BOLT, CLOUD, MOON, SUN, CROSS, DONUT, FRAME, BEVEL, CUBE, WAVE, TEAR, FUNNEL, GEAR_6, GEAR_9, PLAQUE, FOLDED_CORNER, BLOCK_ARC, NO_SYMBOL |
+| Math | MATH_PLUS, MATH_MINUS, MATH_MULTIPLY, MATH_DIVIDE, MATH_EQUAL |
+| Ribbons | UP_RIBBON, DOWN_RIBBON, CURVED_UP_RIBBON, CURVED_DOWN_RIBBON |
+
+### Functions — Boolean Shapes
+
+Create shapes via boolean operations (subtract/union/intersect) — enables effects impossible with preset shapes. Requires `shapely` (`pip install shapely`); graceful fallback when not installed.
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `spotlight(slide, cx, cy, radius, alpha, color)` | Dark overlay with bright circular window | alpha=0-100 (default 70); hero/CTA slides |
+| `bool_donut(slide, cx, cy, outer_r, inner_r, fill, line, C)` | Donut with custom hole size/position | Off-center hole; replaces MSO_SHAPE.DONUT |
+| `bool_frame(slide, x, y, w, h, border, fill, line, C)` | Frame/border shape (outer minus inner) | border: width in inches |
+| `bool_clipped_card(slide, x, y, w, h, clip_corners, clip_size, fill, line, C)` | Card with clipped corners | clip_corners: ['tl','tr','bl','br']; clip_size: inches |
+| `bool_neon_tube(slide, x, y, w, h, wall, fill, C)` | Hollow neon tube shape | wall: thickness in inches; combine with glow |
+| `bool_star(slide, cx, cy, r, points, inner_ratio, fill, line, C)` | Custom star with adjustable inner radius | inner_ratio: 0.0-1.0; any point count |
+| `bool_cross(slide, cx, cy, w, h, bar_ratio, fill, line, C)` | Custom cross with adjustable bar thickness | bar_ratio: 0.0-1.0 |
+
+**Advanced: custom boolean combinations** — when presets aren't enough:
+
+```python
+from ppt_pro_max.renderer.boolean_shapes import *
+
+# Rectangle with circular hole
+mask = bool_subtract(poly_rect(0, 0, 6, 4), poly_circle(3, 2, 1.5))
+bool_shape(mask, slide, 1, 2, 6, 4, fill='#000000', alpha=70)
+
+# Star-shaped image crop
+star_geom = poly_star(3, 3, 2, inner_ratio=0.4, points=5)
+bool_image(star_geom, slide, 2, 2, 2, 2, 'photo.jpg')
+
+# Available primitives: poly_rect, poly_circle, poly_rounded_rect, poly_star, poly_regular, poly_points
+# Operations: bool_subtract, bool_union, bool_intersect, bool_symdiff
+# Render: bool_shape(geometry, slide, x, y, w, h, fill, line, C, alpha)
+#         bool_image(geometry, slide, x, y, w, h, image_path, border_color)
+```
+
+See **[`shapes-reference.md`](src/ppt_pro_max/docs/shapes-reference.md)** for full API and examples.
 
 ### Functions — Image Effects
 
@@ -1314,6 +1364,11 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 |----------|---------|------------|
 | `cover_image(slide, left, top, width, height, image_path)` | **Cover-fit image** (crop to fill, no stretch) | **PREFERRED** over add_picture — Pillow pre-crops to exact aspect ratio |
 | `circle_image(slide, cx, cy, radius, image_path, border_color)` | Circle-cropped image | Center x/y + radius |
+| `hex_image(slide, cx, cy, size, image_path, border_color)` | Hexagon-cropped image | Center + size |
+| `star_image(slide, cx, cy, size, image_path, points=5, border_color)` | Star-cropped image | points: 5/6/8/10/12 |
+| `diamond_image(slide, cx, cy, size, image_path, border_color)` | Diamond-cropped image | Center + size |
+| `heart_image(slide, cx, cy, size, image_path, border_color)` | Heart-cropped image | Center + size |
+| `shape_image(slide, shape_type, left, top, width, height, image_path, border_color)` | **Any shape** image crop | shape_type: MSO_SHAPE or string name |
 | `soft_edge_image(slide, left, top, width, height, image_path, soft_radius)` | Soft-edge faded image | Feathered edge effect |
 | `duotone_image(slide, left, top, width, height, image_path, color1, color2)` | Duotone image | Two-color mapping |
 | `artistic_image(slide, left, top, width, height, image_path, effect, params)` | Artistic effect image | 22 effects: watercolor_sponge, etc. |

@@ -215,6 +215,248 @@ def oval(slide, left, top, width, height, fill, line=None, C=None):
     return shape
 
 
+def shape(slide, shape_type, left, top, width, height, fill, line=None, C=None):
+    _type = shape_type
+    if isinstance(_type, str):
+        _type = getattr(MSO_SHAPE, _type.upper(), MSO_SHAPE.RECTANGLE)
+    sh = slide.shapes.add_shape(_type,
+                                Inches(left), Inches(top),
+                                Inches(width), Inches(height))
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
+    if line:
+        sh.line.color.rgb = _rgb(_resolve_color(line, C))
+        sh.line.width = Pt(1)
+    else:
+        sh.line.fill.background()
+    return sh
+
+
+def _centered_shape(slide, mso_type, cx, cy, width, height, fill, line=None, C=None):
+    sh = slide.shapes.add_shape(mso_type,
+                                Inches(cx - width / 2), Inches(cy - height / 2),
+                                Inches(width), Inches(height))
+    sh.fill.solid()
+    sh.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
+    if line:
+        sh.line.color.rgb = _rgb(_resolve_color(line, C))
+        sh.line.width = Pt(1)
+    else:
+        sh.line.fill.background()
+    return sh
+
+
+def hexagon(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.HEXAGON, cx, cy, size, size * 0.87,
+                           fill, line, C)
+
+
+def pentagon(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.REGULAR_PENTAGON, cx, cy, size, size,
+                           fill, line, C)
+
+
+def octagon(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.OCTAGON, cx, cy, size, size,
+                           fill, line, C)
+
+
+def diamond(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.DIAMOND, cx, cy, size, size,
+                           fill, line, C)
+
+
+def triangle(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.ISOSCELES_TRIANGLE, left, top, width, height,
+                 fill, line, C)
+
+
+def right_triangle(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.RIGHT_TRIANGLE, left, top, width, height,
+                 fill, line, C)
+
+
+def parallelogram(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.PARALLELOGRAM, left, top, width, height,
+                 fill, line, C)
+
+
+def trapezoid(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.TRAPEZOID, left, top, width, height,
+                 fill, line, C)
+
+
+def star5(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.STAR_5_POINT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def star6(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.STAR_6_POINT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def star8(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.STAR_8_POINT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def star10(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.STAR_10_POINT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def star12(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.STAR_12_POINT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def donut(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.DONUT, cx, cy, size, size,
+                           fill, line, C)
+
+
+def heart(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.HEART, cx, cy, size, size,
+                           fill, line, C)
+
+
+def cross(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.CROSS, cx, cy, size, size,
+                           fill, line, C)
+
+
+def arrow(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.RIGHT_ARROW, left, top, width, height,
+                 fill, line, C)
+
+
+def chevron(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.CHEVRON, left, top, width, height,
+                 fill, line, C)
+
+
+def cloud(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.CLOUD, left, top, width, height,
+                 fill, line, C)
+
+
+def lightning(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.LIGHTNING_BOLT, left, top, width, height,
+                 fill, line, C)
+
+
+def gear(slide, cx, cy, size, fill, line=None, C=None, teeth=6):
+    mso = MSO_SHAPE.GEAR_9 if teeth >= 9 else MSO_SHAPE.GEAR_6
+    return _centered_shape(slide, mso, cx, cy, size, size, fill, line, C)
+
+
+def funnel(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FUNNEL, left, top, width, height,
+                 fill, line, C)
+
+
+def moon(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.MOON, cx, cy, size, size,
+                           fill, line, C)
+
+
+def sun(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.SUN, cx, cy, size, size,
+                           fill, line, C)
+
+
+def wave(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.WAVE, left, top, width, height,
+                 fill, line, C)
+
+
+def block_arc(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.BLOCK_ARC, cx, cy, size, size,
+                           fill, line, C)
+
+
+def callout(slide, left, top, width, height, fill, line=None, C=None, style='rect'):
+    _MAP = {
+        'rect': MSO_SHAPE.RECTANGULAR_CALLOUT,
+        'round': MSO_SHAPE.ROUNDED_RECTANGULAR_CALLOUT,
+        'oval': MSO_SHAPE.OVAL_CALLOUT,
+        'cloud': MSO_SHAPE.CLOUD_CALLOUT,
+    }
+    mso = _MAP.get(style, MSO_SHAPE.RECTANGULAR_CALLOUT)
+    return shape(slide, mso, left, top, width, height, fill, line, C)
+
+
+def flow_process(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FLOWCHART_PROCESS, left, top, width, height,
+                 fill, line, C)
+
+
+def flow_decision(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.FLOWCHART_DECISION, cx, cy, size, size,
+                           fill, line, C)
+
+
+def flow_data(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FLOWCHART_DATA, left, top, width, height,
+                 fill, line, C)
+
+
+def flow_document(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FLOWCHART_DOCUMENT, left, top, width, height,
+                 fill, line, C)
+
+
+def flow_connector(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.FLOWCHART_CONNECTOR, cx, cy, size, size,
+                           fill, line, C)
+
+
+def no_symbol(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.NO_SYMBOL, cx, cy, size, size,
+                           fill, line, C)
+
+
+def plaque(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.PLAQUE, left, top, width, height,
+                 fill, line, C)
+
+
+def frame(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FRAME, left, top, width, height,
+                 fill, line, C)
+
+
+def cube(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.CUBE, left, top, width, height,
+                 fill, line, C)
+
+
+def bevel(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.BEVEL, left, top, width, height,
+                 fill, line, C)
+
+
+def folded_corner(slide, left, top, width, height, fill, line=None, C=None):
+    return shape(slide, MSO_SHAPE.FOLDED_CORNER, left, top, width, height,
+                 fill, line, C)
+
+
+def tear(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.TEAR, cx, cy, size, size,
+                           fill, line, C)
+
+
+def math_plus(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.MATH_PLUS, cx, cy, size, size,
+                           fill, line, C)
+
+
+def math_multiply(slide, cx, cy, size, fill, line=None, C=None):
+    return _centered_shape(slide, MSO_SHAPE.MATH_MULTIPLY, cx, cy, size, size,
+                           fill, line, C)
+
+
 def text(slide, left, top, width, height, txt, font_size=12,
          color='text_body', bold=False, align='left',
          font_name=None, C=None, anchor='top'):
@@ -1276,6 +1518,51 @@ def circle_image(slide, cx, cy, radius, image_path, border_color=None):
                              border_hex=border_color)
 
 
+def hex_image(slide, cx, cy, size, image_path, border_color=None):
+    x = cx - size / 2
+    y = cy - size * 0.87 / 2
+    return _add_image_in_shape(slide, MSO_SHAPE.HEXAGON, x, y, size, size * 0.87,
+                               image_path, border_hex=border_color)
+
+
+def star_image(slide, cx, cy, size, image_path, points=5, border_color=None):
+    _STAR_MAP = {
+        5: MSO_SHAPE.STAR_5_POINT,
+        6: MSO_SHAPE.STAR_6_POINT,
+        8: MSO_SHAPE.STAR_8_POINT,
+        10: MSO_SHAPE.STAR_10_POINT,
+        12: MSO_SHAPE.STAR_12_POINT,
+    }
+    mso = _STAR_MAP.get(points, MSO_SHAPE.STAR_5_POINT)
+    x = cx - size / 2
+    y = cy - size / 2
+    return _add_image_in_shape(slide, mso, x, y, size, size,
+                               image_path, border_hex=border_color)
+
+
+def diamond_image(slide, cx, cy, size, image_path, border_color=None):
+    x = cx - size / 2
+    y = cy - size / 2
+    return _add_image_in_shape(slide, MSO_SHAPE.DIAMOND, x, y, size, size,
+                               image_path, border_hex=border_color)
+
+
+def heart_image(slide, cx, cy, size, image_path, border_color=None):
+    x = cx - size / 2
+    y = cy - size / 2
+    return _add_image_in_shape(slide, MSO_SHAPE.HEART, x, y, size, size,
+                               image_path, border_hex=border_color)
+
+
+def shape_image(slide, shape_type, left, top, width, height, image_path,
+                border_color=None):
+    _type = shape_type
+    if isinstance(_type, str):
+        _type = getattr(MSO_SHAPE, _type.upper(), MSO_SHAPE.OVAL)
+    return _add_image_in_shape(slide, _type, left, top, width, height,
+                               image_path, border_hex=border_color)
+
+
 def soft_edge_image(slide, left, top, width, height, image_path,
                     soft_radius=10):
     import os as _os
@@ -1362,6 +1649,122 @@ def grid_background(slide, spacing=1.0, color='#E0E0E0', alpha=15):
 
 def ink_splash(slide, left, top, size, color='#2C2C2C', alpha=100):
     return _add_ink_splash(slide, left, top, size, color=color, alpha=alpha)
+
+
+# ── Boolean shape functions (require shapely) ──
+
+
+def _bool_import():
+    from ppt_pro_max.renderer.boolean_shapes import HAS_SHAPELY
+    return HAS_SHAPELY
+
+
+def spotlight(slide, cx, cy, radius, alpha=70, color='#000000'):
+    if not _bool_import():
+        rrect(slide, 0, 0, 13.333, 7.5, color)
+        return None
+    from ppt_pro_max.renderer.boolean_shapes import (
+        poly_rect, poly_circle, bool_subtract, bool_shape,
+    )
+    overlay = poly_rect(0, 0, 13.333, 7.5)
+    cutout = poly_circle(cx, cy, radius)
+    geom = bool_subtract(overlay, cutout)
+    return bool_shape(geom, slide, 0, 0, 13.333, 7.5,
+                      fill=color, alpha=alpha)
+
+
+def bool_donut(slide, cx, cy, outer_r, inner_r, fill='#1D78FA',
+               line=None, C=None):
+    if not _bool_import():
+        return donut(slide, cx, cy, outer_r * 2, fill, line, C)
+    from ppt_pro_max.renderer.boolean_shapes import (
+        poly_circle, bool_subtract, bool_shape,
+    )
+    outer = poly_circle(cx, cy, outer_r)
+    inner = poly_circle(cx, cy, inner_r)
+    geom = bool_subtract(outer, inner)
+    size = outer_r * 2
+    return bool_shape(geom, slide, cx - outer_r, cy - outer_r,
+                      size, size, fill=fill, line=line, C=C)
+
+
+def bool_frame(slide, x, y, w, h, border, fill=None, line=None, C=None):
+    if not _bool_import():
+        rrect(slide, x, y, w, h, fill or '#1D78FA', line, C)
+        return None
+    from ppt_pro_max.renderer.boolean_shapes import (
+        poly_rect, bool_subtract, bool_shape,
+    )
+    outer = poly_rect(x, y, w, h)
+    inner = poly_rect(x + border, y + border, w - 2 * border, h - 2 * border)
+    geom = bool_subtract(outer, inner)
+    return bool_shape(geom, slide, x, y, w, h, fill=fill or '#1D78FA',
+                      line=line, C=C)
+
+
+def bool_clipped_card(slide, x, y, w, h, clip_corners, clip_size=0.3,
+                      fill=None, line=None, C=None):
+    if not _bool_import():
+        return rrect(slide, x, y, w, h, fill or '#1D78FA', line, C)
+    from ppt_pro_max.renderer.boolean_shapes import (
+        poly_rect, bool_subtract, bool_union, bool_shape, Polygon,
+    )
+    base = poly_rect(x, y, w, h)
+    clips = []
+    if 'tl' in clip_corners:
+        clips.append(Polygon([(x, y), (x + clip_size, y), (x, y + clip_size)]))
+    if 'tr' in clip_corners:
+        clips.append(Polygon([(x + w - clip_size, y), (x + w, y), (x + w, y + clip_size)]))
+    if 'bl' in clip_corners:
+        clips.append(Polygon([(x, y + h - clip_size), (x + clip_size, y + h), (x, y + h)]))
+    if 'br' in clip_corners:
+        clips.append(Polygon([(x + w, y + h - clip_size), (x + w, y + h), (x + w - clip_size, y + h)]))
+    if not clips:
+        return rrect(slide, x, y, w, h, fill or '#1D78FA', line, C)
+    from ppt_pro_max.renderer.boolean_shapes import Polygon as _Poly, bool_union
+    all_clips = bool_union(*clips)
+    geom = bool_subtract(base, all_clips)
+    return bool_shape(geom, slide, x, y, w, h, fill=fill or '#1D78FA',
+                      line=line, C=C)
+
+
+def bool_neon_tube(slide, x, y, w, h, wall=0.06, fill=None, C=None):
+    if not _bool_import():
+        return neon_border(slide, x, y, w, h, color=fill or '#8B5CF6')
+    from ppt_pro_max.renderer.boolean_shapes import (
+        poly_rounded_rect, bool_subtract, bool_shape,
+    )
+    outer = poly_rounded_rect(x, y, w, h, wall * 2)
+    inner = poly_rounded_rect(x + wall, y + wall, w - 2 * wall, h - 2 * wall, wall)
+    geom = bool_subtract(outer, inner)
+    return bool_shape(geom, slide, x, y, w, h, fill=fill or '#8B5CF6', C=C)
+
+
+def bool_star(slide, cx, cy, r, points=5, inner_ratio=0.4, fill=None,
+              line=None, C=None):
+    if not _bool_import():
+        mso_map = {5: MSO_SHAPE.STAR_5_POINT, 6: MSO_SHAPE.STAR_6_POINT,
+                   8: MSO_SHAPE.STAR_8_POINT}
+        mso = mso_map.get(points, MSO_SHAPE.STAR_5_POINT)
+        return _centered_shape(slide, mso, cx, cy, r * 2, r * 2, fill or '#1D78FA', line, C)
+    from ppt_pro_max.renderer.boolean_shapes import poly_star, bool_shape
+    geom = poly_star(cx, cy, r, points=points, inner_ratio=inner_ratio)
+    return bool_shape(geom, slide, cx - r, cy - r, r * 2, r * 2,
+                      fill=fill or '#1D78FA', line=line, C=C)
+
+
+def bool_cross(slide, cx, cy, w, h, bar_ratio=0.33, fill=None,
+               line=None, C=None):
+    if not _bool_import():
+        return cross(slide, cx, cy, max(w, h), fill or '#1D78FA', line, C)
+    from ppt_pro_max.renderer.boolean_shapes import poly_rect, bool_union, bool_shape
+    bar_w = w * bar_ratio
+    bar_h = h * bar_ratio
+    v_bar = poly_rect(cx - bar_w / 2, cy - h / 2, bar_w, h)
+    h_bar = poly_rect(cx - w / 2, cy - bar_h / 2, w, bar_h)
+    geom = bool_union(v_bar, h_bar)
+    return bool_shape(geom, slide, cx - w / 2, cy - h / 2, w, h,
+                      fill=fill or '#1D78FA', line=line, C=C)
 
 
 def slide_transition(slide, transition_type='fade', speed='medium',
