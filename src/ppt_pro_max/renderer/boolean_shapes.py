@@ -124,7 +124,7 @@ def bool_intersect(a, b):
 def bool_symdiff(a, b):
     if not HAS_SHAPELY or a is None or b is None:
         return None
-    return a.symmetric_difference(a)
+    return a.symmetric_difference(b)
 
 
 def _polygon_to_path_cmds(poly, scale: float = 1.0):
@@ -255,7 +255,7 @@ def bool_shape(geometry, slide, x, y, w, h, fill=None, line=None, C=None,
                alpha=None):
     if geometry is None:
         return None
-    from ppt_pro_max.build_helpers import _resolve_color, _rgb
+    from ppt_pro_max.build_helpers import _resolve_color
     fill_hex = _resolve_color(fill, C) if fill else '#4472C4'
     line_hex = _resolve_color(line, C) if line else None
     return _boolean_to_slide(slide, geometry, x, y, w, h,
@@ -266,7 +266,32 @@ def bool_shape(geometry, slide, x, y, w, h, fill=None, line=None, C=None,
 def bool_image(geometry, slide, x, y, w, h, image_path, border_color=None):
     if geometry is None:
         return None
-    from ppt_pro_max.renderer.blip_fill import add_image_in_shape
-    from pptx.enum.shapes import MSO_SHAPE
-    return add_image_in_shape(slide, MSO_SHAPE.OVAL, x, y, w, h,
-                               image_path, border_hex=border_color)
+    paths = _multipolygon_to_paths(geometry, scale=1.0)
+    if not paths:
+        return None
+    sp = _build_custGeom_shape(slide, paths, x, y, w, h,
+                               fill_color="#FFFFFF", line_color=border_color)
+    if sp is None:
+        return None
+    from ppt_pro_max.renderer.blip_fill import fill_shape_with_image
+    spPr = sp.find(qn("p:spPr"))
+    solidFill = spPr.find(qn("a:solidFill"))
+    if solidFill is not None:
+        spPr.remove(solidFill)
+    class _ShapeProxy:
+        def __init__(self, element, slide_ref):
+            self._element = element
+            self._slide = slide_ref
+    proxy = _ShapeProxy(sp, slide)
+    rId = fill_shape_with_image(proxy, slide, image_path)
+    if rId is None:
+        return sp
+    if border_color:
+        ln = spPr.find(qn("a:ln"))
+        if ln is not None:
+            spPr.remove(ln)
+        ln = etree.SubElement(spPr, qn("a:ln"))
+        ln.set("w", "12700")
+        sf = etree.SubElement(ln, qn("a:solidFill"))
+        etree.SubElement(sf, qn("a:srgbClr")).set("val", border_color.lstrip("#"))
+    return sp
