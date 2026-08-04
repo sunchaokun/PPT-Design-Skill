@@ -387,6 +387,12 @@ def _render_freestyle_with_components(
         dark_mode=effective_theme.get("dark_mode", False),
     )
 
+    image_fetcher = None
+    if image_mode and image_mode != "placeholder":
+        from ppt_pro_max.renderer.image_fetcher import ImageFetcher
+        cfg = dict(image_config or {})
+        image_fetcher = ImageFetcher(mode=image_mode, **cfg)
+
     page_dicts = []
     for design, content in zip(page_designs, page_contents):
         page = {
@@ -404,6 +410,20 @@ def _render_freestyle_with_components(
             if comp_type:
                 page["component_type"] = comp_type
                 page["component_category"] = comp_cat
+        if image_fetcher and not page.get("image"):
+            keywords = content.image_keywords or content.goal or ""
+            if keywords:
+                try:
+                    fetched = image_fetcher.fetch(
+                        keywords=keywords,
+                        goal=design.goal,
+                        width=1920,
+                        height=1080,
+                    )
+                    if fetched and os.path.isfile(fetched):
+                        page["image"] = fetched
+                except Exception:
+                    pass
         page_dicts.append(page)
 
     precision = PrecisionRenderer(brand_spec=brand_spec)

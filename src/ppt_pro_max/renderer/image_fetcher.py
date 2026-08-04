@@ -290,7 +290,6 @@ class ImageFetcher:
                 "model": model,
                 "prompt": prompt,
                 "size": img_size,
-                "output_format": "png",
                 "response_format": "url",
                 "watermark": False,
             }).encode("utf-8")
@@ -574,7 +573,7 @@ class ImageFetcher:
             req = urllib.request.Request(url, headers={
                 "User-Agent": "PPT-Design-Skill/0.7.0",
             })
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 image_data = resp.read()
 
             if len(image_data) < 1000:
@@ -611,8 +610,8 @@ class ImageFetcher:
                 "env_key": "ARK_API_KEY",
                 "env_base_url": "ARK_BASE_URL",
                 "env_model": "ARK_IMAGE_MODEL",
-                "default_model": "doubao-seedream-5-0-260128",
-                "models": "doubao-seedream-5-0-260128, doubao-seedream-5-0-pro-260628, doubao-seedream-4-5-251128",
+                "default_model": "doubao-seedream-4-5-251128",
+                "models": "doubao-seedream-4-5-251128, doubao-seedream-5-0-260128, doubao-seedream-5-0-pro-260628",
                 "base_url": "https://ark.cn-beijing.volces.com/api/v3",
             },
             "gpt-image": {
