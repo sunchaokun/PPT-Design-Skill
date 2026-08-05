@@ -67,29 +67,37 @@
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 一键安装 — 自动检测平台 + 安装 skill + 依赖
+# 一键安装 — 自动检测平台 + 安装 skill + pip 注册 Python 包 + 依赖
 python install.py                     # 自动检测
 python install.py --platform opencode # 指定平台
 ```
+
+安装后 `ppt_pro_max` 注册为全局 Python 包，任何项目下可直接 `from ppt_pro_max.build_helpers import *`。
 
 支持 13 个平台：OpenCode · Claude Code · Codex · Cursor · Windsurf · Roo Code · Gemini · Trae · Continue · Droid · KiloCode · Augment · Copilot
 
 ### 作为 Python 包使用
 
 ```bash
-# 安装（editable 模式，git pull 即更新）
-git clone https://github.com/sunchaokun/PPT-Design-Skill.git
-cd PPT-Design-Skill
-pip install -e .
+pip install git+https://github.com/sunchaokun/PPT-Design-Skill.git
+```
+
+安装后即可在任何项目直接 import：
+
+```python
+from ppt_pro_max.build_helpers import *
+from ppt_pro_max import generate_ppt
 ```
 
 ### 更新
 
 ```bash
-cd PPT-Design-Skill && git pull
-```
+# Skill 安装方式
+cd PPT-Design-Skill && git pull && python install.py --force
 
-> `pip install -e .` 是 editable 安装，代码目录直接链接到 Python 包路径，`git pull` 后立即生效，无需重新安装。
+# pip 安装方式
+pip install --force-reinstall git+https://github.com/sunchaokun/PPT-Design-Skill.git
+```
 
 ### 在 AI 编码工具中使用
 

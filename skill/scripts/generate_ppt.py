@@ -11,10 +11,13 @@ Usage:
 import sys
 import os
 
-pkg_src = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "src")
-pkg_src = os.path.normpath(pkg_src)
-if os.path.isdir(pkg_src):
-    sys.path.insert(0, pkg_src)
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+for _rel in [os.path.join(_script_dir, "..", "src"),
+             os.path.join(_script_dir, "..", "..", "..", "..", "src")]:
+    _candidate = os.path.normpath(_rel)
+    if os.path.isdir(_candidate):
+        sys.path.insert(0, _candidate)
+        break
 
 from ppt_pro_max import generate_ppt
 

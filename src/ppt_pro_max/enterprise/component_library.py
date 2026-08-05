@@ -195,9 +195,7 @@ class ComponentLibrary:
         if not comp_type or not category:
             return None
 
-        results = self.search(type=comp_type, category=category, node_count=node_count, limit=50)
-        if not results:
-            results = self.search(type=comp_type, category=category, limit=50)
+        results = self.search(type=comp_type, category=category, limit=50)
 
         if not results:
             return None
@@ -217,13 +215,23 @@ class ComponentLibrary:
         pn = "http://schemas.openxmlformats.org/presentationml/2006/main"
         an = "http://schemas.openxmlformats.org/drawingml/2006/main"
 
+        dummy_texts = [f"Text{i+1}" for i in range(max(node_count, 4))]
+
         scored_list: list[tuple[float, dict]] = []
         for cand in candidates:
             xp = self.load_xml(cand["id"])
             if not xp or "group" not in xp:
                 scored_list.append((0.0, cand))
                 continue
-            grp = xp["group"]
+
+            try:
+                from ppt_pro_max.enterprise.component_renderer import ComponentRenderer
+                renderer = ComponentRenderer()
+                filled = renderer._fill_group_data(xp, dummy_texts)
+                grp = filled.get("group", xp["group"])
+            except Exception:
+                grp = xp["group"]
+
             if isinstance(grp, bytes):
                 grp = grp.decode("utf-8")
             try:
@@ -234,7 +242,7 @@ class ComponentLibrary:
 
             total_sps = 0
             sps_with_text = 0
-            for sp in root.findall(f"{{{pn}}}sp"):
+            for sp in root.iter(f"{{{pn}}}sp"):
                 total_sps += 1
                 ptxb = sp.find(f"{{{pn}}}txBody")
                 if ptxb is not None:
@@ -249,7 +257,7 @@ class ComponentLibrary:
                 text_coverage = 0.0
 
             cxn_count = len(root.findall(f"{{{pn}}}cxnSp"))
-            richness = (total_sps + cxn_count * 0.5) / 20.0
+            richness = min((total_sps + cxn_count * 0.5) / 20.0, 1.0)
 
             aspect_score = 0.0
             if target_aspect > 0:
@@ -266,10 +274,28 @@ class ComponentLibrary:
                                 aspect_ratio = min(comp_aspect, target_aspect) / max(comp_aspect, target_aspect)
                                 aspect_score = aspect_ratio
 
+            filled_font_sizes: set[int] = set()
+            for r in root.iter(f"{{{an}}}r"):
+                t = r.find(f"{{{an}}}t")
+                rPr = r.find(f"{{{an}}}rPr")
+                if t is not None and t.text and t.text.strip():
+                    if rPr is not None:
+                        sz = rPr.get("sz")
+                        if sz:
+                            filled_font_sizes.add(int(sz))
+            font_hierarchy = min(len(filled_font_sizes), 4) / 4.0 if filled_font_sizes else 0.0
+
             min_shapes = max(3, node_count)
             shape_penalty = max(0, min_shapes - total_sps) / min_shapes if min_shapes > 0 else 0
 
-            score = richness * 0.3 + text_coverage * 0.1 + aspect_score * 0.5 - shape_penalty * 0.3
+            slot_match = 0.0
+            if node_count > 0 and sps_with_text > 0:
+                if sps_with_text <= node_count:
+                    slot_match = sps_with_text / node_count
+                else:
+                    slot_match = node_count / sps_with_text
+
+            score = richness * 0.1 + text_coverage * 0.1 + aspect_score * 0.2 + font_hierarchy * 0.2 + slot_match * 0.3 - shape_penalty * 0.2
 
             scored_list.append((score, cand))
 
