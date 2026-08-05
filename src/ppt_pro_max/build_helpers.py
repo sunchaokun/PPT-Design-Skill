@@ -20,6 +20,7 @@ from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
+from pptx import Presentation as _Presentation
 
 from ppt_pro_max.renderer.text_effects import (
     apply_text_gradient, apply_text_gradient_preset, set_vertical_text,
@@ -1793,3 +1794,128 @@ def emphasis_animation(slide, shape_id, effect='pulse', delay_ms=0,
     add_emphasis_animation(slide, shape_id, effect=effect, delay_ms=delay_ms,
                            duration_ms=duration_ms,
                            click_triggered=click_triggered)
+
+
+def text_outline(slide, left, top, width, height, txt,
+                 color='#FFFFFF', width_pt=1.5,
+                 font_size=44, bold=False, font_name=None, C=None,
+                 align='left'):
+    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                      Inches(width), Inches(height))
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                   'right': PP_ALIGN.RIGHT}[align]
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    cjk_font = (C or {}).get('font_cjk') or (C or {}).get('font_body')
+    if cjk_font:
+        _set_cjk_font(run, cjk_font)
+    apply_text_outline(run, color=color, width_pt=width_pt)
+    return txBox
+
+
+def text_shadow(slide, left, top, width, height, txt,
+                blur_pt=8, distance_pt=3, direction_deg=90,
+                color='#000000', alpha_pct=25,
+                font_size=44, bold=False, font_name=None, C=None,
+                align='left'):
+    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                      Inches(width), Inches(height))
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                   'right': PP_ALIGN.RIGHT}[align]
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    cjk_font = (C or {}).get('font_cjk') or (C or {}).get('font_body')
+    if cjk_font:
+        _set_cjk_font(run, cjk_font)
+    from ppt_pro_max.renderer.visual_effects import apply_shadow as _apply_shadow
+    _apply_shadow(txBox, blur_pt=blur_pt, distance_pt=distance_pt,
+                  direction_deg=direction_deg, color=color, alpha_pct=alpha_pct)
+    return txBox
+
+
+def text_glow(slide, left, top, width, height, txt,
+              color='#00FFFF', size_pt=8, alpha_pct=40,
+              font_size=44, bold=False, font_name=None, C=None,
+              align='left'):
+    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                      Inches(width), Inches(height))
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                   'right': PP_ALIGN.RIGHT}[align]
+    run = p.add_run()
+    run.text = txt
+    run.font.size = Pt(font_size)
+    run.font.bold = bold
+    if font_name:
+        run.font.name = font_name
+    cjk_font = (C or {}).get('font_cjk') or (C or {}).get('font_body')
+    if cjk_font:
+        _set_cjk_font(run, cjk_font)
+    from ppt_pro_max.renderer.visual_effects import apply_glow as _apply_glow
+    _apply_glow(txBox, radius_pt=size_pt, color=color, alpha_pct=alpha_pct)
+    return txBox
+
+
+def add_shadow(shape, blur_pt=8, distance_pt=3, direction_deg=90,
+               color='#000000', alpha_pct=25):
+    from ppt_pro_max.renderer.visual_effects import apply_shadow as _apply_shadow
+    _apply_shadow(shape, blur_pt=blur_pt, distance_pt=distance_pt,
+                  direction_deg=direction_deg, color=color, alpha_pct=alpha_pct)
+
+
+def add_glow(shape, color='#00FFFF', size_pt=8, alpha_pct=40):
+    from ppt_pro_max.renderer.visual_effects import apply_glow as _apply_glow
+    _apply_glow(shape, radius_pt=size_pt, color=color, alpha_pct=alpha_pct)
+
+
+def adjust_image(shape, brightness=0, contrast=0, saturation=100):
+    from ppt_pro_max.renderer.blip_fill import (
+        apply_blip_brightness_contrast, apply_blip_saturation,
+    )
+    if brightness != 0 or contrast != 0:
+        apply_blip_brightness_contrast(shape, bright_pct=brightness,
+                                       contrast_pct=contrast)
+    if saturation != 100:
+        apply_blip_saturation(shape, saturation_pct=saturation)
+
+
+def query_components(component_type=None, category=None,
+                     node_count=None, limit=10):
+    from ppt_pro_max import query_component_library
+    db_type, db_category = None, category
+    if component_type:
+        if component_type == 'smartart':
+            db_type, db_category = 'smartart', category
+        else:
+            db_type = 'group'
+            db_category = component_type if category is None else category
+    results = query_component_library(
+        type=db_type, category=db_category, node_count=node_count,
+    )
+    if isinstance(results, list) and limit is not None:
+        return results[:limit]
+    return results
+
+
+def analyze_pptx(pptx_path):
+    from ppt_pro_max import extract_design_dna
+    return extract_design_dna(pptx_path)
+
+
+Presentation = _Presentation

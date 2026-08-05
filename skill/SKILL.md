@@ -12,20 +12,109 @@ metadata:
 
 # PPT Design Skill
 
-**⚠️ READ BEFORE coding: [`src/ppt_pro_max/docs/python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — 170+ shape types, 73 chart types, tables, connectors, freeform, hyperlinks, media, effects, 3D, OOXML. python-pptx has far more capabilities than rect/oval/textbox.
+## ⛔ STOP — Read This Before Writing ANY Code
 
-AI-powered PPT generation — three-mode engine (Build default + VI Build + FreeStyle quick draft), 40,000+ style combos, 10 diagram types, brand compliance, version control, fully editable .pptx.
+**You MUST use `build_helpers` for ALL slide operations. Raw python-pptx is FORBIDDEN in build.py.**
+
+Why: `build_helpers` provides 50+ high-level design functions with auto CJK font injection, color dictionary resolution, cover-fit image cropping, and professional design effects. Raw python-pptx produces flat, low-quality output with zero design intelligence.
+
+### ❌ FORBIDDEN (violations produce detectable AI Tells):
+
+| Forbidden Pattern | Why It's Forbidden | Use Instead |
+|---|---|---|
+| `slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, ...)` | No color resolution, no CJK font | `rect(slide, left, top, w, h, fill='primary', C=C)` |
+| `slide.shapes.add_shape(MSO_SHAPE.OVAL, ...)` | Only 1 shape type when 50+ available | `oval()` / `hexagon()` / `star5()` / `shape(s, 'HEXAGON', ...)` |
+| `shape.fill.solid(); shape.fill.fore_color.rgb = RGBColor(...)` | Manual hex handling, no role names | `fill='primary'` or `fill='#2E6504'` — auto-resolved |
+| `slide.shapes.add_textbox(...)` | No CJK font, no design effects | `text(slide, ..., color='text_body', C=C)` |
+| `slide.shapes.add_picture(path, ...)` | Stretches images, distorts aspect ratio | `cover_image(slide, ...)` — Pillow pre-crops |
+| `run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)` | Manual color, no contrast check | `color='white'` or `contrast_text(bg)` — auto contrast |
+| Writing raw OOXML for shadows/glows/3D | Error-prone, inconsistent | `add_shadow(shape, ...)` / `add_glow(shape, ...)` / `shape_3d(...)` |
+
+**Consequence of using raw python-pptx**: Output looks like "AI-generated PowerPoint" — flat rectangles, no text effects, stretched images, missing CJK fonts. This is the #1 AI Tell in PPT design.
+
+### ✅ Correct build.py Template:
+
+```python
+from ppt_pro_max.build_helpers import *   # ← ONLY import you need
+
+C = {'primary': '#2E6504', 'accent': '#7DA92F', 'muted': '#81C784',
+     'light': '#C8E6C9', 'white': '#FFFFFF', 'background': '#FFFFFF',
+     'card_bg': '#F9F9F9', 'text_dark': '#1A1A1A', 'text_body': '#333333',
+     'text_muted': '#666666', 'divider': '#CCCCCC',
+     'font_heading': '微软雅黑', 'font_body': '微软雅黑', 'font_cjk': '微软雅黑'}
+
+t = TYPOGRAPHY['mckinsey']    # or 'cyberpunk'/'creative'/'minimal'/'cjk_mckinsey'
+sp = SPACING['mckinsey']      # or 'cyberpunk'/'creative'/'minimal'
+
+prs = Presentation()
+s = add_slide(prs)
+hero_slide(s, 'Title', 'Subtitle', C, typo=t)     # ← NOT raw python-pptx
+# ... use build_helpers functions for everything
+prs.save('output.pptx')
+```
+
+### 📖 Function Quick-Find (by scenario):
+
+| I want to... | Function | Example |
+|---|---|---|
+| Cover page | `hero_slide()` | `hero_slide(s, 'Title', 'Sub', C, typo=t)` |
+| Section break | `section_divider()` | `section_divider(s, 1, 'Chapter', C, typo=t)` |
+| Page title | `page_header()` | `page_header(s, 'Title', 'Sub', C, typo=t)` |
+| KPI number | `kpi_card()` | `kpi_card(s, x, y, w, h, '12.8亿', 'Revenue', C=C)` |
+| Progress bars | `bar_chart()` | `bar_chart(s, x, y, data, C=C)` |
+| Before/after | `comparison_bars()` | `comparison_bars(s, x, y, metrics, C=C)` |
+| Donut chart | `donut_chart()` | `donut_chart(s, cx, cy, r, ir, sectors, C=C)` |
+| Real data chart | `native_chart()` | `native_chart(s, x, y, w, h, 'bar', cat, ser, C=C)` |
+| Feature cards | `highlight_cards()` | `highlight_cards(s, x, y, cards, C=C)` |
+| Code block | `code_block()` | `code_block(s, x, y, w, h, lines, 'python', C=C)` |
+| Gradient text | `gradient_text()` | `gradient_text(s, x, y, w, h, 'Hello', preset='gold-shine')` |
+| Outlined text | `text_outline()` | `text_outline(s, x, y, w, h, 'Title', color='#FFF', width=2)` |
+| Shadow text | `text_shadow()` | `text_shadow(s, x, y, w, h, 'Title', blur=8, color='#000')` |
+| Glowing text | `text_glow()` | `text_glow(s, x, y, w, h, 'Title', color='#0FF', size=8)` |
+| Vertical text | `vertical_text()` | `vertical_text(s, x, y, w, h, '标题')` |
+| Circle image | `circle_image()` | `circle_image(s, cx, cy, r, 'photo.jpg')` |
+| Hex image | `hex_image()` | `hex_image(s, cx, cy, size, 'photo.jpg')` |
+| Star image | `star_image()` | `star_image(s, cx, cy, size, 'photo.jpg', points=5)` |
+| Cover-fit image | `cover_image()` | `cover_image(s, x, y, w, h, 'photo.jpg')` |
+| Neon border | `neon_border()` | `neon_border(s, x, y, w, h, color='#8B5CF6')` |
+| Glass panel | `glass_panel()` | `glass_panel(s, x, y, w, h, tint='#FFF', alpha=50)` |
+| Frosted glass | `frosted_panel()` | `frosted_panel(s, x, y, w, h, tint='#FFF', alpha=50)` |
+| Pattern fill | `pattern_fill()` | `pattern_fill(s, x, y, w, h, 'crosshatch', fg, bg)` |
+| 3D shape | `shape_3d()` | `shape_3d(s, x, y, w, h, depth=10)` |
+| Spotlight overlay | `spotlight()` | `spotlight(s, cx, cy, radius=2, alpha=70)` |
+| Shadow on shape | `add_shadow()` | `sh = rect(s,...); add_shadow(sh, blur=8, distance=3)` |
+| Glow on shape | `add_glow()` | `sh = rrect(s,...); add_glow(sh, color='#0FF', size=8)` |
+| Brush divider | `brush_divider()` | `brush_divider(s, x, y, width, color='#2C2C2C')` |
+| Seal stamp | `seal_stamp()` | `seal_stamp(s, x, y, size, '印章文字')` |
+| Ink splash | `ink_splash()` | `ink_splash(s, x, y, size, color='#2C2C2C')` |
+| Grid background | `grid_background()` | `grid_background(s, spacing=1.0, color='#E0E0E0')` |
+| Adjust image | `adjust_image()` | `img = cover_image(s,...); adjust_image(img, brightness=20)` |
+| Query templates | `query_components()` | `query_components(component_type='infographic', node_count=5)` |
+| Analyze PPT | `analyze_pptx()` | `dna = analyze_pptx('template.pptx')` |
+| Slide transition | `slide_transition()` | `slide_transition(s, 'fade')` |
+| Entrance anim | `entrance_animation()` | `entrance_animation(s, shape_id, 'fade_in')` |
+| Exit anim | `exit_animation()` | `exit_animation(s, shape_id, 'fade_out')` |
+| Emphasis anim | `emphasis_animation()` | `emphasis_animation(s, shape_id, 'pulse')` |
+| Contrast check | `check_contrast()` | `check_contrast('#FFF', '#000')` |
+| Auto text color | `contrast_text()` | `contrast_text('#1B5E20')` → '#FFFFFF' |
+
+### 📚 Reference Files (load order):
+
+1. **This SKILL.md** — read workflow + constraints first
+2. **[`docs/build_helpers_api.md`](docs/build_helpers_api.md)** — complete function signatures + parameter enums
+3. **[`python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — for UNDERSTANDING python-pptx capabilities only, NOT for direct use in build.py
 
 ## ⚠️ Non-Negotiable Sections (DO NOT compress or remove)
 
 These sections are the LLM's only reference for writing correct output:
-1. **content.json Format** — LLM must know the exact schema to write valid content
-2. **brand.json Format** — LLM must know brand spec structure for VI Build mode
-3. **Build Helpers API** — LLM must know function signatures to write build.py
-4. **UX Intelligence API** — LLM must know how to query ui-ux-pro-max for design decisions
-5. **Content Design Rules** — LLM must know which content patterns trigger which rendering
-6. **Key Constraints** — LLM must know API signatures to write correct python-pptx code
-7. **generate_ppt() signature** — LLM must know valid parameters to call the pipeline
+1. **⛔ STOP block above** — FORBIDDEN patterns and Quick-Find table
+2. **content.json Format** — LLM must know the exact schema to write valid content
+3. **brand.json Format** — LLM must know brand spec structure for VI Build mode
+4. **Build Helpers API** — LLM must know function signatures to write build.py
+5. **UX Intelligence API** — LLM must know how to query ui-ux-pro-max for design decisions
+6. **Content Design Rules** — LLM must know which content patterns trigger which rendering
+7. **Key Constraints** — LLM must know API gotchas and OOXML details
+8. **generate_ppt() signature** — LLM must know valid parameters to call the pipeline
 
 ## Execution Workflow
 
@@ -70,6 +159,18 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 ### Step 2: Visual Proposals (3 structurally-different build.py) — MANDATORY
 
 **⚠️ ALWAYS generate 3 structurally-different build.py proposals. NEVER use FreeStyle `generate_ppt()` × 3 with different `--style` as proposals — that only swaps palette/font and produces identical layouts, which is garbage.**
+
+#### ⛔ Pre-Flight: Read Build Helpers API (MANDATORY before writing build.py)
+
+**Do NOT write any build.py code until you have confirmed the following checklist.** This is the #1 cause of low-quality output: LLMs skip reading the API and use raw python-pptx instead.
+
+**Pre-flight checklist** (confirm each before proceeding):
+- [ ] I have read the "Build Helpers API" section and know the available functions
+- [ ] I have identified which functions I need for each page (use the Quick-Find table above)
+- [ ] I will NOT use `slide.shapes.add_shape()`, `slide.shapes.add_textbox()`, or `slide.shapes.add_picture()` — these are FORBIDDEN
+- [ ] I will use `cover_image()` for all images (never `add_picture()` with stretch)
+- [ ] I will use color role names (`'primary'`, `'accent'`) instead of raw hex in function calls
+- [ ] For CJK content, I will use `TYPOGRAPHY['cjk_mckinsey']` or `cjk_professional` (body=14-15pt, not 11-12pt)
 
 Each proposal must have a **completely different page structure, layout strategy, and visual language** — not just a palette/font swap. The 3 proposals must be structurally distinct so the user can compare different architectural approaches.
 
@@ -529,6 +630,23 @@ Match user topic/keywords to the paradigm with the most keyword hits. If ambiguo
 | **Animation** | NONE | Any animation |
 
 ## Design Constraints
+
+### Quantified Design Constraints (violations = detectable AI Tells)
+
+| Constraint | Threshold | Violation Consequence |
+|---|---|---|
+| Min font size | ≥ 11pt (CJK: ≥ 14pt) | Unreadable on projection → #2 AI Tell |
+| Font-size levels per deck | ≥ 4 (hero/h1/h2/body) | 2-level deck = "AI didn't care about typography" |
+| Max font families | ≤ 2 (heading + body) | 3+ fonts = "AI threw everything at the wall" |
+| Accent colors | ≤ 1 per deck | Multi-accent = "AI can't commit to a palette" |
+| Corner radius system | 1 per deck (0pt / 8-12pt / pill) | Mixed radii = "AI has no design system" |
+| Slides ≥ 8 pages | ≥ 4 distinct layout structures | Same layout × 8 = "AI copy-pasted" |
+| Cover title | ≤ 2 lines, 44-52pt | 3+ lines = "AI couldn't summarize" |
+| Bullets per page | ≤ 5: single col; 6-9: two col; 10+: cards/grid | 10+ bullets in list = "AI dumped text" |
+| Images | ALWAYS `cover_image()`, NEVER `add_picture()` stretch | Stretched image = "AI doesn't understand aspect ratio" |
+| CJK body text | 14-15pt (NOT 11-12pt Latin presets) | 11pt CJK = "AI used Latin defaults, characters unreadable" |
+| Dark theme text | ≥ 60% luminance above background | Low contrast = "AI can't see its own output" |
+| Shapes per slide | ≤ 50 | 50+ = performance issues on older hardware |
 
 ### Typography
 - Cover title: 44-52pt, ≤2 lines | Inner title: 32-36pt | Body: 14-16pt | Bullets: 13-14pt | Caption: 11-12pt
@@ -1071,6 +1189,68 @@ color_c = search_color("vibrant neon", 1)    # Different color query
 
 LLM writes `build.py` scripts using these functions. Import: `from ppt_pro_max.build_helpers import *`
 
+### Which function should I use? — Decision Trees
+
+#### Data Visualization Decision Tree:
+
+```
+Need to show data?
+├─ Standard chart with axes/gridlines/legend?
+│  ├─ Bar/Line/Pie/Area/Scatter → native_chart()
+│  └─ Radar/Bubble/Stock → native_chart()
+├─ Custom visual (no axes, brand-styled)?
+│  ├─ Horizontal progress bars → bar_chart()
+│  ├─ Before/after comparison → comparison_bars()
+│  ├─ Donut with center KPI → donut_chart(native=False)
+│  └─ Donut with multiple sectors → donut_chart(native=True)
+├─ Single metric highlight?
+│  └─ kpi_card()
+└─ Multiple metrics in a row?
+   └─ highlight_cards()
+```
+
+#### Text Effect Decision Tree:
+
+```
+Need text styling beyond plain?
+├─ Gradient fill → gradient_text(preset='gold-shine')
+├─ Outline/stroke → text_outline(color='#FFF', width=2)
+├─ Drop shadow → text_shadow(blur=8, distance=3)
+├─ Neon glow → text_glow(color='#0FF', size=8)
+├─ Vertical (CJK) → vertical_text(direction='ea')
+└─ Code with syntax badge → code_block(language='python')
+```
+
+#### Image Decision Tree:
+
+```
+Need to add an image?
+├─ Full rectangle (cover-fit, NO stretch) → cover_image()
+├─ Circle crop → circle_image()
+├─ Hexagon crop → hex_image()
+├─ Star crop → star_image(points=5)
+├─ Diamond crop → diamond_image()
+├─ Heart crop → heart_image()
+├─ Any MSO_SHAPE crop → shape_image(shape_type='HEXAGON', ...)
+├─ Soft edge fade → soft_edge_image()
+├─ Duotone effect → duotone_image()
+├─ Artistic effect → artistic_image(effect='watercolor_sponge')
+└─ Need to adjust after placing? → adjust_image(shape, brightness=20)
+```
+
+#### Shape Effect Decision Tree:
+
+```
+Need to enhance a shape?
+├─ Shadow → add_shadow(shape, blur=8, distance=3)
+├─ Glow → add_glow(shape, color='#0FF', size=8)
+├─ 3D extrusion → shape_3d(depth=10)
+├─ Bevel → bevel_shape()
+├─ Pattern fill → pattern_fill(pattern_type='crosshatch', ...)
+├─ Frosted glass → frosted_panel(tint='#FFF', alpha=50)
+└─ Spotlight overlay → spotlight(cx, cy, radius, alpha=70)
+```
+
 ### Color Dictionary (C)
 
 ```python
@@ -1294,6 +1474,11 @@ pinyin_hanzi_block(slide, left, top, size, items, gap=0.3, grid_type='mizi', ...
 | `gradient_text(slide, left, top, width, height, txt, preset, stops, font_size, bold, font_name, align)` | Gradient-filled text | preset: 'gold-shine', etc.; or custom stops |
 | `vertical_text(slide, left, top, width, height, txt, direction, font_name, font_size, color, bold, align)` | Vertical text | direction: 'ea' (east-asian); defaults: STKaiti 24pt |
 | `code_block(slide, left, top, width, height, lines, language, C, typo)` | Code block with language badge | lines: list of code strings; dark bg #1E1E1E; grouped=True |
+| `text_outline(slide, left, top, width, height, txt, color, width_pt, font_size, bold, font_name, C, align)` | **Outlined text** | color: outline color; width_pt: thickness; great for dark backgrounds |
+| `text_shadow(slide, left, top, width, height, txt, blur_pt, distance_pt, direction_deg, color, alpha_pct, font_size, bold, font_name, C, align)` | **Shadowed text** | blur_pt: shadow blur; distance_pt: offset; adds depth to titles |
+| `text_glow(slide, left, top, width, height, txt, color, size_pt, alpha_pct, font_size, bold, font_name, C, align)` | **Glowing text** | color: glow color; size_pt: glow radius; cyberpunk/neon style |
+
+**Gradient presets**: `gold-shine`, `blue-deep`, `purple-neon`, `ink-wash`, `cyber-cyan`, `sunset`, `emerald`, `rose-gold`, `seal-red`, `steel`
 
 ### Functions — Shapes
 
@@ -1372,6 +1557,50 @@ See **[`shapes-reference.md`](src/ppt_pro_max/docs/shapes-reference.md)** for fu
 | `soft_edge_image(slide, left, top, width, height, image_path, soft_radius)` | Soft-edge faded image | Feathered edge effect |
 | `duotone_image(slide, left, top, width, height, image_path, color1, color2)` | Duotone image | Two-color mapping |
 | `artistic_image(slide, left, top, width, height, image_path, effect, params)` | Artistic effect image | 22 effects: watercolor_sponge, etc. |
+| `adjust_image(shape, brightness, contrast, saturation)` | **Adjust image brightness/contrast/saturation** | brightness/contrast: -100 to 100; saturation: 0-200 (100=normal) |
+
+### Functions — Shape Effects
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `add_shadow(shape, blur_pt, distance_pt, direction_deg, color, alpha_pct)` | **Add shadow to any shape** | blur_pt=8, distance_pt=3, direction_deg=90, color='#000000', alpha_pct=25 |
+| `add_glow(shape, color, size_pt, alpha_pct)` | **Add glow to any shape** | color='#00FFFF', size_pt=8, alpha_pct=40; cyberpunk/neon style |
+| `shape_3d(slide, left, top, width, height, depth, material, extrusion_color, shape_type)` | 3D extrusion | depth=10, material='powder'; applies 3D to any shape |
+| `bevel_shape(slide, left, top, width, height, top_w, top_h, material, shape_type)` | Bevel effect | top_w=4, top_h=2; bevel on any shape |
+| `pattern_fill(slide, left, top, width, height, pattern_type, fg_color, bg_color, fg_alpha, shape_type)` | Pattern fill | 31 pattern types; see Pattern Types below |
+| `frosted_panel(slide, left, top, width, height, tint, alpha, soft_edge)` | Frosted glass | tint='#FFFFFF', alpha=50, soft_edge=8 |
+
+**Pattern types** (31): `cross`, `dark_downward_diagonal`, `dark_upward_diagonal`, `dark_horizontal`, `dark_vertical`, `small_checker`, `trellis`, `light_horizontal`, `light_vertical`, `light_downward_diagonal`, `light_upward_diagonal`, `narrow_horizontal`, `narrow_vertical`, `dashed_downward_diagonal`, `dashed_upward_diagonal`, `dashed_horizontal`, `dashed_vertical`, `small_confetti`, `large_confetti`, `zigzag`, `wave`, `diagonal_brick`, `horizontal_brick`, `weave`, `plaid`, `divot`, `dotted_grid`, `dotted_diamond`, `shingle`, `large_checker`, `large_grid`, `small_grid`, `solid_diamond`, `percent_5`-`percent_90`
+
+### Functions — Component Library
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `query_components(component_type, category, node_count, limit)` | **Search 5,534 professional chart templates** | component_type: infographic/process/hierarchy/chart/timeline/swot |
+
+**component_type** counts: `infographic` (4,237), `process` (673), `hierarchy` (566), `chart` (133), `timeline` (41), `swot` (39), `smartart` (23)
+
+**Usage in build.py**:
+```python
+results = query_components(component_type='infographic', node_count=5)
+# Returns list of {id, type, category, variant, node_count, level_count, tags, xml_path, source}
+# Note: component_type maps to DB category (type='group' for all 6 types; type='smartart' for SmartArt)
+```
+
+### Functions — Template Analysis (VI Build)
+
+| Function | Purpose | Key Params |
+|----------|---------|------------|
+| `analyze_pptx(pptx_path)` | **Extract design DNA from any PPTX** | Returns dict with colors, fonts, text_zones, images |
+
+**Usage**:
+```python
+dna = analyze_pptx('client_template.pptx')
+# dna['colors'] → color_palette (brand colors) + actual_colors
+# dna['fonts'] → font_scheme + actual_fonts + actual_font_sizes
+# dna['text_zones'] → slides[].shapes[]
+# Use dna to build C dict and TYPOGRAPHY for VI Build
+```
 
 ### Functions — Accessibility
 
@@ -1414,6 +1643,7 @@ See **[`shapes-reference.md`](src/ppt_pro_max/docs/shapes-reference.md)** for fu
 
 ## Key Constraints
 
+- **⛔ NEVER use raw python-pptx in build.py**: `slide.shapes.add_shape()`, `slide.shapes.add_textbox()`, `slide.shapes.add_picture()` are FORBIDDEN. Use `rect()`, `text()`, `cover_image()` instead. Raw python-pptx produces flat, low-quality output with no CJK font support, no color resolution, no cover-fit. This is the #1 AI Tell in PPT design.
 - **python-pptx 1.0.2**: No `PP_TRANSITION_TYPE`, must use XML for transitions/animations
 - **Cover-fit images**: Use `_add_picture_cover()` with Pillow pre-crop — never stretch
 - **Cache-first**: All image engines check cache before API call
