@@ -79,6 +79,20 @@ def _set_cjk_font(run, font_name):
     cs.set('typeface', font_name)
 
 
+def _strip_style(shape):
+    sp = shape._element
+    ns = 'http://schemas.openxmlformats.org/presentationml/2006/main'
+    style_el = sp.find(f'{{{ns}}}style')
+    if style_el is not None:
+        sp.remove(style_el)
+
+
+def _add_shape(shapes, mso_type, left, top, width, height):
+    sh = shapes.add_shape(mso_type, left, top, width, height)
+    _strip_style(sh)
+    return sh
+
+
 def _set_run(paragraph, txt, font_size=12, color='text_body', bold=False,
              font_name=None, C=None):
     run = paragraph.add_run()
@@ -165,6 +179,124 @@ SPACING = {
 }
 
 
+def set_widescreen(prs):
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+    sldSz = prs._element.find(
+        '{http://schemas.openxmlformats.org/presentationml/2006/main}sldSz'
+    )
+    if sldSz is not None and 'type' in sldSz.attrib:
+        del sldSz.attrib['type']
+
+
+def set_dark_theme(prs, C=None):
+    C = C or {}
+    from lxml import etree as _et
+    ns = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    bg = C.get('background', '#0B1020')
+    fg = C.get('text_dark', '#E2E8F0')
+    theme_part = None
+    for rel in prs.part.rels.values():
+        if 'theme' in rel.reltype:
+            theme_part = rel.target_part
+            break
+    if theme_part is None:
+        return
+    theme_el = _et.fromstring(theme_part.blob)
+    clrScheme = theme_el.find(f'{{{ns}}}themeElements/{{{ns}}}clrScheme')
+    if clrScheme is None:
+        return
+    for tag, val in [('dk1', fg), ('lt1', bg)]:
+        el = clrScheme.find(f'{{{ns}}}{tag}')
+        if el is not None:
+            for child in list(el):
+                el.remove(child)
+            srgb = _et.SubElement(el, f'{{{ns}}}srgbClr')
+            srgb.set('val', val.lstrip('#'))
+    theme_part._blob = _et.tostring(theme_el, xml_declaration=True, encoding='UTF-8', standalone=True)
+
+
+def clean_save(prs, path):
+    import os, zipfile, shutil
+    from lxml import etree as _et
+    os.makedirs(os.path.dirname(path) if os.path.dirname(path) else '.', exist_ok=True)
+    prs.save(path)
+    tmp = path + '.tmp'
+    ns_a = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    ns_r = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+    ns_p = 'http://schemas.openxmlformats.org/presentationml/2006/main'
+    ns_ct = 'http://schemas.openxmlformats.org/package/2006/content-types'
+    with zipfile.ZipFile(path, 'r') as zin:
+        with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+            items = {}
+            for item in zin.namelist():
+                if 'printerSettings' in item:
+                    continue
+                items[item] = zin.read(item)
+    rid_map = None
+    for name, data in items.items():
+        if name == 'ppt/_rels/presentation.xml.rels':
+            root = _et.fromstring(data)
+            to_remove = [r for r in root
+                         if 'printerSettings' in r.get('Target', '')]
+            if to_remove:
+                for r in to_remove:
+                    root.remove(r)
+                rid_map = {}
+                for r in root:
+                    old = r.get('Id', '')
+                    if old.startswith('rId'):
+                        rid_map[old] = 'rId%d' % (len(rid_map) + 1)
+                for r in root:
+                    old = r.get('Id', '')
+                    if old in rid_map:
+                        r.set('Id', rid_map[old])
+            data = _et.tostring(root, xml_declaration=True,
+                                encoding='UTF-8', standalone=True)
+            items[name] = data
+    if rid_map:
+        for name in list(items.keys()):
+            if name == 'ppt/presentation.xml':
+                root = _et.fromstring(items[name])
+                for el in root.iter():
+                    rid = el.get(f'{{{ns_r}}}id', '')
+                    if rid in rid_map:
+                        el.set(f'{{{ns_r}}}id', rid_map[rid])
+                items[name] = _et.tostring(root, xml_declaration=True,
+                                           encoding='UTF-8', standalone=True)
+    ct_data = items.get('[Content_Types].xml')
+    if ct_data is not None:
+        ct_root = _et.fromstring(ct_data)
+        to_remove = []
+        for el in ct_root:
+            if el.tag == f'{{{ns_ct}}}Default':
+                ct_val = el.get('ContentType', '')
+                if 'printerSettings' in ct_val:
+                    to_remove.append(el)
+        for el in to_remove:
+            ct_root.remove(el)
+        if to_remove:
+            items['[Content_Types].xml'] = _et.tostring(
+                ct_root, xml_declaration=True, encoding='UTF-8', standalone=True)
+    with zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for name, data in items.items():
+            if name.endswith('.xml') and name.startswith('ppt/slides/slide'):
+                try:
+                    root = _et.fromstring(data)
+                    changed = False
+                    for ln in root.iter(f'{{{ns_a}}}ln'):
+                        if len(ln) == 0:
+                            _et.SubElement(ln, f'{{{ns_a}}}noFill')
+                            changed = True
+                    if changed:
+                        data = _et.tostring(root, xml_declaration=True,
+                                            encoding='UTF-8', standalone=True)
+                except Exception:
+                    pass
+            zout.writestr(name, data)
+    shutil.move(tmp, path)
+
+
 def add_slide(prs, layout_index=None):
     if layout_index is not None:
         return prs.slides.add_slide(prs.slide_layouts[layout_index])
@@ -175,9 +307,9 @@ def add_slide(prs, layout_index=None):
 
 
 def rect(slide, left, top, width, height, fill, line=None, C=None):
-    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-                                    Inches(left), Inches(top),
-                                    Inches(width), Inches(height))
+    shape = _add_shape(slide.shapes, MSO_SHAPE.RECTANGLE,
+                       Inches(left), Inches(top),
+                       Inches(width), Inches(height))
     shape.fill.solid()
     shape.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     if line:
@@ -189,9 +321,9 @@ def rect(slide, left, top, width, height, fill, line=None, C=None):
 
 
 def rrect(slide, left, top, width, height, fill, line=None, C=None):
-    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                    Inches(left), Inches(top),
-                                    Inches(width), Inches(height))
+    shape = _add_shape(slide.shapes, MSO_SHAPE.ROUNDED_RECTANGLE,
+                       Inches(left), Inches(top),
+                       Inches(width), Inches(height))
     shape.fill.solid()
     shape.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     if line:
@@ -203,9 +335,9 @@ def rrect(slide, left, top, width, height, fill, line=None, C=None):
 
 
 def oval(slide, left, top, width, height, fill, line=None, C=None):
-    shape = slide.shapes.add_shape(MSO_SHAPE.OVAL,
-                                    Inches(left), Inches(top),
-                                    Inches(width), Inches(height))
+    shape = _add_shape(slide.shapes, MSO_SHAPE.OVAL,
+                       Inches(left), Inches(top),
+                       Inches(width), Inches(height))
     shape.fill.solid()
     shape.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     if line:
@@ -220,9 +352,9 @@ def shape(slide, shape_type, left, top, width, height, fill, line=None, C=None):
     _type = shape_type
     if isinstance(_type, str):
         _type = getattr(MSO_SHAPE, _type.upper(), MSO_SHAPE.RECTANGLE)
-    sh = slide.shapes.add_shape(_type,
-                                Inches(left), Inches(top),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, _type,
+                    Inches(left), Inches(top),
+                    Inches(width), Inches(height))
     sh.fill.solid()
     sh.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     if line:
@@ -234,9 +366,9 @@ def shape(slide, shape_type, left, top, width, height, fill, line=None, C=None):
 
 
 def _centered_shape(slide, mso_type, cx, cy, width, height, fill, line=None, C=None):
-    sh = slide.shapes.add_shape(mso_type,
-                                Inches(cx - width / 2), Inches(cy - height / 2),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, mso_type,
+                    Inches(cx - width / 2), Inches(cy - height / 2),
+                    Inches(width), Inches(height))
     sh.fill.solid()
     sh.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     if line:
@@ -560,17 +692,17 @@ def kpi_card(slide, left, top, width, height, number, label,
         group = slide.shapes.add_group_shape()
         gs = group.shapes
 
-        bg = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                          Inches(left), Inches(top),
-                          Inches(width), Inches(height))
+        bg = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                        Inches(left), Inches(top),
+                        Inches(width), Inches(height))
         bg.fill.solid()
-        bg.fill.fore_color.rgb = _rgb(C.get('white', '#FFFFFF'))
-        bg.line.color.rgb = _rgb(C.get('light', '#DDDDDD'))
+        bg.fill.fore_color.rgb = _rgb(C.get('card_bg', C.get('white', '#FFFFFF')))
+        bg.line.color.rgb = _rgb(C.get('card_line', C.get('light', '#DDDDDD')))
         bg.line.width = Pt(1)
 
-        accent_bar = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                                  Inches(left), Inches(top),
-                                  Inches(width), Inches(0.06))
+        accent_bar = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                                Inches(left), Inches(top),
+                                Inches(width), Inches(0.06))
         accent_bar.fill.solid()
         accent_bar.fill.fore_color.rgb = _rgb(C.get('accent', '#4CAF50'))
         accent_bar.line.fill.background()
@@ -597,8 +729,9 @@ def kpi_card(slide, left, top, width, height, number, label,
 
         return group
     else:
-        rrect(slide, left, top, width, height, C.get('white', '#FFFFFF'),
-              line=C.get('light', '#DDDDDD'), C=C)
+        rrect(slide, left, top, width, height,
+              C.get('card_bg', C.get('white', '#FFFFFF')),
+              line=C.get('card_line', C.get('light', '#DDDDDD')), C=C)
         rect(slide, left, top, width, 0.06, C.get('accent', '#4CAF50'), C=C)
         text(slide, left + pad, top + 0.25, width - 2 * pad, 0.5, number,
              font_size=t.h1, color=C.get('primary', '#1B5E20'), bold=True,
@@ -629,18 +762,18 @@ def bar_chart(slide, left, top, data, max_width=5.0, bar_height=0.3, C=None,
         for i, (label, pct, val) in enumerate(data):
             y = top + i * (bar_height + gap)
 
-            bg = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                              Inches(left), Inches(y),
-                              Inches(max_width), Inches(bar_height))
+            bg = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                            Inches(left), Inches(y),
+                            Inches(max_width), Inches(bar_height))
             bg.fill.solid()
             bg.fill.fore_color.rgb = _rgb(C.get('bg_tint', '#F5F5F5'))
             bg.line.fill.background()
 
             bar_w = max_width * pct
             if bar_w > 0:
-                bar = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                   Inches(left), Inches(y),
-                                   Inches(bar_w), Inches(bar_height))
+                bar = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                                 Inches(left), Inches(y),
+                                 Inches(bar_w), Inches(bar_height))
                 bar.fill.solid()
                 bar.fill.fore_color.rgb = _rgb(bar_colors[i % len(bar_colors)])
                 bar.line.fill.background()
@@ -696,34 +829,34 @@ def comparison_bars(slide, left, top, metrics, max_width=4.0, C=None,
                      bold=True, font_name=C.get('font_body'), C=C)
             p.alignment = PP_ALIGN.RIGHT
 
-            bg1 = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                               Inches(left), Inches(y),
-                               Inches(max_width), Inches(0.18))
+            bg1 = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                             Inches(left), Inches(y),
+                             Inches(max_width), Inches(0.18))
             bg1.fill.solid()
             bg1.fill.fore_color.rgb = _rgb(C.get('bg_tint', '#F5F5F5'))
             bg1.line.fill.background()
 
             bar_old = max_width * pct_old
             if bar_old > 0:
-                b1 = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                  Inches(left), Inches(y),
-                                  Inches(bar_old), Inches(0.18))
+                b1 = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                                Inches(left), Inches(y),
+                                Inches(bar_old), Inches(0.18))
                 b1.fill.solid()
                 b1.fill.fore_color.rgb = _rgb(C.get('muted', '#81C784'))
                 b1.line.fill.background()
 
-            bg2 = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                               Inches(left), Inches(y + 0.22),
-                               Inches(max_width), Inches(0.18))
+            bg2 = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                             Inches(left), Inches(y + 0.22),
+                             Inches(max_width), Inches(0.18))
             bg2.fill.solid()
             bg2.fill.fore_color.rgb = _rgb(C.get('bg_tint', '#F5F5F5'))
             bg2.line.fill.background()
 
             bar_new = max_width * pct_new
             if bar_new > 0:
-                b2 = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                                  Inches(left), Inches(y + 0.22),
-                                  Inches(bar_new), Inches(0.18))
+                b2 = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                                Inches(left), Inches(y + 0.22),
+                                Inches(bar_new), Inches(0.18))
                 b2.fill.solid()
                 b2.fill.fore_color.rgb = _rgb(C.get('primary', '#1B5E20'))
                 b2.line.fill.background()
@@ -810,16 +943,16 @@ def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
         gs = group.shapes
 
         for name, pct_str, clr in sectors:
-            outer = gs.add_shape(MSO_SHAPE.OVAL,
-                                 Inches(cx - radius), Inches(cy - radius),
-                                 Inches(radius * 2), Inches(radius * 2))
+            outer = _add_shape(gs, MSO_SHAPE.OVAL,
+                               Inches(cx - radius), Inches(cy - radius),
+                               Inches(radius * 2), Inches(radius * 2))
             outer.fill.solid()
             outer.fill.fore_color.rgb = _rgb(clr)
             outer.line.fill.background()
 
-        inner = gs.add_shape(MSO_SHAPE.OVAL,
-                             Inches(cx - inner_radius), Inches(cy - inner_radius),
-                             Inches(inner_radius * 2), Inches(inner_radius * 2))
+        inner = _add_shape(gs, MSO_SHAPE.OVAL,
+                           Inches(cx - inner_radius), Inches(cy - inner_radius),
+                           Inches(inner_radius * 2), Inches(inner_radius * 2))
         inner.fill.solid()
         inner.fill.fore_color.rgb = _rgb(C.get('background', '#FFFFFF'))
         inner.line.fill.background()
@@ -835,9 +968,9 @@ def donut_chart(slide, cx, cy, radius, inner_radius, sectors, C=None,
         ly = cy - radius
         lx = cx + radius + 0.5
         for name, pct_str, clr in sectors:
-            dot = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                               Inches(lx), Inches(ly),
-                               Inches(0.2), Inches(0.2))
+            dot = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                             Inches(lx), Inches(ly),
+                             Inches(0.2), Inches(0.2))
             dot.fill.solid()
             dot.fill.fore_color.rgb = _rgb(clr)
             dot.line.fill.background()
@@ -1158,17 +1291,17 @@ def highlight_cards(slide, left, top, cards, total_width=12.0, C=None,
         for i, (title, desc, accent) in enumerate(cards):
             x = left + i * (card_w + gap)
 
-            bg = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                              Inches(x), Inches(top),
-                              Inches(card_w), Inches(card_h))
+            bg = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                            Inches(x), Inches(top),
+                            Inches(card_w), Inches(card_h))
             bg.fill.solid()
             bg.fill.fore_color.rgb = _rgb(C.get('card_bg', '#F9F9F9'))
             bg.line.color.rgb = _rgb(C.get('light', '#DDDDDD'))
             bg.line.width = Pt(1)
 
-            accent_bar = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                                      Inches(x), Inches(top),
-                                      Inches(card_w), Inches(0.06))
+            accent_bar = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                                    Inches(x), Inches(top),
+                                    Inches(card_w), Inches(0.06))
             accent_bar.fill.solid()
             accent_bar.fill.fore_color.rgb = _rgb(accent)
             accent_bar.line.fill.background()
@@ -1209,17 +1342,17 @@ def code_block(slide, left, top, width, height, lines, language='python',
         group = slide.shapes.add_group_shape()
         gs = group.shapes
 
-        bg = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(left), Inches(top),
-                          Inches(width), Inches(height))
+        bg = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                        Inches(left), Inches(top),
+                        Inches(width), Inches(height))
         bg.fill.solid()
         bg.fill.fore_color.rgb = _rgb('#1E1E1E')
         bg.line.fill.background()
 
         badge_w = len(language) * 0.12 + 0.3
-        badge = gs.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-                             Inches(left + 0.1), Inches(top - 0.28),
-                             Inches(badge_w), Inches(0.25))
+        badge = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
+                           Inches(left + 0.1), Inches(top - 0.28),
+                           Inches(badge_w), Inches(0.25))
         badge.fill.solid()
         badge.fill.fore_color.rgb = _rgb(C.get('accent', '#4CAF50'))
         badge.line.fill.background()
@@ -1265,9 +1398,9 @@ def section_divider(slide, number, title, C=None, typo=None, grouped=True):
         group = slide.shapes.add_group_shape()
         gs = group.shapes
 
-        bg = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0), Inches(0),
-                          Inches(13.333), Inches(7.5))
+        bg = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                        Inches(0), Inches(0),
+                        Inches(13.333), Inches(7.5))
         bg.fill.solid()
         bg.fill.fore_color.rgb = _rgb(C.get('primary', '#1B5E20'))
         bg.line.fill.background()
@@ -1278,9 +1411,9 @@ def section_divider(slide, number, title, C=None, typo=None, grouped=True):
         _set_run(p, str(number).zfill(2), font_size=72, color=C.get('light', '#C8E6C9'),
                  bold=True, font_name=C.get('font_heading'), C=C)
 
-        line = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                            Inches(1.2), Inches(3.6),
-                            Inches(2.0), Inches(0.04))
+        line = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                          Inches(1.2), Inches(3.6),
+                          Inches(2.0), Inches(0.04))
         line.fill.solid()
         line.fill.fore_color.rgb = _rgb(C.get('accent', '#4CAF50'))
         line.line.fill.background()
@@ -1311,9 +1444,9 @@ def hero_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
         group = slide.shapes.add_group_shape()
         gs = group.shapes
 
-        bg = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0), Inches(0),
-                          Inches(13.333), Inches(7.5))
+        bg = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                        Inches(0), Inches(0),
+                        Inches(13.333), Inches(7.5))
         bg.fill.solid()
         bg.fill.fore_color.rgb = _rgb(C.get('primary', '#1B5E20'))
         bg.line.fill.background()
@@ -1351,9 +1484,9 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
         group = slide.shapes.add_group_shape()
         gs = group.shapes
 
-        bg = gs.add_shape(MSO_SHAPE.RECTANGLE,
-                          Inches(0), Inches(0),
-                          Inches(13.333), Inches(7.5))
+        bg = _add_shape(gs, MSO_SHAPE.RECTANGLE,
+                        Inches(0), Inches(0),
+                        Inches(13.333), Inches(7.5))
         bg.fill.solid()
         bg.fill.fore_color.rgb = _rgb(C.get('primary', '#1B5E20'))
         bg.line.fill.background()
@@ -1593,8 +1726,8 @@ def artistic_image(slide, left, top, width, height, image_path,
 
 def shape_3d(slide, left, top, width, height, depth=10.0, material='powder',
              extrusion_color='#000000', shape_type=MSO_SHAPE.RECTANGLE):
-    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, shape_type, Inches(left), Inches(top),
+                    Inches(width), Inches(height))
     apply_3d(sh, depth_pt=depth, material=material,
              extrusion_color=extrusion_color)
     return sh
@@ -1602,8 +1735,8 @@ def shape_3d(slide, left, top, width, height, depth=10.0, material='powder',
 
 def bevel_shape(slide, left, top, width, height, top_w=4.0, top_h=2.0,
                 material='powder', shape_type=MSO_SHAPE.RECTANGLE):
-    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, shape_type, Inches(left), Inches(top),
+                    Inches(width), Inches(height))
     apply_bevel(sh, top_w=top_w, top_h=top_h, material=material)
     return sh
 
@@ -1611,8 +1744,8 @@ def bevel_shape(slide, left, top, width, height, top_w=4.0, top_h=2.0,
 def pattern_fill(slide, left, top, width, height, pattern_type, fg_color,
                  bg_color, fg_alpha=None,
                  shape_type=MSO_SHAPE.RECTANGLE):
-    sh = slide.shapes.add_shape(shape_type, Inches(left), Inches(top),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, shape_type, Inches(left), Inches(top),
+                    Inches(width), Inches(height))
     apply_pattern_fill(sh, pattern_type, fg_color, bg_color,
                        fg_alpha=fg_alpha)
     return sh
@@ -1620,8 +1753,8 @@ def pattern_fill(slide, left, top, width, height, pattern_type, fg_color,
 
 def frosted_panel(slide, left, top, width, height, tint='#FFFFFF',
                   alpha=50, soft_edge=8):
-    sh = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left), Inches(top),
-                                Inches(width), Inches(height))
+    sh = _add_shape(slide.shapes, MSO_SHAPE.RECTANGLE, Inches(left), Inches(top),
+                    Inches(width), Inches(height))
     apply_frosted_glass(sh, tint_color=tint, tint_alpha=alpha,
                         soft_edge=soft_edge)
     return sh

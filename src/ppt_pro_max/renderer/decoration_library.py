@@ -24,6 +24,14 @@ from ppt_pro_max.renderer.freeform_builder import FreeformBuilder
 from ppt_pro_max.renderer.visual_effects import apply_glow, apply_frosted_glass
 
 
+def _strip_style(shape):
+    sp = shape._element
+    ns = 'http://schemas.openxmlformats.org/presentationml/2006/main'
+    style_el = sp.find(f'{{{ns}}}style')
+    if style_el is not None:
+        sp.remove(style_el)
+
+
 def add_brush_divider(
     slide, x: float, y: float, w: float,
     color: str = "#2C2C2C", thickness: float = 0.08,
@@ -105,6 +113,7 @@ def add_seal_stamp(
         MSO_SHAPE.RECTANGLE,
         Inches(x), Inches(y), Inches(size), Inches(size),
     )
+    _strip_style(sh)
     if style == "zhu":
         sh.fill.solid()
         sh.fill.fore_color.rgb = RGBColor.from_string(fill_hex.lstrip("#"))
@@ -156,6 +165,7 @@ def add_scroll_frame(
         MSO_SHAPE.RECTANGLE,
         Inches(x), Inches(y), Inches(w), Inches(h),
     )
+    _strip_style(sh)
     sh.fill.solid()
     sh.fill.fore_color.rgb = RGBColor.from_string(colors["fill"].lstrip("#"))
     sh.line.color.rgb = RGBColor.from_string(colors["border"].lstrip("#"))
@@ -171,6 +181,7 @@ def add_neon_border(
         MSO_SHAPE.ROUNDED_RECTANGLE,
         Inches(x), Inches(y), Inches(w), Inches(h),
     )
+    _strip_style(sh)
     spPr = sh._element.find(qn("p:spPr"))
     for tag in ("a:solidFill", "a:noFill", "a:gradFill", "a:pattFill"):
         el = spPr.find(qn(tag))
@@ -200,6 +211,7 @@ def add_grid_background(
             MSO_SHAPE.RECTANGLE,
             Inches(x), Inches(0), Inches(0.005), Inches(sh),
         )
+        _strip_style(line_sh)
         spPr = line_sh._element.find(qn("p:spPr"))
         for tag in ("a:solidFill", "a:noFill", "a:gradFill", "a:pattFill"):
             el = spPr.find(qn(tag))
@@ -213,7 +225,8 @@ def add_grid_background(
         ln = spPr.find(qn("a:ln"))
         if ln is not None:
             spPr.remove(ln)
-        etree.SubElement(spPr, qn("a:ln"))
+        ln = etree.SubElement(spPr, qn("a:ln"))
+        etree.SubElement(ln, qn("a:noFill"))
         elems.append(line_sh._element)
         x += spacing
 
@@ -223,6 +236,7 @@ def add_grid_background(
             MSO_SHAPE.RECTANGLE,
             Inches(0), Inches(y), Inches(sw), Inches(0.005),
         )
+        _strip_style(line_sh)
         spPr = line_sh._element.find(qn("p:spPr"))
         for tag in ("a:solidFill", "a:noFill", "a:gradFill", "a:pattFill"):
             el = spPr.find(qn(tag))
@@ -236,7 +250,8 @@ def add_grid_background(
         ln = spPr.find(qn("a:ln"))
         if ln is not None:
             spPr.remove(ln)
-        etree.SubElement(spPr, qn("a:ln"))
+        ln = etree.SubElement(spPr, qn("a:ln"))
+        etree.SubElement(ln, qn("a:noFill"))
         elems.append(line_sh._element)
         y += spacing
 
@@ -251,6 +266,7 @@ def add_glass_panel(
         MSO_SHAPE.RECTANGLE,
         Inches(x), Inches(y), Inches(w), Inches(h),
     )
+    _strip_style(sh)
     apply_frosted_glass(sh, tint_color=tint, tint_alpha=alpha,
                         soft_edge=soft_edge)
     return sh._element
