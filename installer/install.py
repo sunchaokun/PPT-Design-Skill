@@ -203,27 +203,42 @@ def install_to_dir(project_root: Path, dest_dir: Path, label: str,
     return str(dest_dir)
 
 
-def install_python_package(skill_dir: Path) -> bool:
+def install_python_package(skill_dir: Path, project_root: Path | None = None) -> bool:
     if not (skill_dir / "pyproject.toml").exists():
         print(f"  [SKIP] No pyproject.toml in {skill_dir}")
         return False
-    print(f"  Installing Python package from {skill_dir}...")
+    install_dir = project_root if project_root and (project_root / "pyproject.toml").exists() and (project_root / "src" / "ppt_pro_max").exists() else skill_dir
+    print(f"  Installing Python package from {install_dir}...")
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pip", "install", str(skill_dir)],
+            [sys.executable, "-m", "pip", "install", str(install_dir)],
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
-            print("  [OK] ppt_pro_max installed to site-packages")
+            success = False
+            for line in result.stdout.splitlines():
+                if "Successfully installed" in line and "ppt-design-skill" in line:
+                    success = True
+                    break
+            if not success:
+                for line in result.stdout.splitlines():
+                    if "Requirement already satisfied" in line and "ppt-design-skill" in line:
+                        success = True
+                        break
+            if success:
+                print("  [OK] ppt-design-skill installed to site-packages")
+            else:
+                print("  [WARN] pip install succeeded but package name unexpected")
+                print(f"  {result.stdout[:300]}")
             return True
         else:
             print(f"  [WARN] pip install failed (exit {result.returncode})")
             print(f"  {result.stderr[:200]}")
-            print(f"  You can install manually: pip install {skill_dir}")
+            print(f"  You can install manually: pip install {install_dir}")
             return False
     except Exception as e:
         print(f"  [WARN] pip install failed: {e}")
-        print(f"  You can install manually: pip install {skill_dir}")
+        print(f"  You can install manually: pip install {install_dir}")
         return False
 
 
@@ -412,16 +427,16 @@ def main() -> None:
         pip_dirs = list(set(all_installed))
         if pip_dirs:
             for d in pip_dirs:
-                install_python_package(Path(d))
+                install_python_package(Path(d), project_root=project_root)
         else:
             for platform in (global_platforms if not args.no_global else []):
                 info = PLATFORMS[platform]
                 skill_dest = Path.home() / info["global_path"] / SKILL_NAME
                 if skill_dest.exists():
-                    install_python_package(skill_dest)
+                    install_python_package(skill_dest, project_root=project_root)
                     break
             else:
-                install_python_package(project_root)
+                install_python_package(project_root, project_root=project_root)
 
     # --- ui-ux-pro-max skill (required) ---
     install_ui_ux_pro_max(target_dir, force=args.force)
