@@ -40,9 +40,10 @@ def sync_version(new_version: str) -> None:
             file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(f"  [OK] {rel_path}: {old_version} -> {new_version}")
         elif rel_path.endswith(".toml"):
-            old_match = re.search(r'version\s*=\s*"([^"]+)"', content)
+            old_match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
             old_version = old_match.group(1) if old_match else "?"
-            content = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{new_version}"', content)
+            content = re.sub(r'^version\s*=\s*"[^"]+"', f'version = "{new_version}"',
+                             content, count=1, flags=re.MULTILINE)
             file_path.write_text(content, encoding="utf-8")
             print(f"  [OK] {rel_path}: {old_version} -> {new_version}")
 

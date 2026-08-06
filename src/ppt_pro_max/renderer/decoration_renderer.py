@@ -18,7 +18,8 @@ class DecorationRenderer:
                                 add_oval_fn: Callable | None = None,
                                 add_text_fn: Callable | None = None,
                                 apply_glow_fn: Callable | None = None) -> None:
-        method = getattr(self, f"_title_{style}", self._title_accent_bar)
+        style_key = (style or "accent-bar").replace("-", "_").replace(" ", "_")
+        method = getattr(self, f"_title_{style_key}", self._title_accent_bar)
         ctx = {
             "add_rect": add_rect_fn,
             "add_oval": add_oval_fn,

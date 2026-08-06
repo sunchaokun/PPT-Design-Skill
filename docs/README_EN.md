@@ -158,13 +158,18 @@ prs.save("output/presentation.pptx")
 
 ## 🎨 Design System
 
-**Natural language style** — describe and generate:
+**Natural language style** — describe and generate. Natural-language styles go through **mood detection + ui-ux-pro-max database** and, without a seed, select palette/fonts/decoration **randomly per run** (not a fixed mapping). For deterministic output use preset names (`dark-tech`/`professional`/`warm-elegant`) or explicit `--style-seed`:
 
 ```bash
-ppt-design "investor pitch" --style "warm fintech"       # → ocean-blue + clean-corporate + accent-bar
-ppt-design "product launch" --style "dark cyberpunk"      # → cyber-neon + tech-mono + neon-lines
-ppt-design "brand strategy" --style "elegant luxury"      # → golden-luxury + elegant-serif + gold-trim
-ppt-design "山水诗" --style "水墨"                        # → ink-wash palette + KaiTi + brush decoration
+ppt-design "investor pitch" --style "warm fintech"       # mood=[warm,fintech]; palette/fonts via ux database
+ppt-design "product launch" --style "dark cyberpunk"      # mood=[dark,neon] → neon-lines decoration, dark neon colors
+ppt-design "brand strategy" --style "elegant luxury"      # mood=[elegant,luxury] → rose-toned ux colors (not gold)
+ppt-design "山水诗" --style "水墨"                        # mood=[ink-wash] → paper-toned + seal-stamp decoration
+
+# Deterministic: preset / explicit atoms / fixed seed
+ppt-design "product launch" --style "dark-tech"           # fixed → cyber-neon palette + tech-mono + neon-lines
+ppt-design "investor pitch" --palette ocean-blue --fonts clean-corporate --decoration accent-bar
+ppt-design "investor pitch" --style "warm fintech" --style-seed 42
 ```
 
 **41 mood keywords**: professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics, ink-wash, zen, sci, neon ...

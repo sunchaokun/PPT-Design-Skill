@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.14.0"
+__version__ = "0.15.0"
 
 from ppt_pro_max.planner.story_planner import StoryPlanner
 from ppt_pro_max.decider.design_decider import DesignDecider
@@ -136,7 +136,7 @@ def extract_design_dna(pptx_path: str) -> dict[str, Any]:
 
 
 def generate_ppt(
-    query: str,
+    query: str = "",
     strategy: str | None = None,
     theme: str | None = None,
     style: str | None = None,
@@ -190,6 +190,22 @@ def generate_ppt(
         import shutil as _shutil
         atexit.register(lambda: _shutil.rmtree(_content_dir, ignore_errors=True))
 
+    if content_file and _has_slides(content_file):
+        if beautify:
+            import warnings as _warnings
+            _warnings.warn(
+                "content_file with slides is ignored when beautify is set",
+                UserWarning,
+                stacklevel=2,
+            )
+        elif proposal:
+            import warnings as _warnings
+            _warnings.warn(
+                "content_file with slides is ignored when proposal=True",
+                UserWarning,
+                stacklevel=2,
+            )
+
     if beautify:
         return _generate_ppt_beautify(
             input_pptx=beautify,
@@ -240,7 +256,7 @@ def generate_ppt(
 
 
 def _generate_ppt_freestyle(
-    query: str,
+    query: str = "",
     strategy: str | None = None,
     theme: str | None = None,
     style: str | None = None,
@@ -268,31 +284,6 @@ def _generate_ppt_freestyle(
     auto_detect: bool = True,
     component_library: str | None = None,
 ) -> dict:
-    planner = StoryPlanner()
-    story_plan = planner.plan(query, strategy_override=strategy, slide_count_override=slides)
-
-    decider = DesignDecider()
-    page_designs = decider.decide(story_plan, theme=theme, variance=variance, motion=motion, density=density)
-
-    generator = ContentGenerator(query=query)
-    page_contents = generator.generate(page_designs, content_file=content_file)
-
-    if dry_run:
-        return {
-            "dry_run": True,
-            "strategy": story_plan.strategy,
-            "page_count": story_plan.total_slides,
-            "pages": [
-                {
-                    "position": d.position,
-                    "goal": d.goal,
-                    "emotion": d.emotion,
-                    "layout": d.layout,
-                }
-                for d in page_designs
-            ],
-        }
-
     effective_image_mode = image_mode
     if fetch_images and image_mode == "placeholder":
         if llm_provider:
@@ -339,11 +330,60 @@ def _generate_ppt_freestyle(
         except Exception:
             component_lib = None
 
+    image_fetcher = None
+    if effective_image_mode and effective_image_mode != "placeholder":
+        from ppt_pro_max.renderer.image_fetcher import ImageFetcher
+        image_fetcher = ImageFetcher(mode=effective_image_mode, **dict(image_config))
+
+    # 直通路径：content.json 含 slides 时跳过 StoryPlanner/DesignDecider/ContentGenerator
+    page_dicts = None
+    fallback_theme = None
+    if content_file and _has_slides(content_file):
+        page_dicts = _load_content_json_to_pages(content_file)
+        if page_dicts is not None:
+            if dry_run:
+                return {
+                    "dry_run": True,
+                    "strategy": "content.json",
+                    "page_count": len(page_dicts),
+                    "pages": [
+                        {"position": i, "goal": p.get("goal", "content"),
+                         "emotion": None, "layout": None}
+                        for i, p in enumerate(page_dicts)
+                    ],
+                }
+            _fetch_missing_images(page_dicts, image_fetcher)
+
+    if page_dicts is None:
+        planner = StoryPlanner()
+        story_plan = planner.plan(query, strategy_override=strategy, slide_count_override=slides)
+        decider = DesignDecider()
+        page_designs = decider.decide(story_plan, theme=theme, variance=variance, motion=motion, density=density)
+        generator = ContentGenerator(query=query)
+        page_contents = generator.generate(page_designs, content_file=content_file)
+        if dry_run:
+            return {
+                "dry_run": True,
+                "strategy": story_plan.strategy,
+                "page_count": story_plan.total_slides,
+                "pages": [
+                    {
+                        "position": d.position,
+                        "goal": d.goal,
+                        "emotion": d.emotion,
+                        "layout": d.layout,
+                    }
+                    for d in page_designs
+                ],
+            }
+        fallback_theme = decider.design_system
+        page_dicts = _build_freestyle_page_dicts(page_designs, page_contents, image_fetcher)
+
     try:
-        result = _render_freestyle_with_components(
-            page_designs, page_contents, composed_theme,
-            component_lib, output, fetch_images, effective_image_mode,
-            image_config, decider.design_system, query,
+        result = _render_page_dicts(
+            page_dicts, composed_theme, component_lib, output,
+            fallback_theme=fallback_theme,
+            proactive_component=False,
         )
     finally:
         if component_lib:
@@ -355,8 +395,8 @@ def _generate_ppt_freestyle(
     if composed_theme:
         result["theme_atoms"] = composed_theme.get("atoms", {})
 
-    if persist:
-        _persist_design_system(decider.design_system, result.get("output_path", ""))
+    if persist and fallback_theme:
+        _persist_design_system(fallback_theme, result.get("output_path", ""))
 
     return result
 
@@ -373,11 +413,75 @@ def _render_freestyle_with_components(
     design_system,
     query,
 ) -> dict:
+    image_fetcher = None
+    if image_mode and image_mode != "placeholder":
+        from ppt_pro_max.renderer.image_fetcher import ImageFetcher
+        cfg = dict(image_config or {})
+        image_fetcher = ImageFetcher(mode=image_mode, **cfg)
+
+    page_dicts = _build_freestyle_page_dicts(page_designs, page_contents, image_fetcher)
+    return _render_page_dicts(
+        page_dicts, composed_theme, component_lib, output,
+        fallback_theme=design_system,
+    )
+
+
+def _build_freestyle_page_dicts(page_designs, page_contents, image_fetcher) -> list[dict]:
+    page_dicts = []
+    for design, content in zip(page_designs, page_contents):
+        page = {
+            "goal": design.goal,
+            "title": content.title,
+            "subtitle": content.subtitle,
+            "bullets": content.bullets,
+            "metrics": content.metrics,
+            "chart": content.chart_data,
+            "quote": content.quote,
+            "image_keywords": content.image_keywords,
+        }
+        page_dicts.append(page)
+    _fetch_missing_images(page_dicts, image_fetcher)
+    return page_dicts
+
+
+def _fetch_missing_images(page_dicts, image_fetcher) -> None:
+    if image_fetcher is None:
+        return
+    for page in page_dicts:
+        if page.get("image") and os.path.isfile(page["image"]):
+            continue
+        keywords = page.get("image_keywords") or page.get("goal") or ""
+        if not keywords:
+            continue
+        try:
+            fetched = image_fetcher.fetch(
+                keywords=keywords,
+                goal=page.get("goal", ""),
+                width=1920,
+                height=1080,
+            )
+            if fetched and os.path.isfile(fetched):
+                page["image"] = fetched
+        except Exception:
+            pass
+
+
+def _render_page_dicts(
+    page_dicts,
+    composed_theme,
+    component_lib,
+    output,
+    fallback_theme=None,
+    proactive_component: bool = True,
+) -> dict:
     from ppt_pro_max.enterprise.precision_renderer import PrecisionRenderer
     from ppt_pro_max.enterprise.brand_spec import BrandSpec
-    from ppt_pro_max.enterprise.content_parser import infer_component_category
 
-    effective_theme = composed_theme or design_system or {}
+    effective_theme = composed_theme or fallback_theme
+    if not effective_theme:
+        composer = ThemeComposer()
+        effective_theme = composer.compose(style="professional")
+
     colors = effective_theme.get("colors", {})
     typography = effective_theme.get("typography", {})
     brand_spec = BrandSpec(
@@ -387,44 +491,10 @@ def _render_freestyle_with_components(
         dark_mode=effective_theme.get("dark_mode", False),
     )
 
-    image_fetcher = None
-    if image_mode and image_mode != "placeholder":
-        from ppt_pro_max.renderer.image_fetcher import ImageFetcher
-        cfg = dict(image_config or {})
-        image_fetcher = ImageFetcher(mode=image_mode, **cfg)
-
-    page_dicts = []
-    for design, content in zip(page_designs, page_contents):
-        page = {
-            "goal": design.goal,
-            "title": content.title,
-            "subtitle": content.subtitle,
-            "bullets": content.bullets,
-            "metrics": content.metrics,
-            "chart_data": content.chart_data,
-            "quote": content.quote,
-            "image_keywords": content.image_keywords,
-        }
-        if content.bullets and not page.get("component_type"):
-            comp_type, comp_cat = infer_component_category(content.bullets)
-            if comp_type:
-                page["component_type"] = comp_type
-                page["component_category"] = comp_cat
-        if image_fetcher and not page.get("image"):
-            keywords = content.image_keywords or content.goal or ""
-            if keywords:
-                try:
-                    fetched = image_fetcher.fetch(
-                        keywords=keywords,
-                        goal=design.goal,
-                        width=1920,
-                        height=1080,
-                    )
-                    if fetched and os.path.isfile(fetched):
-                        page["image"] = fetched
-                except Exception:
-                    pass
-        page_dicts.append(page)
+    layout_variant_out = dict(effective_theme.get("layout_variant", {}))
+    deco_atom = effective_theme.get("atoms", {}).get("decoration", "accent-bar")
+    layout_variant_out["decoration_style"] = deco_atom
+    layout_variant_out["decoration"] = effective_theme.get("decoration", {})
 
     precision = PrecisionRenderer(brand_spec=brand_spec)
     prs = precision.create_presentation()
@@ -432,7 +502,9 @@ def _render_freestyle_with_components(
     total = len(page_dicts)
     for i, page in enumerate(page_dicts):
         precision.render_slide(prs, page, component_lib=component_lib,
-                               page_index=i, total_pages=total)
+                               layout_variant=layout_variant_out,
+                               page_index=i, total_pages=total,
+                               proactive_component=proactive_component)
 
     if output is None:
         from datetime import datetime
@@ -451,6 +523,43 @@ def _render_freestyle_with_components(
         "strategy": "generated",
         "render_mode": "precision",
     }
+
+
+def _has_slides(content_file: str) -> bool:
+    """检测 content.json 是否包含非空 slides 数组（直通渲染的判断条件）。"""
+    try:
+        with open(content_file, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        return isinstance(raw.get("slides"), list) and len(raw["slides"]) > 0
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
+
+def _load_content_json_to_pages(content_file: str):
+    """从 content.json 的 slides 数组直接构建 page_dicts，跳过 StoryPlanner/ContentGenerator。
+
+    失败时返回 None，调用方应回退到 legacy 路径。
+    """
+    from ppt_pro_max.enterprise.content_parser import load_enterprise_content
+    from ppt_pro_max.content.content_generator import _GOAL_IMAGE_KEYWORDS
+
+    try:
+        with open(content_file, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+
+        project_dir = os.path.dirname(os.path.abspath(content_file))
+        pages = load_enterprise_content(raw, project_dir)
+
+        if not pages:
+            return None
+
+        for page in pages:
+            if not page.get("image_keywords"):
+                page["image_keywords"] = _GOAL_IMAGE_KEYWORDS.get(page.get("goal", ""), "abstract")
+
+        return pages
+    except (json.JSONDecodeError, TypeError, OSError, KeyError):
+        return None
 
 
 def _generate_proposals(

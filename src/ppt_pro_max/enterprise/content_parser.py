@@ -324,8 +324,16 @@ def load_enterprise_content(
             cards = resolved_cards
 
         diagram = slide_data.get("diagram")
-        diagram_type = diagram.get("type") if isinstance(diagram, dict) else None
-        diagram_data = diagram if isinstance(diagram, dict) else None
+        if isinstance(diagram, dict):
+            diagram_type = diagram.get("type")
+            inner_data = diagram.get("data")
+            if isinstance(inner_data, dict):
+                diagram_data = inner_data
+            else:
+                diagram_data = diagram
+        else:
+            diagram_type = None
+            diagram_data = None
 
         code = slide_data.get("code")
         exercise = slide_data.get("exercise")
@@ -359,6 +367,7 @@ def load_enterprise_content(
             "component_variant": slide_data.get("component_variant"),
             "blocks": slide_data.get("blocks"),
             "elements": slide_data.get("elements"),
+            "section_number": slide_data.get("section_number"),
         })
 
     return result

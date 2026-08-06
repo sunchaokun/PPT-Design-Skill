@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "AI-powered PPT generation skill for AI coding assistants",
-    "version": "0.10.0"
+    "version": "0.15.0"
   },
   "plugins": [
     {
       "name": "ppt-design-skill",
       "source": "./",
       "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
-      "version": "0.10.0",
+      "version": "0.15.0",
       "author": {
         "name": "sunchaokun"
       },
@@ -27,5 +27,5 @@
       "strict": false
     }
   ],
-  "version": "0.10.0"
+  "version": "0.15.0"
 }

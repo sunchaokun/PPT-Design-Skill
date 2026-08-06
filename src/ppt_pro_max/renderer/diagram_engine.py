@@ -51,7 +51,7 @@ class DiagramEngine:
         nodes = data.get("nodes", [])
         if nodes:
             for node in nodes:
-                label = node.get("label", node.get("title", ""))
+                label = node.get("label", node.get("title", node.get("text", "")))
                 if label:
                     items.append(label)
         stages = data.get("stages", [])

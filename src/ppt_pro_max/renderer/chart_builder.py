@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 try:
+    from lxml import etree
     from pptx.chart.data import CategoryChartData, XyChartData, BubbleChartData
     from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION, XL_LABEL_POSITION
     from pptx.dml.color import RGBColor
+    from pptx.oxml.ns import qn
     from pptx.util import Inches, Pt
 
     _PPTX_AVAILABLE = True
@@ -71,12 +73,14 @@ class ChartBuilder:
         style=None,
         position=None,
         brand_colors=None,
+        brand_fonts=None,
     ) -> Any:
         if not _PPTX_AVAILABLE:
             return None
 
         if isinstance(chart_type_or_config, dict):
-            return self._build_from_config(slide, chart_type_or_config, position, brand_colors)
+            return self._build_from_config(slide, chart_type_or_config, position,
+                                           brand_colors, brand_fonts)
 
         return self._build_legacy(slide, chart_type_or_config, data, style, position)
 
@@ -136,6 +140,7 @@ class ChartBuilder:
         chart_config: dict[str, Any],
         position: dict[str, float] | None = None,
         brand_colors: dict[str, str] | None = None,
+        brand_fonts: dict[str, str] | None = None,
     ) -> Any:
         chart_type_str = chart_config.get("type", "bar")
         pptx_type = _ENTERPRISE_CHART_TYPE_MAP.get(chart_type_str)
@@ -170,6 +175,7 @@ class ChartBuilder:
             self._apply_chart_title(chart, chart_config)
             self._apply_axes(chart, style, is_pie)
             self._apply_chart_style(chart, style)
+            self._apply_text_theme(chart, brand_colors, brand_fonts)
 
             return chart_frame
         except Exception:
@@ -399,6 +405,123 @@ class ChartBuilder:
                 chart.style = int(chart_style)
             except Exception:
                 pass
+
+    def _apply_text_theme(self, chart: Any, brand_colors: dict[str, str] | None,
+                          brand_fonts: dict[str, str] | None = None) -> None:
+        """Theme all chart text (title, legend, axis labels, data labels) to the brand."""
+        if not _PPTX_AVAILABLE or not brand_colors:
+            return
+
+        text_color = (brand_colors.get("foreground") or brand_colors.get("text")
+                      or brand_colors.get("on-primary") or "#1F2937")
+        dark = False
+        try:
+            bg = (brand_colors.get("background") or "#FFFFFF").lstrip("#")
+            r, g, b = int(bg[0:2], 16), int(bg[2:4], 16), int(bg[4:6], 16)
+            dark = (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5
+        except Exception:
+            pass
+        if dark and not (brand_colors.get("foreground") or brand_colors.get("text")):
+            text_color = "#E2E8F0"
+
+        body_font = (brand_fonts or {}).get("body") or (brand_fonts or {}).get("heading")
+        heading_font = (brand_fonts or {}).get("heading") or body_font
+        rgb = RGBColor.from_string(text_color.lstrip("#"))
+
+        try:
+            if chart.has_title:
+                for p in chart.chart_title.text_frame.paragraphs:
+                    for r in p.runs:
+                        r.font.color.rgb = rgb
+                        if heading_font:
+                            r.font.name = heading_font
+        except Exception:
+            pass
+        try:
+            if chart.has_legend:
+                chart.legend.font.color.rgb = rgb
+                chart.legend.font.size = Pt(11)
+                if body_font:
+                    chart.legend.font.name = body_font
+        except Exception:
+            pass
+        try:
+            plot = chart.plots[0]
+            if plot.has_data_labels:
+                plot.data_labels.font.color.rgb = rgb
+                if body_font:
+                    plot.data_labels.font.name = body_font
+        except Exception:
+            pass
+
+        # Pie/doughnut charts have no axes — guard the access.
+        try:
+            cat_axis = chart.category_axis
+        except Exception:
+            cat_axis = None
+        try:
+            val_axis = chart.value_axis
+        except Exception:
+            val_axis = None
+        for axis in (cat_axis, val_axis):
+            if axis is None:
+                continue
+            try:
+                axis.tick_labels.font.color.rgb = rgb
+                axis.tick_labels.font.size = Pt(11)
+            except Exception:
+                pass
+            try:
+                if axis.has_title:
+                    for p in axis.axis_title.text_frame.paragraphs:
+                        for r in p.runs:
+                            r.font.color.rgb = rgb
+                            if body_font:
+                                r.font.name = body_font
+            except Exception:
+                pass
+
+        # Global chartSpace txPr default — themes any text not overridden above.
+        try:
+            self._set_chartspace_text_color(chart, text_color, body_font)
+        except Exception:
+            pass
+
+        # Theme-aware gridlines.
+        if val_axis is not None:
+            try:
+                grid = brand_colors.get("border") or ("#334155" if dark else "#E2E8F0")
+                if val_axis.has_major_gridlines:
+                    val_axis.major_gridlines.format.line.color.rgb = RGBColor.from_string(grid.lstrip("#"))
+            except Exception:
+                pass
+
+    def _set_chartspace_text_color(self, chart: Any, text_color: str,
+                                   body_font: str | None = None) -> None:
+        cs = chart._chartSpace
+        txPr = cs.find(qn("c:txPr"))
+        if txPr is None:
+            return
+        p = txPr.find(qn("a:p"))
+        if p is None:
+            return
+        pPr = p.find(qn("a:pPr"))
+        if pPr is None:
+            return
+        defRPr = pPr.find(qn("a:defRPr"))
+        if defRPr is None:
+            return
+        latin = defRPr.find(qn("a:latin"))
+        if latin is not None:
+            defRPr.remove(latin)
+        for sf in defRPr.findall(qn("a:solidFill")):
+            defRPr.remove(sf)
+        solidFill = etree.SubElement(defRPr, qn("a:solidFill"))
+        srgb = etree.SubElement(solidFill, qn("a:srgbClr"))
+        srgb.set("val", text_color.lstrip("#"))
+        if body_font:
+            latin_el = etree.SubElement(defRPr, qn("a:latin"))
+            latin_el.set("typeface", body_font)
 
     def _resolve_colors(self, color_scheme, brand_colors: dict[str, str] | None, num_series: int) -> list[str]:
         if color_scheme == "auto":

@@ -34,7 +34,7 @@ class FlowchartDiagram(BaseDiagram):
 
         max_label_w = node_w - self.style.padding_inches * 2
         for i, nd in enumerate(nodes_data):
-            label = nd.get("label", nd.get("title", f"Step {i + 1}"))
+            label = nd.get("label", nd.get("title", nd.get("text", f"Step {i + 1}")))
             est_w, est_h = estimate_node_size(
                 label, self.style.node_font_size_pt, max_label_w,
             )
@@ -67,7 +67,7 @@ class FlowchartDiagram(BaseDiagram):
 
         max_label_w = node_w - self.style.padding_inches * 2
         for i, nd in enumerate(nodes_data):
-            label = nd.get("label", nd.get("title", f"Step {i + 1}"))
+            label = nd.get("label", nd.get("title", nd.get("text", f"Step {i + 1}")))
             est_w, est_h = estimate_node_size(
                 label, self.style.node_font_size_pt, max_label_w,
             )

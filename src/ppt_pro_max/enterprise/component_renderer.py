@@ -654,6 +654,20 @@ class ComponentRenderer:
     def _inject_to_slide(self, slide, xml_parts: dict, bounds: tuple) -> None:
         self._inject_via_python_pptx(slide, xml_parts, bounds)
 
+    def _strip_theme_style_refs(self, root) -> None:
+        """Remove <p:style> theme-style references from injected shapes.
+
+        Component XML may carry <p:style> blocks whose theme style indices are
+        incompatible with the target presentation's theme. PowerPoint treats
+        such references as corruption and refuses to open the file, so they are
+        stripped — shapes then inherit the target theme's defaults.
+        """
+        ns_p = _NS["p"]
+        for style_el in root.findall(f".//{{{ns_p}}}style"):
+            parent = style_el.getparent()
+            if parent is not None:
+                parent.remove(style_el)
+
     def _inject_via_python_pptx(self, slide, xml_parts: dict, bounds: tuple) -> None:
         try:
             ns_p = _NS["p"]
@@ -806,7 +820,6 @@ class ComponentRenderer:
         p_ns = _NS["p"]
 
         all_t = [t for t in root.iter(f"{{{a_ns}}}t") if t.text and t.text.strip()]
-        t_to_idx = {id(t): i for i, t in enumerate(all_t)}
         if not all_t:
             result = dict(xml_parts)
             result["group"] = etree.tostring(root, xml_declaration=False, encoding="UTF-8")
@@ -963,6 +976,7 @@ class ComponentRenderer:
 
             self._remove_unresolvable_references(grp_elem)
             self._ensure_shape_fills(grp_elem, brand_spec=brand_spec)
+            self._strip_theme_style_refs(grp_elem)
 
             if not skip_denorm:
                 self._denormalize_coordinates(grp_elem, target_left, target_top, target_w, target_h, stretch=stretch)

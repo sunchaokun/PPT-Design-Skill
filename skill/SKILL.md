@@ -120,7 +120,7 @@ These sections are the LLM's only reference for writing correct output:
 
 ALWAYS follow this 5-step workflow. Each step requires user confirmation before proceeding. Do NOT skip steps or generate final PPT directly — rework is extremely costly.
 
-**Mode selection rule**: ALWAYS use Build Mode for proposal generation. FreeStyle is only for quick one-command drafts when user explicitly says "just a quick draft" or "freestyle". When in doubt, use Build Mode.
+**Mode selection rule**: ALWAYS use Build Mode for proposal generation. FreeStyle is for agent-driven `content.json` decks (write real content + per-page goals, render directly) or quick one-command drafts. NEVER use FreeStyle for proposals. When in doubt, use Build Mode.
 
 ### Step 1: Requirements & Framework (All Modes)
 
@@ -133,7 +133,7 @@ ALWAYS follow this 5-step workflow. Each step requires user confirmation before 
 - **Mode decision**: determine which mode to use based on user request and quality requirements
   - Build Mode: **DEFAULT** — always use for proposal generation and delivery-grade output
   - VI Build Mode: user provides enterprise template (template.pptx) + requests brand compliance
-  - FreeStyle: ONLY when user explicitly says "quick draft" / "freestyle" / "just explore" — NO proposals, one-shot output
+  - FreeStyle: agent-driven `content.json` deck, or when user explicitly says "quick draft" / "freestyle" / "just explore" — NO proposals, one-shot output
 - Present to user as text outline (including domain + mode choice), confirm before proceeding
 
 **Dial → Action Map (V/M/D → LLM decisions):**
@@ -317,8 +317,9 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 - Present key content to user for review before final generation
 - User confirms content accuracy before proceeding
 
-**FreeStyle Mode (quick draft only):**
-- Generate full PPT: `generate_ppt(query, content_file=..., style=..., fetch_images=True, ...)`
+**FreeStyle Mode (agent-driven content.json or quick draft):**
+- Path A: you write `content.json` (real content, per-page `goal` + field selection), then `generate_ppt(content_file="content.json", style=..., ...)` renders it directly — see [content.json Format](#contentjson-format)
+- Path B: one-command draft `generate_ppt("topic", style=..., fetch_images=True, ...)`
 - No proposal step — one-shot output
 - For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
 
@@ -330,8 +331,8 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 - For revisions: modify build.py and re-run (build.py is the single source of truth)
 - Version control: save output to `output/v1/`, increment on revisions
 
-**FreeStyle Mode (quick draft only):**
-- Generate full PPT: `generate_ppt(query, content_file=..., style=confirmed_style, fetch_images=True, ...)`
+**FreeStyle Mode (agent-driven content.json or quick draft):**
+- Generate full PPT: `generate_ppt(content_file="content.json", style=confirmed_style, fetch_images=True, ...)` (query optional)
 - Verify output: check page count, file size, content rendering
 - For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
 
@@ -407,17 +408,17 @@ When writing content (content.json for FreeStyle, or hardcoded text in build.py 
 
 | | **Build Script** | **VI Build** | FreeStyle |
 |---|---|---|---|
-| **Use case** | Delivery-grade, no template | **Enterprise VI compliance** | Quick draft only (NO proposals) |
-| **Trigger** | **DEFAULT** — always use unless user says "quick draft" | User provides template.pptx + requests brand compliance | User explicitly says "quick draft" / "freestyle" |
-| **Content source** | Hardcoded per page in build.py | LLM reads template analysis, generates build.py | AI auto-generates via content.json |
+| **Use case** | Delivery-grade, no template | **Enterprise VI compliance** | Agent-driven content.json OR quick draft (NO proposals) |
+| **Trigger** | **DEFAULT** — always use unless user says "quick draft" | User provides template.pptx + requests brand compliance | You write content.json with real content, or user says "quick draft" / "freestyle" |
+| **Content source** | Hardcoded per page in build.py | LLM reads template analysis, generates build.py | **You write content.json** (recommended) or one-liner topic |
 | **Brand compliance** | Design Token dict `C` | **Extracted VI Token from template** | Style atom combos |
-| **Layout control** | **Per-element x/y/w/h** | **Preserve framework pages + build_helpers for new** | Auto-match goal type |
+| **Layout control** | **Per-element x/y/w/h** | **Preserve framework pages + build_helpers for new** | goal + field selection (10 layout branches) |
 | **Font control** | **Run-level per character** | **Run-level + template font inheritance** | Theme-level |
 | **Template reuse** | None | **Framework pages preserved + decorations/LOGO copied** | None |
 | **Proposal type** | 3 build.py (structural differentiation) | 3 build.py (layout strategy differentiation, same VI Token) | **NO proposals** — one-shot output only |
-| **Quality ceiling** | ★★★★★ | ★★★★★ | ★★ (no structural control) |
+| **Quality ceiling** | ★★★★★ | ★★★★★ | ★★★★ (goal-driven, fixed positions) |
 
-> **Mandatory workflow**: ALWAYS use Build Mode for proposals (3 structurally-different build.py). FreeStyle is for quick one-shot drafts only — NEVER use FreeStyle for proposal generation.
+> **Mandatory workflow**: ALWAYS use Build Mode for proposals (3 structurally-different build.py). FreeStyle is for agent-driven content.json decks or quick one-shot drafts — NEVER use FreeStyle for proposal generation.
 
 ### Build Mode (Pixel-Perfect Delivery) — DEFAULT & PRIMARY DELIVERY MODE
 
@@ -489,11 +490,31 @@ prs.save('output.pptx')
 - Use `copy_decorations()` / `copy_logo()` to maintain VI consistency
 - VI Token (`C` dict) extracted from `analyze_template.py` output, not hand-written
 
-### FreeStyle Mode (Quick Draft Only — NO Proposals)
+### FreeStyle Mode (Agent-Driven content.json — NO Proposals)
 
-One command, AI generates everything — content, design, images. **NO proposal step** — one-shot output only. Use ONLY when user explicitly says "quick draft" / "freestyle" / "just explore".
+FreeStyle renders a deck from a **content.json you write** (recommended, agent-driven) OR from a one-liner topic string (legacy quick draft). **NO proposal step** — one-shot output only. Use when user says "quick draft" / "freestyle" / "just explore", or when you need a fast, fully-editable deck.
 
-**⚠️ NEVER use FreeStyle for proposal generation.** Calling `generate_ppt()` × 3 with different `--style` only swaps palette/font and produces identical layouts — this is NOT a valid proposal.
+**⚠️ NEVER use FreeStyle for proposal generation.** Calling `generate_ppt()` × 3 with different `--style` only swaps palette/font and produces identical layouts — this is NOT a valid proposal. Use Build Mode (build.py) for proposals.
+
+#### Path A (Recommended): You write content.json → render
+
+In an agent environment **you are the LLM** — you don't need Python to call an API for content. Write a `content.json` with real content and per-page `goal`, then call `generate_ppt(content_file=...)`. This is the deterministic, high-quality path: you control every page's content AND which render branch it uses.
+
+```python
+# query is optional when content_file contains slides[]
+result = generate_ppt(content_file="content.json", style="dark-tech")
+```
+
+**Three-layer orthogonality:**
+- `content.json` controls **content** (title/subtitle/bullets/cards/chart/code/diagram/exercise) + **layout role** (`goal` field → render branch)
+- `style` param controls **visuals** (colors/fonts/decorations → ThemeComposer → BrandSpec)
+- renderer's `goal` branches control **structure**
+
+Prefer **preset** style names for deterministic output (`dark-tech`, `professional`, `warm-elegant`, ...). Natural-language styles like `"dark cyberpunk"` resolve via mood detection and may produce different palettes.
+
+See [content.json Format](#contentjson-format) below for the full schema and design rules (chart format, section_number, field-to-layout mapping).
+
+#### Path B (Quick draft): one-liner topic
 
 ```bash
 python -m ppt_pro_max "AI startup investor pitch"
@@ -833,10 +854,12 @@ from ppt_pro_max import generate_ppt, fetch_image
 # LLM writes build.py using build_helpers — see Build Helpers API section
 
 # FreeStyle
-result = generate_ppt("AI startup pitch", style="dark cyberpunk", fetch_images=True)
+result = generate_ppt("AI startup investor pitch", style="dark cyberpunk", fetch_images=True)
 
-# With content.json
-result = generate_ppt("pitch", content_file="content.json", style="warm fintech", fetch_images=True)
+# With content.json (agent-driven — recommended). query is OPTIONAL when content_file contains slides[].
+# content_file with slides[] bypasses StoryPlanner/ContentGenerator and renders your pages directly.
+result = generate_ppt(content_file="content.json", style="warm fintech", fetch_images=True)
+result = generate_ppt("pitch", content_file="content.json", style="dark-tech")
 
 # With design dials
 result = generate_ppt("pitch", content_file="content.json", style="professional",
@@ -981,15 +1004,17 @@ my-project/
   "meta": {"title": "...", "author": "..."},
   "slides": [
     {
-      "goal": "hook|problem|solution|features|cta|content|data|code|exercise|section|overview",
+      "goal": "hook|problem|solution|features|cta|content|data|code|exercise|section|testimonials|overview",
       "title": "Page Title",
       "subtitle": "Optional subtitle",
       "bullets": ["Point 1", "Point 2"],
       "image": "images/photo.png",
       "cards": [{"title": "...", "text": "..."}],
-      "diagram": {"type": "flowchart", "data": {...}},
+      "diagram": {"type": "flowchart", "data": {"nodes": [{"id": "a", "text": "A"}], "connectors": [["a", "b"]]}},
       "code": {"language": "python", "source": "..."},
       "exercise": {"instructions": "...", "duration": "5 min", "steps": [...]},
+      "chart": {"type": "bar", "title": "...", "categories": ["A", "B"], "series": [{"name": "S", "values": [1, 2]}]},
+      "section_number": "01",
       "component_type": "group",
       "component_category": "process"
     }
@@ -997,18 +1022,42 @@ my-project/
 }
 ```
 
+**chart format (must match ChartBuilder — `categories`/`series` at top level):**
+
+```json
+{
+  "chart": {
+    "type": "bar",              // bar|line|pie|doughnut|area|scatter|radar|... (28 types)
+    "title": "Accuracy Over Time",
+    "categories": ["Baseline", "v1.0", "v2.0", "v3.0"],
+    "series": [{"name": "Accuracy", "values": [45, 72, 88, 97]}]
+  }
+}
+```
+> Do NOT use `labels` (use `categories`), `datasets` (use `series`), or a `data` wrapper. Use `doughnut` not `donut` (unknown type silently falls back to `bar`). Chart text (title/legend/axes/data labels) is auto-themed to the style.
+
 **Goal types and rendering behavior:**
 
 | Goal | Rendering | Notes |
 |------|-----------|-------|
-| `hook` | Hero: full-bleed image + gradient overlay + title | First slide; short subtitle recommended |
-| `cta` | Hero: full-bleed image + gradient overlay + title | Last slide; long subtitle recommended |
-| `section` | Section divider: oversized number + title + gradient line | Auto-handled by render_slide() when goal="section"; Pipeline can auto-insert on topic shifts |
-| `problem`/`solution`/`content` | Title + gradient line accent + bullets + optional image | Standard content slide; 6+ bullets → two-column |
-| `features` | Title + cards row | First card gets featured treatment (gradient bar, 22pt title, higher elevation) |
-| `data`/`overview` | Title + bullets or diagram | 6+ bullets trigger two-column layout |
-| `code` | Title + code block (always dark bg #1E293B) + language badge | `language` + `source` required |
-| `exercise` | Title + badge (ALL CAPS, solid variant) + instructions + numbered steps | `duration` + `steps` recommended |
+| `hook` | Hero: full-bleed gradient + centered title + subtitle | First slide; short subtitle recommended |
+| `cta` | Hero: full-bleed gradient + centered title + subtitle | Last slide; long subtitle recommended |
+| `section` | Section divider: oversized number + title + accent bar | Use `section_number` for custom number ("01" or 1); defaults to page_index+1 |
+| `problem`/`solution`/`content` | Title band + bullets + optional image | 6+ bullets → two-column |
+| `features` | Title + cards row | First card featured (gradient bar, 22pt title); use `cards`, not bullets |
+| `data` | Title + **chart** | Use `chart` for real charts; falls back to bullets/diagram if absent |
+| `code` | Title + dark code block + language badge | `language` + `source` required |
+| `exercise` | Title + badge (ALL CAPS) + instructions + numbered steps | `duration` + `steps` recommended |
+| `testimonials` | Title + bullets (same as content — no dedicated quote layout) | Use `bullets` |
+| `overview` | Title + bullets or diagram | Same as content |
+
+**Render priority per slide:** `blocks` > `cards` > `component_type` > `diagram` > `code` > `exercise` > `bullets`. `chart` and `image` render **additively** (on top) — avoid combining them with other content fields on the same page.
+
+**Field → layout selection:** the same goal can render differently based on which field you populate. E.g. `features` + `cards` → card row; `features` + `bullets` → bullet list; `content` + `diagram` → diagram.
+
+**diagram format:** `{"type": "flowchart|funnel|timeline|swot|matrix|cycle|table|hierarchy|pyramid|venn", "data": {...}}`. Node/stage text reads from `label`/`title`/`text` keys (any works). The inner `data` object is what the diagram engine consumes.
+
+**Component opt-in (FreeStyle passthrough):** in agent-driven FreeStyle, proactive component auto-matching is **disabled** — add `component_type` + `component_category` explicitly to a slide to use a library component, otherwise the goal-based layout is used.
 
 ## brand.json Format
 

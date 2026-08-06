@@ -109,7 +109,34 @@ pip install --force-reinstall git+https://github.com/sunchaokun/PPT-Design-Skill
 
 AI 会自动加载 skill 并生成 .pptx 文件。
 
-### FreeStyle — 一句话生成
+### FreeStyle — Agent 驱动（推荐） / 一句话生成
+
+**Path A（推荐）— 写 content.json，渲染高质量 deck**：agent 写真实内容 + 每页 `goal`，`generate_ppt` 直通渲染。这是确定性最高、质量最好的 FreeStyle 路径：
+
+```json
+{
+  "slides": [
+    {"goal": "hook", "title": "让智能的成本下降一个数量级", "subtitle": "DeepSeek B 轮融资"},
+    {"goal": "problem", "title": "大模型竞争白热化", "bullets": ["推理成本是商业化瓶颈", "参数军备竞赛撞墙"]},
+    {"goal": "data", "title": "推理成本对比",
+     "chart": {"type": "bar", "categories": ["DeepSeek", "GPT-5"], "series": [{"name": "价格", "values": [0.14, 2.5]}]}},
+    {"goal": "section", "title": "融资计划", "section_number": "01"},
+    {"goal": "features", "title": "三大护城河", "cards": [{"title": "MoE", "text": "..."}, {"title": "RL 新范式", "text": "..."}]},
+    {"goal": "cta", "title": "融资 500 亿元", "subtitle": "..."}
+  ]
+}
+```
+
+```python
+from ppt_pro_max import generate_ppt
+result = generate_ppt(content_file="content.json", style="dark-tech")  # 预设名 = 确定性输出
+```
+
+- 支持 11 种 goal（hook/problem/features/data/code/exercise/diagram/section/testimonials/cta/content）+ 图表/卡片/图形/代码等字段
+- 统一版式系统：渐变背景 + 装饰、自适应字号填满版面、图表文字主题化
+- 自然语言风格随机、预设名确定；配图用 `--fetch-images --llm-provider seedream`
+
+**Path B — 一句话快速草稿**：
 
 ```bash
 ppt-design "AI产品融资路演"
@@ -150,6 +177,10 @@ prs.save("output/presentation.pptx")
 | 特性 | 说明 |
 |------|------|
 | **三模式引擎** | FreeStyle 快速生成 + Build Script 逐页精确控制 + VI Build 企业模板合规 |
+| **content.json 直通渲染** | Agent 写真实内容 + 每页 goal → `generate_ppt(content_file=...)` 直接渲染，跳过 StoryPlanner |
+| **统一版式系统** | 11 种 goal 版式共享同一设计框架（标题带/内容区/页脚/页码），渐变背景 + 风格装饰 |
+| **自适应排版** | 字号随内容量自动缩放 + 垂直居中，稀疏内容不再大段留白 |
+| **图表主题化** | 图表系列/文字/网格线全部匹配主题色，深色浅色主题自动适配 |
 | **40,000+ 风格组合** | 30 色彩方案 × 25 字体 × 15 装饰 × 12 布局，自然语言指定 `--style` |
 | **AI 智能配图** | Seedream / GPT Image / DALL-E / Gemini / Wanx 5 种引擎 + Kimi 增强 |
 | **python-pptx 直出** | 完全可编辑 .pptx，356x 快于 HTML→截图方案 |
@@ -166,8 +197,8 @@ prs.save("output/presentation.pptx")
 |---|---|---|---|
 | **场景** | 快速探索、原型 | 交付级精确控制 | 企业 VI 合规 |
 | **触发** | 默认 | `"build mode"` / `"像素级"` | 提供 template.pptx |
-| **内容** | AI 自动生成 | 手写 build.py | LLM 读模板生成 build.py |
-| **质量** | ★★★ | ★★★★★ | ★★★★★ |
+| **内容** | Agent 写 content.json（推荐）或一句话 | 手写 build.py | LLM 读模板生成 build.py |
+| **质量** | ★★★★（goal 驱动 11 种版式） | ★★★★★ | ★★★★★ |
 | **方案** | 3 种风格预览 | 3 种结构化方案 | 3 种布局方案（同 VI Token） |
 
 > **推荐工作流**：FreeStyle 原型 → Build / VI Build 精细交付
@@ -176,13 +207,18 @@ prs.save("output/presentation.pptx")
 
 ## 🎨 设计系统
 
-**自然语言风格** — 描述即生成：
+**自然语言风格** — 描述即生成。自然语言 style 走 **mood 检测 + ui-ux-pro-max 数据库**，未指定 seed 时每次运行**随机**选取调色板/字体/装饰，不保证固定映射。要确定性输出，用预设名（`dark-tech`/`professional`/`warm-elegant`）或显式 `--seed`：
 
 ```bash
-ppt-design "融资路演" --style "warm fintech"       # → ocean-blue + clean-corporate + accent-bar
-ppt-design "产品发布" --style "dark cyberpunk"      # → cyber-neon + tech-mono + neon-lines
-ppt-design "品牌策略" --style "elegant luxury"      # → golden-luxury + elegant-serif + gold-trim
-ppt-design "山水诗词" --style "水墨"                # → ink-wash 调色板 + 楷书 + 笔触装饰
+ppt-design "融资路演" --style "warm fintech"       # mood=[warm,fintech]，调色板/字体走 ux 数据库
+ppt-design "产品发布" --style "dark cyberpunk"      # mood=[dark,neon] → 装饰多为 neon-lines，深色霓虹配色
+ppt-design "品牌策略" --style "elegant luxury"      # mood=[elegant, luxury] → 玫红调 ux 配色（非金色）
+ppt-design "山水诗词" --style "水墨"                # mood=[ink-wash] → 纸感浅色 + seal-stamp 装饰
+
+# 确定性输出：预设名 / 显式原子 / 固定 seed
+ppt-design "产品发布" --style "dark-tech"           # 固定 → cyber-neon 调色板 + tech-mono 字体 + neon-lines
+ppt-design "融资路演" --palette ocean-blue --fonts clean-corporate --decoration accent-bar
+ppt-design "融资路演" --style "warm fintech" --style-seed 42
 ```
 
 **41 种 mood 关键词**：professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics, ink-wash, zen, sci, neon ...
