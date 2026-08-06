@@ -6,16 +6,16 @@
 
 **一句话 → 专业 .pptx · 40,000+ 风格 · AI 配图 · 完全可编辑**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
 [![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
 
-在 AI 编码工具中输入：`生成一份AI融资路演PPT` → 自动调用 skill → 输出可编辑 .pptx
+在 AI 编码工具中输入：`用Build模式生成一份AI融资路演PPT` → 自动调用 skill → 输出可编辑 .pptx
 
-| FreeStyle 自由模式 | Build 设计师模式 | VI Build 企业模式 |
+| Build 设计师模式 ⭐ | FreeStyle 自由模式 | VI Build 企业模式 |
 |:---:|:---:|:---:|
-| 一句话出PPT | **像素级控制 + 方案对比** | **基于企业模板 VI 精确生成** |
-| 30秒快速生成 | **python-pptx 精确构建** | **保留框架页 + build_helpers** |
+| **像素级控制 + 方案对比** | 一句话出PPT | **基于企业模板 VI 精确生成** |
+| **python-pptx 精确构建** | 30秒快速生成 | **保留框架页 + build_helpers** |
 
 [English](docs/README_EN.md) | [使用手册](docs/usage-guide.md) | 中文
 
@@ -104,12 +104,49 @@ pip install --force-reinstall git+https://github.com/sunchaokun/PPT-Design-Skill
 安装后，在 OpenCode / Claude Code / Codex 中直接输入：
 
 ```
-生成一份AI融资路演PPT，dark cyberpunk风格
+用Build模式生成一份AI融资路演PPT，dark cyberpunk风格
 ```
 
 AI 会自动加载 skill 并生成 .pptx 文件。
 
-### FreeStyle — Agent 驱动（推荐） / 一句话生成
+### Build Script — 逐页精确控制（推荐 ⭐）
+
+Build 模式是**推荐的主力模式**——用 `build_helpers` 工具箱逐像素控制每一页、每个元素，3 种结构化方案自动对比，质量最高、确定性最强。
+
+```python
+from ppt_pro_max.build_helpers import *
+
+# 设计令牌：暗色 AI 科技主题
+C = {
+    "primary": "#4F46E5", "accent": "#22D3EE", "background": "#0B1020",
+    "card_bg": "#141B33", "text_dark": "#E2E8F0", "text_body": "#B6C2D6",
+    "font_heading": "Orbitron", "font_body": "JetBrains Mono", "font_cjk": "微软雅黑",
+}
+T = Typography(hero=46, h1=30, h2=20, h3=16, body=14, caption=12, micro=11)
+
+prs = Presentation()
+set_widescreen(prs)
+set_dark_theme(prs, C)
+
+s = add_slide(prs)
+rect(s, 0, 0, 13.333, 7.5, C["background"])
+grid_background(s, spacing=0.85, color=C["divider"], alpha=7)
+gradient_text(s, 1.0, 2.0, 11.3, 1.5, "让智能的成本，下降一个数量级",
+              stops=[("#22D3EE", 0), ("#818CF8", 100)],
+              font_size=46, bold=True, font_name="Orbitron", cjk_font="微软雅黑")
+kpi_card(s, 1.0, 4.5, 3.5, 1.1, "92", "综合能力指数", C=C, typo=T)
+native_chart(s, 5.0, 1.5, 7.5, 4.5, "bar",
+             categories=["DeepSeek", "GPT-5", "Claude 4"],
+             series=[{"name": "综合能力", "values": [92, 95, 93]}], C=C)
+
+clean_save(prs, "output.pptx")
+```
+
+**核心工具箱**：`rect` · `rrect` · `oval` · `text` · `gradient_text` · `kpi_card` · `native_chart` · `donut_chart` · `code_block` · `section_divider` · `neon_border` · `grid_background` · `page_header` · `highlight_cards` · `set_widescreen` · `set_dark_theme` · `clean_save`
+
+**暗色主题支持**：`set_dark_theme(prs, C)` 自动修正主题 `dk1/lt1`，确保默认文字为浅色；`clean_save(prs, path)` 清除 `printerSettings`、修复空 `<a:ln/>`、保证 PPTX 合法性。
+
+### FreeStyle — Agent 驱动 / 一句话生成
 
 **Path A（推荐）— 写 content.json，渲染高质量 deck**：agent 写真实内容 + 每页 `goal`，`generate_ppt` 直通渲染。这是确定性最高、质量最好的 FreeStyle 路径：
 
@@ -158,18 +195,6 @@ python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
 python build.py
 ```
 
-### Build Script — 逐页精确控制
-
-```python
-from ppt_pro_max.build_helpers import *
-
-prs = Presentation()
-s = add_slide(prs)
-hero_slide(s, '标题', '副标题', C=C, typo=TYPOGRAPHY['mckinsey'])
-# ... 每个元素精确控制 x, y, w, h, font, size, color
-prs.save("output/presentation.pptx")
-```
-
 ---
 
 ## 🔥 核心特性
@@ -193,15 +218,15 @@ prs.save("output/presentation.pptx")
 
 ## 🏗️ 三模式架构
 
-| | **FreeStyle** | **Build Script** | **VI Build** |
+| | **Build Script** ⭐ | **FreeStyle** | **VI Build** |
 |---|---|---|---|
-| **场景** | 快速探索、原型 | 交付级精确控制 | 企业 VI 合规 |
-| **触发** | 默认 | `"build mode"` / `"像素级"` | 提供 template.pptx |
-| **内容** | Agent 写 content.json（推荐）或一句话 | 手写 build.py | LLM 读模板生成 build.py |
-| **质量** | ★★★★（goal 驱动 11 种版式） | ★★★★★ | ★★★★★ |
-| **方案** | 3 种风格预览 | 3 种结构化方案 | 3 种布局方案（同 VI Token） |
+| **场景** | 交付级精确控制 | 快速探索、原型 | 企业 VI 合规 |
+| **触发** | `"build mode"` / `"像素级"` | 默认 | 提供 template.pptx |
+| **内容** | 手写 build.py | Agent 写 content.json 或一句话 | LLM 读模板生成 build.py |
+| **质量** | ★★★★★ | ★★★★（goal 驱动 11 种版式） | ★★★★★ |
+| **方案** | 3 种结构化方案 | 3 种风格预览 | 3 种布局方案（同 VI Token） |
 
-> **推荐工作流**：FreeStyle 原型 → Build / VI Build 精细交付
+> **推荐工作流**：FreeStyle 快速原型 → Build 精细交付（主力模式）
 
 ---
 
