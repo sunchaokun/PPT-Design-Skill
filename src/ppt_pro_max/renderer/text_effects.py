@@ -48,6 +48,8 @@ def apply_text_gradient(run, stops: list[tuple[str, int]], angle: int = 5400000)
     rPr = run._r.get_or_add_rPr()
     _remove_run_fill(rPr)
     gradFill = etree.SubElement(rPr, qn("a:gradFill"))
+    gradFill.set("rotWithShape", "1")
+    gradFill.set("flip", "none")
     gsLst = etree.SubElement(gradFill, qn("a:gsLst"))
     for color_hex, pos in stops:
         gs = etree.SubElement(gsLst, qn("a:gs"))

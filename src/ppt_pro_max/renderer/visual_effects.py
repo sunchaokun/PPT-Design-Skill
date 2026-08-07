@@ -70,6 +70,8 @@ class GradientFill:
         _remove_existing_fill(spPr)
 
         gradFill = etree.SubElement(spPr, qn("a:gradFill"))
+        gradFill.set("rotWithShape", "1")
+        gradFill.set("flip", "none")
         gsLst = etree.SubElement(gradFill, qn("a:gsLst"))
         for stop in self.stops:
             gs = etree.SubElement(gsLst, qn("a:gs"))
@@ -264,6 +266,8 @@ def set_line_gradient(shape, color1: str, color2: str, width_pt: float = 2.0, an
         if el is not None:
             ln.remove(el)
     gradFill = etree.SubElement(ln, qn("a:gradFill"))
+    gradFill.set("rotWithShape", "1")
+    gradFill.set("flip", "none")
     gsLst = etree.SubElement(gradFill, qn("a:gsLst"))
     gs1 = etree.SubElement(gsLst, qn("a:gs"))
     gs1.set("pos", "0")
