@@ -1,0 +1,6 @@
+animation_id,animation_name,element_type,pptx_entrance,duration_ms,delay_ms
+appear,Appear,any,appear,0,0
+fade-in,Fade In,any,fade,300,0
+fade-in-stagger,Fade In Stagger,card;metric,fade,300,100
+fly-in-bottom,Fly In From Bottom,title;heading,fly,400,0
+grow,Grow/Scale,image;chart,grow,500,0

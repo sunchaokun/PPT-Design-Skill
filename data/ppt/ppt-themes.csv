@@ -1,0 +1,6 @@
+theme_id,theme_name,style_keywords,color_primary,color_accent,color_bg,color_fg,font_heading,font_body,dark_mode
+professional,Professional Modern,modern clean corporate,#2563EB,#F97316,#FFFFFF,#1E293B,Inter,Inter,false
+dark-tech,Dark Tech,futuristic developer dark,#6366F1,#22D3EE,#0F172A,#F8FAFC,Space Grotesk,Inter,true
+warm-elegant,Warm Elegant,luxury premium warm,#92400E,#D97706,#FFFBEB,#1C1917,Playfair Display,Inter,false
+vibrant-startup,Vibrant Startup,bold energetic young,#7C3AED,#EC4899,#F8FAFC,#0F172A,Poppins,Inter,false
+nature-calm,Nature Calm,organic sustainable calm,#059669,#34D399,#ECFDF5,#064E3B,Lora,Inter,false

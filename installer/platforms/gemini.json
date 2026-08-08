@@ -1,0 +1,18 @@
+{
+  "platform": "gemini",
+  "displayName": "Gemini CLI",
+  "folderStructure": {
+    "root": ".gemini",
+    "skillPath": "skills/ppt-design-skill",
+    "filename": "SKILL.md"
+  },
+  "globalPath": ".gemini/skills",
+  "projectDir": ".gemini",
+  "frontmatter": {
+    "name": "ppt-design-skill",
+    "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx"
+  },
+  "sections": {
+    "quickReference": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "platform": "claude",
+  "displayName": "Claude Code",
+  "folderStructure": {
+    "root": ".claude",
+    "skillPath": "skills/ppt-design-skill",
+    "filename": "SKILL.md"
+  },
+  "globalPath": ".claude/skills",
+  "projectDir": ".claude",
+  "frontmatter": {
+    "name": "ppt-design-skill",
+    "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
+    "argument-hint": "[topic] [--style style-description] [--fetch-images] [--proposal]"
+  },
+  "sections": {
+    "quickReference": true
+  }
+}
