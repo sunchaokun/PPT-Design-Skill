@@ -189,3 +189,59 @@ class TestQAReportFlow:
         out = BuildQA().format_report(report)
         assert "QA Report" in out
         assert "Result:" in out
+
+
+class TestScientificMode:
+    """BuildQA mode='scientific' lowers min font to 8pt (journal captions)."""
+
+    def _slide_with_small_font(self, prs, slide, pt):
+        # Add a small caption text using Pt()
+        from pptx.util import Inches, Pt
+        box = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(3), Inches(0.4))
+        tf = box.text_frame
+        p = tf.paragraphs[0]
+        run = p.add_run()
+        run.text = 'Figure 1 caption (journal standard)'
+        run.font.size = Pt(pt)
+        return box
+
+    def test_9pt_caption_passes_in_scientific(self, prs, slide, tmp_path):
+        self._slide_with_small_font(prs, slide, 9)
+        path = tmp_path / "sci.pptx"
+        prs.save(path)
+        report = BuildQA().check(str(path), mode="scientific")
+        small = [i for i in report.warnings if i.check_id == "font_too_small"]
+        assert len(small) == 0
+
+    def test_9pt_caption_fails_in_business(self, prs, slide, tmp_path):
+        self._slide_with_small_font(prs, slide, 9)
+        path = tmp_path / "biz.pptx"
+        prs.save(path)
+        report = BuildQA().check(str(path), mode="business")
+        small = [i for i in report.warnings if i.check_id == "font_too_small"]
+        assert len(small) >= 1
+
+    def test_7pt_fails_even_in_scientific(self, prs, slide, tmp_path):
+        # Even scientific mode has a floor — 7pt is too small
+        self._slide_with_small_font(prs, slide, 7)
+        path = tmp_path / "tiny.pptx"
+        prs.save(path)
+        report = BuildQA().check(str(path), mode="scientific")
+        small = [i for i in report.warnings if i.check_id == "font_too_small"]
+        assert len(small) >= 1
+
+    def test_8pt_boundary_passes_in_scientific(self, prs, slide, tmp_path):
+        self._slide_with_small_font(prs, slide, 8)
+        path = tmp_path / "boundary.pptx"
+        prs.save(path)
+        report = BuildQA().check(str(path), mode="scientific")
+        small = [i for i in report.warnings if i.check_id == "font_too_small"]
+        assert len(small) == 0
+
+    def test_default_mode_is_business(self, prs, slide, tmp_path):
+        self._slide_with_small_font(prs, slide, 9)
+        path = tmp_path / "default.pptx"
+        prs.save(path)
+        report = BuildQA().check(str(path))  # no mode arg = business
+        small = [i for i in report.warnings if i.check_id == "font_too_small"]
+        assert len(small) >= 1

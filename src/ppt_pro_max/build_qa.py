@@ -114,12 +114,23 @@ class BuildQA:
         self,
         pptx_path: str,
         plans: list[dict] | None = None,
+        mode: str = "business",
     ) -> QAReport:
+        """Run QA checks.
+
+        mode='business' (default): min font 11pt.
+        mode='scientific': min font 8pt — figure captions, sequence fonts, and
+            superscript citations in journal decks are intentionally small
+            (Nature/Cell convention). All other checks unchanged.
+        """
         if not os.path.isfile(pptx_path):
             return QAReport(
                 total_slides=0, total_checks=0, passed=0,
                 fatals=[CheckItem("content", "file_missing", "fatal", -1, "Output file not found")],
             )
+
+        min_font_pt = 8 if mode == "scientific" else _MIN_FONT_PT
+        min_font_hundredths = min_font_pt * 100
 
         prs = Presentation(pptx_path)
         total_slides = len(prs.slides)
@@ -135,7 +146,7 @@ class BuildQA:
             all_items.extend(self._check_residual_placeholders(idx, all_text))
             all_items.extend(self._check_blank_page(idx, all_text))
             all_items.extend(self._check_broken_image_ref(idx, slide_elem, prs))
-            all_items.extend(self._check_font_too_small(idx, slide_elem))
+            all_items.extend(self._check_font_too_small(idx, slide_elem, min_font_pt))
             all_items.extend(self._check_text_overflow(idx, slide))
             all_items.extend(self._check_title_duplicate(idx, slide_elem))
             all_items.extend(self._check_color_break(idx, slide_elem))
@@ -272,7 +283,7 @@ class BuildQA:
                     pass
         return items
 
-    def _check_font_too_small(self, slide_idx: int, slide_elem) -> list[CheckItem]:
+    def _check_font_too_small(self, slide_idx: int, slide_elem, min_font_pt: int = _MIN_FONT_PT) -> list[CheckItem]:
         a_ns = _NS["a"]
         items = []
         for tag_name in (f"{{{a_ns}}}rPr", f"{{{a_ns}}}defRPr"):
@@ -281,7 +292,7 @@ class BuildQA:
                 if sz:
                     try:
                         pt = int(sz) / 100
-                        if pt < _MIN_FONT_PT:
+                        if pt < min_font_pt:
                             items.append(CheckItem(
                                 "layout", "font_too_small", "warning", slide_idx,
                                 f"Font size too small ({pt:.0f}pt)",
