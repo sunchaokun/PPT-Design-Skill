@@ -951,22 +951,25 @@ result = fetch_image("product launch", mode="auto", llm_provider="seedream", llm
 python -m ppt_pro_max "AI pitch" --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY
 ```
 
-**In Build mode — call fetch_image() then use the path:**
+**In Build mode — use `ai_image()` (one call) or `fetch_image()` + placement:**
 
 ```python
-from ppt_pro_max import fetch_image
 from ppt_pro_max.build_helpers import *
 
-# Generate image, then place it
-result = fetch_image("protein structure 3D", mode="generate", llm_provider="seedream", llm_api_key="...")
-circle_image(slide, 6.5, 3.5, 1.5, result["path"])
+# ONE call: generate image + place cover-fit (auto mode: AI → search fallback)
+ai_image(slide, 1.0, 2.0, 5.0, 3.0, "protein structure 3D",
+         mode="generate", llm_provider="seedream", llm_api_key="...")
+
+# Or fetch a path first, then place it with any image helper
+r = fetch_image("protein structure 3D", mode="generate", llm_provider="seedream", llm_api_key="...")
+circle_image(slide, 6.5, 3.5, 1.5, r["path"])
 ```
 
 ### Engine Reference
 
 | Engine | Provider | Env Key | Default Model |
 |--------|----------|---------|---------------|
-| Seedream | Volcengine | ARK_API_KEY | doubao-seedream-5-0-260128 |
+| Seedream | Volcengine | ARK_API_KEY | doubao-seedream-4-5-251128 |
 | GPT Image | OpenAI | OPENAI_API_KEY | gpt-image-1 |
 | DALL-E 3 | OpenAI | OPENAI_API_KEY | dall-e-3 |
 | Wanx | Alibaba | DASHSCOPE_API_KEY | wanx-v1 |
@@ -1096,6 +1099,18 @@ from ppt_pro_max.build_qa import BuildQA
 report = BuildQA().check("output.pptx")
 print(BuildQA().format_report(report))
 # is_passable = no fatal issues
+```
+
+- **Debug loop**: after re-running `build.py`, render every slide to PNG + a single HTML contact sheet to eyeball layout without opening PowerPoint:
+
+```bash
+# CLI
+python -m ppt_pro_max.render_preview output.pptx --open
+
+# Python API (auto-detects PowerPoint COM on Windows / LibreOffice fallback)
+from ppt_pro_max.render_preview import render_preview
+result = render_preview("output.pptx", out_dir="output/preview/deck")
+print(result["html"])   # open this in a browser
 ```
 
 ## UX Intelligence API (内置设计数据库 — MANDATORY for Build Mode)
@@ -1696,7 +1711,7 @@ clean_save(prs, 'output/deck.pptx')
 - **python-pptx 1.0.2**: No `PP_TRANSITION_TYPE`, must use XML for transitions/animations
 - **Cover-fit images**: Use `_add_picture_cover()` with Pillow pre-crop — never stretch
 - **Cache-first**: All image engines check cache before API call
-- **Image generation**: ALWAYS use `python -m ppt_pro_max image "keywords"` CLI or `fetch_image()` Python API. NEVER write custom scripts to call image APIs — the built-in CLI already handles cache, retry, multi-engine fallback, and cover-fit cropping
+- **Image generation**: ALWAYS use `python -m ppt_pro_max image "keywords"` CLI, `fetch_image()` Python API, or `ai_image()` in build.py. NEVER write custom scripts to call image APIs — the built-in CLI already handles cache, retry, multi-engine fallback, and cover-fit cropping. In build.py, `ai_image()` is the one-call generate+place helper (exposed by `from ppt_pro_max.build_helpers import *`).
 - **Two-pass rebuild**: Page revision uses rebuild (not in-place) to avoid ZIP corruption
 - **Windows**: Use `python` not `python3`
 - **OOXML alpha**: `a:alpha val` = percentage × 1000 (e.g., 80% = 80000, NOT 0.8)

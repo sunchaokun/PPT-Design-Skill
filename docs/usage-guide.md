@@ -1733,7 +1733,7 @@ result = generate_ppt("课程大纲", project="./course", style="professional")
 
 | 引擎 | CLI 参数 | 默认模型 | 环境变量 |
 |------|---------|---------|---------|
-| **Seedream** | `--llm-provider seedream` | `doubao-seedream-5-0-260128` | `ARK_API_KEY` |
+| **Seedream** | `--llm-provider seedream` | `doubao-seedream-4-5-251128` | `ARK_API_KEY` |
 | **GPT Image** | `--llm-provider gpt-image` | `gpt-image-1` | `OPENAI_API_KEY` |
 | **DALL-E 3** | `--llm-provider dalle` | `dall-e-3` | `OPENAI_API_KEY` |
 | **Gemini** | `--llm-provider gemini` | `gemini-2.5-flash-image` | `GEMINI_API_KEY` |
@@ -1744,9 +1744,9 @@ result = generate_ppt("课程大纲", project="./course", style="professional")
 
 | 模型名 | 说明 |
 |--------|------|
-| `doubao-seedream-5-0-260128` | **默认**，Seedream 5.0 |
+| `doubao-seedream-4-5-251128` | **默认**，Seedream 4.5 |
+| `doubao-seedream-5-0-260128` | Seedream 5.0 |
 | `doubao-seedream-5-0-pro-260628` | Seedream 5.0 Pro |
-| `doubao-seedream-4-5-251128` | Seedream 4.5 |
 
 ```bash
 # 使用 Seedream 5.0 Pro

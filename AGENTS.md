@@ -15,6 +15,12 @@ AI-powered PPT generation — 3 modes: FreeStyle (one-liner), Enterprise (brand 
 python -m ppt_pro_max "AI startup investor pitch" --style "dark cyberpunk" --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY
 ```
 
+### Render Preview (debug build.py layouts without opening PowerPoint)
+```bash
+# Render every slide to PNG + HTML contact sheet (PowerPoint COM / LibreOffice fallback)
+python -m ppt_pro_max.render_preview output/build_10pages.pptx --open
+```
+
 ### Standalone Image Generation
 ```bash
 # AI image generation (no PPT needed)
@@ -63,6 +69,7 @@ python -m ruff check src/
 - `src/ppt_pro_max/renderer/ppt_renderer.py` — Phase 4: PPT rendering
 - `src/ppt_pro_max/renderer/theme_composer.py` — 40,000+ style combinations
 - `src/ppt_pro_max/renderer/image_fetcher.py` — 4 image generation engines (Seedream/GPT Image/DALL-E/Wanx) + 1 enhancer (Kimi)
+- `src/ppt_pro_max/render_preview.py` — Debug tool: batch-render .pptx slides to PNG + HTML contact sheet (PowerPoint COM / LibreOffice)
 
 ### Enterprise / Renderer (unified)
 

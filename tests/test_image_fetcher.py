@@ -76,9 +76,9 @@ def test_available_providers():
     assert "gpt-image" in providers
     assert "dalle" in providers
     assert "gemini" in providers
-    assert providers["seedream"]["default_model"] == "doubao-seedream-5-0-260128"
-    assert "doubao-seedream-5-0-260128" in providers["seedream"]["models"]
+    assert providers["seedream"]["default_model"] == "doubao-seedream-4-5-251128"
     assert "doubao-seedream-4-5-251128" in providers["seedream"]["models"]
+    assert "doubao-seedream-5-0-260128" in providers["seedream"]["models"]
     assert "gpt-image-2" in providers["gpt-image"]["models"]
     assert providers["gemini"]["env_key"] == "GEMINI_API_KEY"
     assert providers["gemini"]["env_base_url"] == "GEMINI_BASE_URL"

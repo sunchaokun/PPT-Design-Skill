@@ -197,7 +197,7 @@ With bundled design DB (192 palettes · 84 styles · 74 font pairs · 161 anti-p
 |--------|------|-----|---------------|
 | `placeholder` | Gradient placeholder | Default | — |
 | `search` | Unsplash / Pexels | `--image-mode search` | — |
-| `seedream` | AI generate | `--llm-provider seedream` | `doubao-seedream-5-0-260128` |
+| `seedream` | AI generate | `--llm-provider seedream` | `doubao-seedream-4-5-251128` |
 | `gpt-image` | AI generate | `--llm-provider gpt-image` | `gpt-image-1` |
 | `dalle` | AI generate | `--llm-provider dalle` | `dall-e-3` |
 | `gemini` | AI generate | `--llm-provider gemini` | `gemini-2.5-flash-image` |

@@ -281,3 +281,35 @@ class TestCopyLogo:
         dst = add_slide(prs)
         copy_logo(dst, src)
         assert len(dst.shapes) >= 1
+
+
+class TestShapeDimensionGuard:
+
+    def test_negative_width_clamped(self, prs, C):
+        from ppt_pro_max.build_helpers import add_slide, shape, rect
+        s = add_slide(prs)
+        sh = shape(s, MSO_SHAPE.RECTANGLE, 1, 1, -2, 2, '#2E6504', C=C)
+        assert sh.width >= 0
+        # shape survives save (no corrupt file)
+        prs.save(str(__import__('tempfile').gettempdir()) + '/_guard_neg.pptx')
+
+    def test_zero_height_clamped(self, prs, C):
+        from ppt_pro_max.build_helpers import add_slide, shape
+        s = add_slide(prs)
+        sh = shape(s, MSO_SHAPE.RECTANGLE, 1, 1, 2, 0, '#2E6504', C=C)
+        assert sh.height > 0
+
+    def test_arrow_negative_height_clamped(self, prs, C):
+        from ppt_pro_max.build_helpers import add_slide, arrow
+        s = add_slide(prs)
+        # height = -0.2 (negative) previously produced a corrupt file
+        sh = arrow(s, 1, 2, 0.6, -0.2, '#2E6504', C=C)
+        assert sh.height > 0
+        prs.save(str(__import__('tempfile').gettempdir()) + '/_guard_arrow.pptx')
+
+    def test_normal_dims_unchanged(self, prs, C):
+        from ppt_pro_max.build_helpers import add_slide, shape
+        s = add_slide(prs)
+        sh = shape(s, MSO_SHAPE.RECTANGLE, 1, 1, 3, 2, '#2E6504', C=C)
+        assert sh.width == Inches(3)
+        assert sh.height == Inches(2)

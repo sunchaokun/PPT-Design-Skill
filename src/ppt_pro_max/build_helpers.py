@@ -14,6 +14,7 @@ Usage in build scripts:
 from __future__ import annotations
 
 import copy
+import os
 
 from lxml import etree
 from pptx.util import Inches, Pt, Emu
@@ -46,6 +47,10 @@ from ppt_pro_max.renderer.animation import (
     add_slide_transition, add_entrance_animation,
     add_exit_animation, add_emphasis_animation,
 )
+
+# Re-exported so build.py `from build_helpers import *` gets the image API too.
+# ai_image() is the one-call generate+place helper; fetch_image() returns a path.
+from ppt_pro_max import fetch_image  # noqa: E402  (safe: no cycle at module level)
 
 
 def _resolve_color(val, C):
@@ -352,6 +357,12 @@ def shape(slide, shape_type, left, top, width, height, fill, line=None, C=None):
     _type = shape_type
     if isinstance(_type, str):
         _type = getattr(MSO_SHAPE, _type.upper(), MSO_SHAPE.RECTANGLE)
+    # Guard: negative or zero dimensions produce a pptx that PowerPoint
+    # refuses to open (reports file corrupt). Clamp to a visible minimum
+    # instead of crashing mid-layout.
+    if width < 0 or height < 0 or width == 0 or height == 0:
+        width = max(width, 0.1)
+        height = max(height, 0.1)
     sh = _add_shape(slide.shapes, _type,
                     Inches(left), Inches(top),
                     Inches(width), Inches(height))
@@ -1645,6 +1656,61 @@ def cover_image(slide, left, top, width, height, image_path):
         cropped_path, Inches(left), Inches(top),
         Inches(width), Inches(height),
     )
+
+
+def ai_image(slide, left, top, width, height, keywords, *,
+             mode="auto", emotion="", goal="", llm_provider=None,
+             llm_api_key=None, llm_base_url=None, llm_model=None,
+             unsplash_access_key=None, pexels_api_key=None,
+             image_cache_dir=None, auto_detect=True, fallback_placeholder=True):
+    """Generate (or fetch) an image and place it cover-fit in ONE call.
+
+    Wraps `fetch_image()` + `cover_image()` so build.py never needs to call
+    image APIs directly. Preferred over hand-rolled urllib/requests scripts —
+    handles cache-first, retry, multi-engine fallback, and cover-fit cropping.
+
+    Args:
+        slide: target slide.
+        left/top/width/height: placement box (inches).
+        keywords: image search / generation prompt.
+        mode: 'auto' (default) | 'generate' | 'search' | 'enhance'.
+        emotion/goal: optional design hints forwarded to image engines.
+        llm_provider: e.g. 'seedream' | 'gpt-image' | 'wanx' | 'kimi' (enhance).
+        llm_api_key / llm_base_url / llm_model: generation credentials.
+        unsplash_access_key / pexels_api_key: search credentials.
+        image_cache_dir: override image cache location.
+        auto_detect: auto-detect provider/keys from environment.
+        fallback_placeholder: draw a neutral placeholder box when fetch fails
+            (keeps the build script from crashing mid-layout).
+
+    Returns:
+        The added picture shape, or None if fetch failed and no fallback.
+    """
+    result = fetch_image(
+        keywords,
+        mode=mode,
+        emotion=emotion,
+        goal=goal,
+        width=int(width * 96),
+        height=int(height * 96),
+        llm_provider=llm_provider,
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
+        unsplash_access_key=unsplash_access_key,
+        pexels_api_key=pexels_api_key,
+        image_cache_dir=image_cache_dir,
+        auto_detect=auto_detect,
+    )
+    path = result.get("path") if result else None
+    if path and os.path.isfile(path):
+        return cover_image(slide, left, top, width, height, path)
+    if fallback_placeholder:
+        rect(slide, left, top, width, height, "#E8ECF1", C=None)
+        text(slide, left, top, width, height * 0.3, keywords, font_size=10,
+             color="#9AA5B1", align="center", C=None)
+        return None
+    return None
 
 
 def circle_image(slide, cx, cy, radius, image_path, border_color=None):

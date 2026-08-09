@@ -296,6 +296,27 @@ highlight_cards(s, 0.65, 2.2, [
 
 ## Image Effects
 
+### Generate + Place (one call — preferred in build.py)
+
+| Function | Signature | Purpose |
+|----------|-----------|---------|
+| `ai_image` | `ai_image(slide, left, top, width, height, keywords, *, mode='auto', emotion='', goal='', llm_provider=None, llm_api_key=None, ...)` | **Generate/fetch an image AND place it cover-fit in one call.** Wraps `fetch_image()` + `cover_image()`. Handles cache, retry, multi-engine fallback, cover-fit. `fallback_placeholder=True` draws a neutral box when fetch fails (never crashes the layout). |
+| `fetch_image` | `fetch_image(keywords, *, mode='auto', ...)` | Low-level: return a local file path dict. Re-exported from `build_helpers` for build.py. |
+
+```python
+# ONE call — generate + place cover-fit (auto mode: AI → search fallback)
+ai_image(s, 0.65, 2.0, 5.0, 3.0, "protein structure 3D",
+         mode="generate", llm_provider="seedream", llm_api_key=os.environ["ARK_API_KEY"])
+
+# Or fetch a path yourself, then use any placement helper
+r = fetch_image("lab bench", mode="search", unsplash_access_key="...")
+circle_image(s, 6.5, 3.5, 1.5, r["path"])
+```
+
+**⚠️ NEVER write custom urllib/requests scripts to call image APIs** — `ai_image()`/`fetch_image()` already handle cache-first, retry, multi-engine fallback, and cover-fit cropping.
+
+### Placement (image must already exist on disk)
+
 | Function | Signature | Purpose |
 |----------|-----------|---------|
 | `cover_image` | `cover_image(slide, left, top, width, height, image_path)` | Cover-fit image (Pillow pre-crop) |
