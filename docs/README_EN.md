@@ -108,7 +108,7 @@ ppt-design "investor pitch" --style "dark cyberpunk" \
 ### VI Build — Enterprise Template Compliance
 
 ```bash
-python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+python -m ppt_pro_max analyze template.pptx > analysis.txt
 # Feed analysis.txt to LLM to generate build.py, then:
 python build.py
 ```
@@ -138,7 +138,7 @@ prs.save("output/presentation.pptx")
 | **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
 | **Animation System** | 12 transitions + 10 entrance + 8 exit + 8 emphasis + Morph, motion 1-10 mapping |
 | **CJK Fonts** | 12 CJK font pairings with auto-fallback |
-| **5,500+ Component Library** | SmartArt/GroupShape templates, SQLite-indexed, match by category/node count |
+| **Built-in Design DB** | 192 palettes · 84 styles · 74 font pairs · 161 anti-patterns, BM25 search, out-of-the-box |
 
 ---
 
@@ -158,7 +158,7 @@ prs.save("output/presentation.pptx")
 
 ## 🎨 Design System
 
-**Natural language style** — describe and generate. Natural-language styles go through **mood detection + ui-ux-pro-max database** and, without a seed, select palette/fonts/decoration **randomly per run** (not a fixed mapping). For deterministic output use preset names (`dark-tech`/`professional`/`warm-elegant`) or explicit `--style-seed`:
+**Natural language style** — describe and generate. Natural-language styles go through **mood detection + bundled design database** and, without a seed, select palette/fonts/decoration **randomly per run** (not a fixed mapping). For deterministic output use preset names (`dark-tech`/`professional`/`warm-elegant`) or explicit `--style-seed`:
 
 ```bash
 ppt-design "investor pitch" --style "warm fintech"       # mood=[warm,fintech]; palette/fonts via ux database
@@ -186,7 +186,7 @@ ppt-design "investor pitch" --style "warm fintech" --style-seed 42
 
 **30 × 25 × 15 × 12 = 135,000 combinations**
 
-With ui-ux-pro-max (192 palettes · 84 styles · 74 fonts · 161 anti-patterns): 200,000+
+With bundled design DB (192 palettes · 84 styles · 74 font pairs · 161 anti-patterns): 200,000+
 
 </details>
 

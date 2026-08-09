@@ -1,7 +1,7 @@
 ---
 name: ppt-design-skill
-version: 0.14.0
-description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: Build (default) + VI Build + FreeStyle (quick draft). 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, 3 structurally-different build.py proposals, brand compliance, component chart library. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
+version: 0.16.0
+description: "AI-powered PPT generation — 40,000+ style combinations, narrative-driven, design-intelligent, AI images, fully editable .pptx. Three modes: Build (default) + VI Build + FreeStyle (quick draft). 8 goal-type layouts, 35 moods, README parsing, size-aware image assignment, 3 structurally-different build.py proposals, brand compliance. Engines: Seedream, GPT Image, DALL-E, Wanx, Kimi."
 argument-hint: "[topic] [--style style-description] [--fetch-images]"
 license: MIT
 metadata:
@@ -89,7 +89,7 @@ prs.save('output.pptx')
 | Ink splash | `ink_splash()` | `ink_splash(s, x, y, size, color='#2C2C2C')` |
 | Grid background | `grid_background()` | `grid_background(s, spacing=1.0, color='#E0E0E0')` |
 | Adjust image | `adjust_image()` | `img = cover_image(s,...); adjust_image(img, brightness=20)` |
-| Query templates | `query_components()` | `query_components(component_type='infographic', node_count=5)` |
+| Query design system | `get_design_system()` | `ds = get_design_system('fintech', variance=5)` |
 | Analyze PPT | `analyze_pptx()` | `dna = analyze_pptx('template.pptx')` |
 | Slide transition | `slide_transition()` | `slide_transition(s, 'fade')` |
 | Entrance anim | `entrance_animation()` | `entrance_animation(s, shape_id, 'fade_in')` |
@@ -102,7 +102,8 @@ prs.save('output.pptx')
 
 1. **This SKILL.md** — read workflow + constraints first
 2. **[`docs/build_helpers_api.md`](docs/build_helpers_api.md)** — complete function signatures + parameter enums
-3. **[`python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — for UNDERSTANDING python-pptx capabilities only, NOT for direct use in build.py
+3. **[`examples/build_10pages.py`](examples/build_10pages.py)** — verified 10-page deck (passes BuildQA 0/0), the canonical build.py reference
+4. **[`python-pptx-reference.md`](src/ppt_pro_max/docs/python-pptx-reference.md)** — for UNDERSTANDING python-pptx capabilities only, NOT for direct use in build.py
 
 ## ⚠️ Non-Negotiable Sections (DO NOT compress or remove)
 
@@ -111,7 +112,7 @@ These sections are the LLM's only reference for writing correct output:
 2. **content.json Format** — LLM must know the exact schema to write valid content
 3. **brand.json Format** — LLM must know brand spec structure for VI Build mode
 4. **Build Helpers API** — LLM must know function signatures to write build.py
-5. **UX Intelligence API** — LLM must know how to query ui-ux-pro-max for design decisions
+5. **UX Intelligence API** — LLM must know how to query the bundled design database for design decisions
 6. **Content Design Rules** — LLM must know which content patterns trigger which rendering
 7. **Key Constraints** — LLM must know API gotchas and OOXML details
 8. **generate_ppt() signature** — LLM must know valid parameters to call the pipeline
@@ -198,13 +199,13 @@ Generate 3 lightweight `build.py` scripts (proposal_A.py, proposal_B.py, proposa
 
 **Proposal generation workflow:**
 
-1. **UX Intelligence Query** — BEFORE writing any build.py, query ui-ux-pro-max for domain-specific design knowledge:
+1. **UX Intelligence Query** — BEFORE writing any build.py, query the bundled design database for domain-specific design knowledge:
    ```python
    from ppt_pro_max.adapters.ui_ux_adapter import (
        is_available, get_design_system, search_design,
        search_style, search_color, search_typography,
    )
-   
+
    if is_available():
        ds = get_design_system("your query", variance=V, motion=M, density=D)
        ux_colors = ds.get('colors', {})          # e.g. {'primary': '#7C3AED', 'background': '#FAF5FF', ...}
@@ -214,7 +215,7 @@ Generate 3 lightweight `build.py` scripts (proposal_A.py, proposal_B.py, proposa
        ux_anti = ds.get('anti_patterns', '')      # e.g. 'Heavy chrome + Slow response feedback'
        ux_pattern = ds.get('pattern_name', '')    # e.g. 'SaaS Landing'
        ux_dials = ds.get('dials', {})             # variance/motion/density recommendations
-       
+
        # Enrich with style/color/typography searches
        style_results = search_style("professional consulting", 2)
        color_results = search_color("dark tech", 2)
@@ -223,7 +224,7 @@ Generate 3 lightweight `build.py` scripts (proposal_A.py, proposal_B.py, proposa
    Use `ux_colors` as the **primary source** for the `C` dict instead of hardcoding colors. Use `ux_anti` to avoid known anti-patterns. Use `ux_effects` to guide decoration/animation choices.
 
 2. Write 3 build.py files (proposal_A.py, proposal_B.py, proposal_C.py) with:
-   - Different `C` color dict derived from ui-ux-pro-max search results (3 distinct palettes)
+   - Different `C` color dict derived from design database search results (3 distinct palettes)
    - Different `TYPOGRAPHY[...]` and `SPACING[...]` selections informed by ux_typo
    - Different page structure and component choices per page
    - Same framework content (titles + placeholder data) so user compares structure, not content
@@ -290,7 +291,7 @@ prs.save('proposal_A.pptx')
 
 When user provides a template.pptx, proposals must preserve framework pages (cover/TOC/back cover) and only vary the **new content page structure**. All 3 proposals share the same VI Token (extracted from template), but differ in layout architecture for content pages.
 
-1. Run `python -m ppt_pro_max.analyze_template template.pptx > analysis.txt`
+1. Run `python -m ppt_pro_max analyze template.pptx > analysis.txt`
 2. Extract VI Token (C dict) from analysis.txt — this is **fixed** across all 3 proposals
 3. Generate 3 build.py files with:
    - **Same** C dict (VI Token from template)
@@ -321,7 +322,7 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 - Path A: you write `content.json` (real content, per-page `goal` + field selection), then `generate_ppt(content_file="content.json", style=..., ...)` renders it directly — see [content.json Format](#contentjson-format)
 - Path B: one-command draft `generate_ppt("topic", style=..., fetch_images=True, ...)`
 - No proposal step — one-shot output
-- For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
+- For revisions: modify content.json and regenerate, or edit the slide count/fields
 
 ### Step 4: Draft Generation & Revision (All Modes)
 
@@ -334,7 +335,7 @@ When user provides a template.pptx, proposals must preserve framework pages (cov
 **FreeStyle Mode (agent-driven content.json or quick draft):**
 - Generate full PPT: `generate_ppt(content_file="content.json", style=confirmed_style, fetch_images=True, ...)` (query optional)
 - Verify output: check page count, file size, content rendering
-- For revisions: modify content.json and regenerate, or use `--pages` / `--beautify`
+- For revisions: modify content.json and regenerate, or edit the slide count/fields
 
 ### Step 5: Final Delivery (All Modes)
 
@@ -447,7 +448,7 @@ LLM reads template analysis, generates build.py that preserves framework pages (
 
 ```bash
 # Step 1: Analyze template
-python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+python -m ppt_pro_max analyze template.pptx > analysis.txt
 
 # Step 2: Give analysis.txt to LLM, which generates build.py
 
@@ -488,7 +489,7 @@ prs.save('output.pptx')
 - Start with `Presentation('template.pptx')` NOT `Presentation()`
 - Framework pages (cover/TOC/back cover) are preserved untouched
 - Use `copy_decorations()` / `copy_logo()` to maintain VI consistency
-- VI Token (`C` dict) extracted from `analyze_template.py` output, not hand-written
+- VI Token (`C` dict) extracted from `ppt-design analyze` output, not hand-written
 
 ### FreeStyle Mode (Agent-Driven content.json — NO Proposals)
 
@@ -810,8 +811,8 @@ Match user topic/keywords to the paradigm with the most keyword hits. If ambiguo
 - Never silently change: page order / navigation labels / logo / legal copy
 
 ### Design System Mapping
-- Consulting/finance → sidebar + component_library process/hierarchy
-- Tech talks → code block + component_library infographic
+- Consulting/finance → sidebar + diagram engine process/hierarchy
+- Tech talks → code block + diagram engine infographic
 - Education → exercise page + built-in bullets
 - Creative proposals → custom blocks + AI images
 - Brand launch → full-bleed images + minimal text
@@ -874,7 +875,7 @@ img = fetch_image("futuristic AI city", mode="generate", llm_provider="seedream"
 print(img["path"])
 ```
 
-**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, ~~`proposal`~~ (deprecated — use build.py), ~~`confirmed_proposal`~~ (deprecated), `materials_dir`, `beautify`, `component_library`, `palette`, `fonts`, `decoration`, `mood`, `llm_provider`, `llm_api_key`, `pages`
+**Key generate_ppt() parameters:** `query`, `style`, `content_file`, `layout_variant`, `variance`, `motion`, `density`, `fetch_images`, `palette`, `fonts`, `decoration`, `mood`, `llm_provider`, `llm_api_key`, `pages`
 
 ## 4-Phase Pipeline
 
@@ -1083,81 +1084,23 @@ my-project/
 - `strip_style`: `"auto"` (varied: left bar / bottom line / none, cycling by page), `"left"` (always left bar), `"none"` (no strip). Default: `"auto"`
 - `section_dividers`: `true` (auto-insert section dividers on topic shifts), `false` (no dividers). Default: `true`
 
-## Page Revision Syntax
+## Revision Workflow
 
-```
---pages "3,5 +6 -8 3>5 3<>7"
-```
-
-| Syntax | Action | Example |
-|--------|--------|---------|
-| `N` | Keep page N | `3,5` keep pages 3 and 5 |
-| `+N` | Insert new page at N | `+6` insert at position 6 |
-| `-N` | Delete page N | `-3` delete page 3 |
-| `N>M` | Move page N to position M | `10>3` move 10 to 3 |
-| `N<>M` | Swap pages N and M | `2<>5` swap 2 and 5 |
-
-All page numbers are 1-based, refer to ORIGINAL document.
-
-## Component Library (Professional Chart Templates)
-
-A SQLite-indexed library of GroupShape/SmartArt templates extracted from real PPT files, with coordinate normalization for universal scaling.
-
-### Library Overview
-
-| Category | Count | Use When |
-|----------|-------|----------|
-| infographic | 4,101 | Data visualization, statistics, KPI dashboards |
-| process | 672 | Workflows, step-by-step, pipelines, procedures |
-| hierarchy | 548 | Org charts, reporting structures, tree diagrams |
-| chart | 132 | Bar/pie/line chart layouts, data comparison |
-| timeline | 42 | Milestones, roadmaps, chronological events |
-| swot | 39 | Strategic analysis, 4-quadrant frameworks |
-
-### How to Query the Library
+- **Build/VI Build**: modify `build.py` and re-run — build.py is the single source of truth
+- **FreeStyle**: modify `content.json` and regenerate — the `slides[]` array drives page count and content
+- Run `BuildQA` before delivery to catch fatal issues (placeholders, blank pages, broken images, overflows)
 
 ```python
-from ppt_pro_max import query_component_library
+from ppt_pro_max.build_qa import BuildQA
 
-catalog = query_component_library()
-results = query_component_library(type="group", category="process")
-results = query_component_library(type="group", category="hierarchy", node_count=5)
+report = BuildQA().check("output.pptx")
+print(BuildQA().format_report(report))
+# is_passable = no fatal issues
 ```
 
-### How to Use Components in content.json
+## UX Intelligence API (内置设计数据库 — MANDATORY for Build Mode)
 
-Add `component_type` and `component_category` to any slide:
-
-```json
-{
-  "goal": "content",
-  "title": "项目流程",
-  "bullets": ["需求分析", "方案设计", "开发实现", "测试上线"],
-  "component_type": "group",
-  "component_category": "process"
-}
-```
-
-Matching logic: exact match (type+category+node_count) → fuzzy match (closest node_count) → fallback (DiagramEngine or bullets).
-
-### Component Selection Strategy
-
-| Scenario | Use Component Library | Use Built-in Layout |
-|----------|----------------------|---------------------|
-| Process/flow with 3-8 steps | `process` component | Only if no library match |
-| Org chart / reporting structure | `hierarchy` component | Never use built-in for this |
-| Data dashboard / KPI grid | `infographic` component | Only for simple 2-3 metrics |
-| Timeline / milestones | `timeline` component | Only if no library match |
-| SWOT analysis | `swot` component | Only if no library match |
-| Simple 3-card features | Built-in `features` cards | Better brand consistency |
-| Code block | Built-in code renderer | Components don't help here |
-| Bullet list (2-5 items) | Built-in bullet renderer | Simpler = better |
-
-**Node count matching:** node_count = number of text items (4 steps → node_count=4). Prefer exact match; if between two, choose larger.
-
-## UX Intelligence API (ui-ux-pro-max — MANDATORY for Build Mode)
-
-**⚠️ BEFORE writing any build.py, you MUST query ui-ux-pro-max for domain-specific design intelligence.** This is the single biggest quality differentiator — without it, you're guessing colors/fonts/styles; with it, you get professional-grade design decisions backed by a searchable database of real-world patterns.
+**⚠️ BEFORE writing any build.py, you MUST query the bundled design database (ui_ux_adapter → design_search) for domain-specific design intelligence.** This is the single biggest quality differentiator — without it, you're guessing colors/fonts/styles; with it, you get professional-grade design decisions backed by a searchable database of real-world patterns (bundled inside ppt_pro_max, no external dependency required).
 
 Import: `from ppt_pro_max.adapters.ui_ux_adapter import is_available, get_design_system, search_design, search_style, search_color, search_typography, search_reasoning`
 
@@ -1165,7 +1108,7 @@ Import: `from ppt_pro_max.adapters.ui_ux_adapter import is_available, get_design
 
 | Function | Purpose | Returns |
 |----------|---------|---------|
-| `is_available()` | Check if ui-ux-pro-max is installed | `bool` |
+| `is_available()` | Check if the bundled design database is available | `bool` |
 | `get_design_system(query, variance=None, motion=None, density=None)` | Full design system for a project | `dict` with colors, typography, style, pattern, anti_patterns, decision_rules, dials |
 | `search_design(query, domain=None, max_results=3)` | Search product/UX patterns | `list[dict]` with Product Type, Keywords, Primary Style Recommendation, Landing Page Pattern |
 | `search_style(query, max_results=3)` | Search visual style patterns | `list[dict]` with Style Category, Effects & Animation, Dark Mode, Light Mode |
@@ -1621,21 +1564,6 @@ See **[`shapes-reference.md`](src/ppt_pro_max/docs/shapes-reference.md)** for fu
 
 **Pattern types** (31): `cross`, `dark_downward_diagonal`, `dark_upward_diagonal`, `dark_horizontal`, `dark_vertical`, `small_checker`, `trellis`, `light_horizontal`, `light_vertical`, `light_downward_diagonal`, `light_upward_diagonal`, `narrow_horizontal`, `narrow_vertical`, `dashed_downward_diagonal`, `dashed_upward_diagonal`, `dashed_horizontal`, `dashed_vertical`, `small_confetti`, `large_confetti`, `zigzag`, `wave`, `diagonal_brick`, `horizontal_brick`, `weave`, `plaid`, `divot`, `dotted_grid`, `dotted_diamond`, `shingle`, `large_checker`, `large_grid`, `small_grid`, `solid_diamond`, `percent_5`-`percent_90`
 
-### Functions — Component Library
-
-| Function | Purpose | Key Params |
-|----------|---------|------------|
-| `query_components(component_type, category, node_count, limit)` | **Search 5,534 professional chart templates** | component_type: infographic/process/hierarchy/chart/timeline/swot |
-
-**component_type** counts: `infographic` (4,237), `process` (673), `hierarchy` (566), `chart` (133), `timeline` (41), `swot` (39), `smartart` (23)
-
-**Usage in build.py**:
-```python
-results = query_components(component_type='infographic', node_count=5)
-# Returns list of {id, type, category, variant, node_count, level_count, tags, xml_path, source}
-# Note: component_type maps to DB category (type='group' for all 6 types; type='smartart' for SmartArt)
-```
-
 ### Functions — Template Analysis (VI Build)
 
 | Function | Purpose | Key Params |
@@ -1690,6 +1618,78 @@ dna = analyze_pptx('client_template.pptx')
 - Role name: `'primary'` → looks up `C['primary']`
 - Missing role: returns `'#000000'` (never crashes)
 
+### Reference: 10-Page Build Skeleton (verified end-to-end)
+
+A proven 10-page structure mixing 4 layout families + 3 section dividers + KPI/chart/code/cards/comparison + CTA. Passes BuildQA (0 fatal/0 warning) with `cjk_professional` typography.
+
+```python
+from ppt_pro_max.build_helpers import *
+
+C = {'primary': '#1E3A5F', 'accent': '#C9A96E', 'muted': '#5B7BA6',
+     'light': '#D6E4F0', 'white': '#FFFFFF', 'background': '#F8FAFC',
+     'card_bg': '#FFFFFF', 'bg_tint': '#F1F5F9', 'text_dark': '#1A2B3C',
+     'text_body': '#37474F', 'text_muted': '#78909C', 'divider': '#E0E8F0',
+     'font_heading': 'Georgia', 'font_body': 'Calibri', 'font_cjk': '微软雅黑'}
+t = TYPOGRAPHY['cjk_professional']   # 中文 body=14pt, micro=11 (BuildQA-safe)
+sp = SPACING['professional']
+
+prs = Presentation()
+set_widescreen(prs)
+set_theme_colors(prs, C)   # 写入主题色, PowerPoint 可识别
+
+# P1 cover: hero + in-canvas decorations
+s = add_slide(prs)
+hero_slide(s, '让企业智能触手可及', 'AI 企业服务 2026 年度战略汇报', C=C, typo=t)
+donut(s, 10.9, 1.2, 1.6, C['accent'], C=C)   # 装饰圆环, 确保在画布内
+rect(s, 0, 6.9, 13.333, 0.08, C['accent'], C=C)
+
+# P2/P5/P8: section dividers
+s = add_slide(prs); section_divider(s, 1, '市场洞察', C=C, typo=t)
+
+# P3: KPI 2x2 grid
+s = add_slide(prs)
+page_header(s, '市场规模与增长', '中国企业级 AI 支出持续扩大', C=C, typo=t, spacing=sp)
+kpi_card(s, 0.65, 1.9, 3.9, 1.4, '1,280亿', '市场规模', '年增 38.5%', C=C, typo=t)
+kpi_card(s, 4.85, 1.9, 3.9, 1.4, '87.6%', '采纳率', '+12.3%', C=C, typo=t)
+
+# P4: native chart (editable)
+s = add_slide(prs)
+page_header(s, '行业收入对比', '各行业 AI 支出（亿元）', C=C, typo=t, spacing=sp)
+native_chart(s, 0.65, 2.0, 12.0, 4.6, 'bar',
+             categories=['金融', '制造', '医疗'],
+             series=[{'name': 'AI 支出', 'values': [520, 410, 320]}],
+             style={'show_legend': False, 'show_labels': True, 'gridlines': 'major_y'},
+             C=C)
+
+# P6: code block + sidebar
+s = add_slide(prs)
+page_header(s, '核心引擎架构', '一次调用完成推理全流程', C=C, typo=t, spacing=sp)
+code_block(s, 0.65, 1.9, 7.5, 4.6, ['from ai import Engine', '', 'e = Engine()'], language='python', C=C, typo=t)
+multiline(s, 8.35, 2.5, 4.3, 3.6, ['多模型路由', '内置 RAG', '安全护栏'], font_size=14, C=C, line_spacing=1.6)
+
+# P7: feature cards
+s = add_slide(prs)
+page_header(s, '三大产品能力', '覆盖关键场景', C=C, typo=t, spacing=sp)
+highlight_cards(s, 0.65, 2.2, [
+    ('智能报告', '财报自动生成, 节省 12 小时/份', C['primary']),
+    ('智能客服', '一次解决率 92%', C['accent']),
+], total_width=12.0, C=C, typo=t, spacing=sp)
+
+# P9: comparison bars (v strings + pct floats!)
+s = add_slide(prs)
+page_header(s, '客户价值对比', '改造前后关键指标', C=C, typo=t, spacing=sp)
+comparison_bars(s, 2.0, 2.2, [
+    ('处理效率', '25%', '92%', 0.25, 0.92),   # v=str, pct=float
+    ('人工成本', '80%', '48%', 0.80, 0.48),
+], max_width=5.0, C=C, typo=t, spacing=sp)
+
+# P10: CTA
+s = add_slide(prs)
+cta_slide(s, '开启企业智能之旅', '预约演示, 获取落地方案', C=C, typo=t)
+
+clean_save(prs, 'output/deck.pptx')
+```
+
 ## Key Constraints
 
 - **⛔ NEVER use raw python-pptx in build.py**: `slide.shapes.add_shape()`, `slide.shapes.add_textbox()`, `slide.shapes.add_picture()` are FORBIDDEN. Use `rect()`, `text()`, `cover_image()` instead. Raw python-pptx produces flat, low-quality output with no CJK font support, no color resolution, no cover-fit. This is the #1 AI Tell in PPT design.
@@ -1698,10 +1698,7 @@ dna = analyze_pptx('client_template.pptx')
 - **Cache-first**: All image engines check cache before API call
 - **Image generation**: ALWAYS use `python -m ppt_pro_max image "keywords"` CLI or `fetch_image()` Python API. NEVER write custom scripts to call image APIs — the built-in CLI already handles cache, retry, multi-engine fallback, and cover-fit cropping
 - **Two-pass rebuild**: Page revision uses rebuild (not in-place) to avoid ZIP corruption
-- **1-based pages**: All `--pages` numbers refer to original document
 - **Windows**: Use `python` not `python3`
-- **Component library**: min_node_count=3 for quality; rebuild DB after normalization logic changes
-- **Component priority**: complex diagrams (hierarchy/process/timeline/swot) → always try library first; simple content (bullets/cards/code) → built-in renderer
 - **OOXML alpha**: `a:alpha val` = percentage × 1000 (e.g., 80% = 80000, NOT 0.8)
 - **OOXML letter-spacing**: `a:spc val` = tracking_em × font_size_pt × 100 (font-size-dependent, NOT percentage)
 - **apply_shadow() signature**: `apply_shadow(shape, blur_pt, distance_pt, direction_deg=90, color="#000000", alpha_pct=25)` — note `direction_deg` comes before `color`
@@ -1713,6 +1710,9 @@ dna = analyze_pptx('client_template.pptx')
 - **animation**: NOT a content.json field — use `--motion` CLI param or `motion=` kwarg in generate_ppt()
 - **Chart selection**: `native_chart()` for standard data charts (bar/line/pie/area/scatter — editable, accurate axes); `bar_chart()`/`comparison_bars()`/`donut_chart(native=False)` for custom visuals (rounded bars, progress bars, gauge, waffle, icon bars). `donut_chart()` defaults to native=True for multi-sector accuracy. Choose based on data accuracy vs visual customization needs.
 - **⚠️ Pie/doughnut chart colors**: In python-pptx, pie/doughnut colors MUST be set at the **point level** (`series.points[i].format.fill`), NOT at the series level (`series.format.fill`). Setting colors at series level makes all sectors the same color. `native_chart()` and `donut_chart(native=True)` handle this automatically — but if writing raw python-pptx code, you MUST iterate `series.points` and set each point's fill individually.
+- **⚠️ comparison_bars() data format**: `[(label, v_old, v_new, pct_old, pct_new)]` — `v_old`/`v_new` are **strings** (bar-end labels like `'25%'`), `pct_old`/`pct_new` are **0-1 floats** (bar width). Mixing them (e.g. `0.25` for v_old, or `'25%'` for pct_old) crashes with `TypeError: can't multiply sequence by non-int`.
+- **⚠️ BuildQA bounds vs decorative bleed**: Keep decorative shapes fully inside the canvas. `element_out_of_bounds` flags decorative shapes as **review** only if low-alpha (≤20%) + no text; opaque decorations (e.g. gold `donut()` rings) extending past the edge are flagged **fatal**. When adding accents, verify coordinates stay within `0 ≤ x < 13.333` and `0 ≤ y < 7.5`.
+- **⚠️ CJK micro font size**: `cjk_*` TYPOGRAPHY presets use `micro=11` (not 10) to stay above BuildQA's 11pt warning threshold. Data labels in `comparison_bars()`/`bar_chart()` use `t.micro` — fine for CJK presets.
 - **⚠️ Cover-fit images**: Always use `cover_image()` to add images — it Pillow-pre-crops to exact aspect ratio. NEVER use `slide.shapes.add_picture()` with stretch — it distorts images. `cover_image()` is the correct replacement for the internal `_add_picture_cover()` method.
 
 ## CLI Quick Reference
@@ -1727,4 +1727,4 @@ python -m ppt_pro_max image "keywords" [--llm-provider PROV] [--llm-api-key KEY]
 - python-pptx >= 1.0.2 (required)
 - Pillow >= 10.0 (required)
 - python-dotenv >= 1.0 (optional, for .env support)
-- **ui-ux-pro-max >= 1.0.0 (required)** — provides design intelligence (colors, typography, styles, anti-patterns) for Build Mode proposals. Without it, proposals use hardcoded defaults instead of domain-specific UX knowledge.
+- **Design database** (bundled) — provides design intelligence (colors, typography, styles, anti-patterns) from 7 bundled CSV datasets. No external installation required.

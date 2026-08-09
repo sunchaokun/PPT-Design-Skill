@@ -6,6 +6,22 @@ Full SKILL.md: [`../SKILL.md`](../SKILL.md)
 
 ---
 
+## ⛔ FIRST — Read This Before Writing ANY build.py
+
+**You MUST use `build_helpers` for ALL slide operations. Raw python-pptx is FORBIDDEN in build.py.**
+
+| Forbidden | Use Instead |
+|-----------|-------------|
+| `slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, ...)` | `rect()` / `rrect()` / `oval()` / `shape()` |
+| `slide.shapes.add_textbox(...)` | `text()` / `multiline()` |
+| `slide.shapes.add_picture(path, ...)` (stretch) | `cover_image()` (Pillow pre-crop) |
+| `shape.fill.solid(); .fore_color.rgb = RGBColor(...)` | `fill='primary'` or `fill='#2E6504'` |
+| `run.font.color.rgb = RGBColor(...)` | `color='white'` or `contrast_text(bg)` |
+
+Raw python-pptx = flat output, no CJK fonts, no color resolution, stretched images = **#1 AI Tell in PPT design**.
+
+---
+
 ## Setup (every build.py starts here)
 
 ```python
@@ -20,8 +36,14 @@ C = {'primary': '#2E6504', 'accent': '#7DA92F', 'muted': '#81C784',
 t = TYPOGRAPHY['mckinsey']
 sp = SPACING['mckinsey']
 prs = Presentation()
+set_widescreen(prs)
+set_theme_colors(prs, C)   # 将 C 调色板写入 PowerPoint 主题色 (推荐)
 s = add_slide(prs)
 ```
+
+**`set_theme_colors(prs, C)`** — 把 C 调色板写入 PowerPoint 主题 clrScheme，使主题色可被 PowerPoint 识别（如吸管、形状默认色）。映射：`primary→accent1` · `secondary→accent2` · `tertiary→accent3` · `muted→accent4` · `light→accent5` · `text_dark→dk2` · `card_bg→lt2`。`build_helpers_api.md` 中的 `C['accent']` 若未设置 `tertiary` 会回退到 `accent`。
+
+> **浅色主题用 `set_theme_colors`**，深色主题用 `set_dark_theme(prs, C)`（只改 dk1/lt1 反转明暗）。
 
 ---
 
@@ -209,6 +231,31 @@ sp = SPACING['mckinsey']  # access: sp.page_margin, sp.section_gap, sp.card_gap,
 | `native_chart` | `native_chart(slide, left, top, width, height, chart_type, categories=None, series=None, style=None, C=None)` | Native PowerPoint chart |
 | `highlight_cards` | `highlight_cards(slide, left, top, cards, total_width=12.0, C=None, typo=None, spacing=None, grouped=True)` | Multi-metric card row |
 
+### Data Formats
+
+⚠️ **Exact tuple formats (verified against source — wrong types crash or render wrong):**
+
+```python
+# bar_chart: list of (label, pct, value) — pct is 0-1 float, value is str
+bar_chart(s, 0.65, 2.0, [('金融', 0.85, '520亿'), ('制造', 0.70, '410亿')], C=C)
+
+# comparison_bars: list of (label, v_old, v_new, pct_old, pct_new)
+#   v_old/v_new = STRING labels displayed at bar end (e.g. '25%')
+#   pct_old/pct_new = 0-1 FLOAT for bar width (NOT percentage strings!)
+comparison_bars(s, 2.0, 2.2, [
+    ('处理效率', '25%', '92%', 0.25, 0.92),  # ✓ correct
+], C=C)
+
+# donut_chart (native=False): list of (label, pct_str, hex_color)
+donut_chart(s, 3.0, 3.0, 1.2, 0.6, [('甲', '40%', '#1E3A5F'), ('乙', '60%', '#C9A96E')], C=C)
+
+# highlight_cards: list of (title, description, accent_hex)
+highlight_cards(s, 0.65, 2.2, [
+    ('智能报告', '财报自动生成', '#1E3A5F'),
+    ('智能客服', '一次解决率 92%', '#C9A96E'),
+], C=C)
+```
+
 ### native_chart Types
 
 | Category | Types |
@@ -324,28 +371,6 @@ sp = SPACING['mckinsey']  # access: sp.page_margin, sp.section_gap, sp.card_gap,
 ### Emphasis Presets
 
 `pulse`, `grow`, `shrink`, `spin`, `teeter`, `color_pulse`, `darken`, `lighten`
-
----
-
-## Component Library
-
-| Function | Signature | Purpose |
-|----------|-----------|---------|
-| `query_components` | `query_components(component_type=None, category=None, node_count=None, limit=10)` | Search 5,715 chart templates |
-
-`component_type` maps to the DB `category` (all 6 types live under `type='group'`; pass `component_type='smartart'` + `category` to search SmartArt diagrams). Returns a list of dicts: `{id, type, category, variant, node_count, level_count, tags, xml_path, source}`.
-
-### Component Types
-
-| Type | Count | Description |
-|------|-------|-------------|
-| `infographic` | 4,237 | Infographic charts |
-| `process` | 673 | Process diagrams |
-| `hierarchy` | 566 | Hierarchy trees |
-| `chart` | 133 | Data charts |
-| `timeline` | 41 | Timeline diagrams |
-| `swot` | 39 | SWOT analysis |
-| `smartart` | 23 | SmartArt (cycle/process/pyramid) |
 
 ---
 

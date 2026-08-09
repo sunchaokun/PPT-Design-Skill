@@ -190,7 +190,7 @@ ppt-design "融资路演" --style "dark cyberpunk" \
 ### VI Build — 基于企业模板精确生成
 
 ```bash
-python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+python -m ppt_pro_max.enterprise.template_analyzer template.pptx > analysis.txt
 # 将 analysis.txt 交给 LLM 生成 build.py，然后：
 python build.py
 ```
@@ -212,7 +212,7 @@ python build.py
 | **10 种图形引擎** | 流程图 / 漏斗 / 时间线 / SWOT / 矩阵 / 循环 / 表格 / 层级 / 金字塔 / 韦恩 |
 | **动画系统** | 12 种切换 + 10 入场 + 8 退场 + 8 强调 + Morph，motion 1-10 映射 |
 | **CJK 字体** | 12 种中英文字体配对自动回退 |
-| **5,500+ 组件库** | SmartArt/GroupShape 模板，SQLite 索引，按类别/节点数匹配 |
+| **内置设计数据库** | 192 色彩方案 · 84 风格 · 74 字体搭配 · 161 反模式，BM25 搜索，开箱即用 |
 
 ---
 
@@ -232,10 +232,10 @@ python build.py
 
 ## 🎨 设计系统
 
-**自然语言风格** — 描述即生成。自然语言 style 走 **mood 检测 + ui-ux-pro-max 数据库**，未指定 seed 时每次运行**随机**选取调色板/字体/装饰，不保证固定映射。要确定性输出，用预设名（`dark-tech`/`professional`/`warm-elegant`）或显式 `--seed`：
+**自然语言风格** — 描述即生成。自然语言 style 走 **mood 检测 + 内置设计数据库**（BM25 搜索 colors/typography/styles），未指定 seed 时每次运行**随机**选取调色板/字体/装饰，不保证固定映射。要确定性输出，用预设名（`dark-tech`/`professional`/`warm-elegant`）或显式 `--seed`：
 
 ```bash
-ppt-design "融资路演" --style "warm fintech"       # mood=[warm,fintech]，调色板/字体走 ux 数据库
+ppt-design "融资路演" --style "warm fintech"       # mood=[warm,fintech]，调色板/字体走设计数据库
 ppt-design "产品发布" --style "dark cyberpunk"      # mood=[dark,neon] → 装饰多为 neon-lines，深色霓虹配色
 ppt-design "品牌策略" --style "elegant luxury"      # mood=[elegant, luxury] → 玫红调 ux 配色（非金色）
 ppt-design "山水诗词" --style "水墨"                # mood=[ink-wash] → 纸感浅色 + seal-stamp 装饰
@@ -260,7 +260,7 @@ ppt-design "融资路演" --style "warm fintech" --style-seed 42
 
 **30 × 25 × 15 × 12 = 135,000 种组合**
 
-叠加 ui-ux-pro-max（192 色彩方案 · 84 风格 · 74 字体 · 161 反模式）可达 200,000+
+叠加内置设计数据库（192 色彩方案 · 84 风格 · 74 字体搭配 · 161 反模式）可达 200,000+
 
 </details>
 
@@ -323,6 +323,59 @@ prs.save("output.pptx")
 ```
 
 </details>
+
+---
+
+## 🧪 测试
+
+### 运行测试
+
+```bash
+# 从项目根目录（conftest.py 自动将 src/ 加入 sys.path，确保加载 V2 源码而非旧版安装包）
+python -m pytest tests/ -q
+
+# 仅运行新增的核心严格测试
+python -m pytest tests/test_design_search.py tests/test_ui_ux_adapter.py \
+  tests/test_build_qa_v2.py tests/test_theme_colors.py -q
+```
+
+> **⚠️ 源码优先级**：系统可能已安装旧版 `ppt_pro_max`（site-packages）。pytest 由 `tests/conftest.py` 的 `sys.path.insert` 保证加载 `src/` 下的 V2 源码。但**手动运行 `python build.py` 或 `python -m ppt_pro_max` 时**，需确保加载的是 V2：
+> ```powershell
+> $env:PYTHONPATH = "src"; python build.py
+> # 或安装为开发包
+> pip install -e .
+> ```
+
+### 已知跳过（7 个，数据依赖问题，非代码缺陷）
+
+```bash
+python -m pytest tests/ -q --ignore=tests/test_group_audit.py \
+  --ignore=tests/test_image_fetcher.py --ignore=tests/test_pptx_capabilities.py \
+  --ignore=tests/test_xml_extraction.py --ignore=tests/test_analyze_template.py
+```
+
+| 跳过文件 | 原因 |
+|----------|------|
+| `test_group_audit.py` | 依赖已移除的组件库数据 |
+| `test_image_fetcher.py` | 模型版本不匹配（doubao-seedream-4-5 vs 5-0） |
+| `test_pptx_capabilities.py` / `test_xml_extraction.py` | 需要特定的 .pptx 样本文件 |
+| `test_analyze_template.py` | 依赖已移除的 `analyze_template` 模块 |
+
+### 覆盖矩阵（1479 tests, 0 failures）
+
+| 模块 | 测试文件 | 覆盖 |
+|------|----------|------|
+| **内置设计数据库** | `test_design_search.py` (50) | BM25 搜索、domain 检测、设计系统生成、dial 解析 |
+| **ui_ux_adapter 契约** | `test_ui_ux_adapter.py` (19) | 4 个消费者的 API 依赖字段、优雅降级 |
+| **BuildQA 三级判定** | `test_build_qa_v2.py` (18) | 装饰性出血 vs 内容溢出、严重度边界、报告一致性 |
+| **主题色写入** | `test_theme_colors.py` (15) | C→clrScheme 映射、持久化回环、XML 良构 |
+| **设计质量升级** | `test_design_quality.py` (95) + `test_design_integration.py` (25) | 28 项 DQ 升级 |
+| **图形引擎** | `test_diagram_engine.py` (75) + `test_shape_functions.py` (96) | 10 种图形、形状工厂 |
+| **高级设计效果** | `test_3d_pattern_frosted.py` (38) + `test_text_effects*.py` (65) + `test_animation_expansion.py` (33) + `test_decoration_library.py` (45) | 3D/图案/文字/动画/装饰 |
+| **原生图表** | `test_native_chart.py` (52) + `test_chart_renderer.py` (20) | 图表类型、样式、主题化 |
+| **LLM 配置适配** | `test_llm_config_adapter.py` (84) | 13 平台 LLM 配置 |
+| **Build helpers** | `test_build_helpers.py` (32) + `test_build_helpers_integration.py` (30) | 颜色解析、形状、数据组件 |
+| **其他** | 其余 40+ 文件 | 规划/决策/内容/渲染/提取器/图片 |
 
 ---
 

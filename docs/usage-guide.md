@@ -36,7 +36,7 @@ PPT-Design-Skill 提供三种生成模式，从快速到精确：
 | | FreeStyle | Build Script | **VI Build** |
 |---|---|---|---|
 | **适用场景** | 快速生成、风格探索 | **交付级质量、逐页精确控制** | **基于企业模板 VI 的精确生成** |
-| **触发方式** | 默认（无 `--project`） | 手写 `build.py` 脚本 | `analyze_template.py` + `build_helpers.py` |
+| **触发方式** | 默认 | 手写 `build.py` 脚本 | `template_analyzer` + `build_helpers.py` |
 | **内容来源** | AI 自动生成 | 代码中硬编码每页内容 | LLM 读取模板分析文本，生成 build.py |
 | **品牌规范** | 风格原子组合 | Design Token 字典 | **从模板提取 VI Token**（色值/字体/布局） |
 | **布局控制** | 自动匹配母版 | **逐元素 x/y/w/h 精确定位** | **保留框架页 + 新增页用 build_helpers** |
@@ -59,15 +59,11 @@ PPT-Design-Skill 提供三种生成模式，从快速到精确：
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 一键安装 — 自动检测 AI 平台 + 安装 skill + pip 依赖 + ui-ux-pro-max
+# 一键安装 — 自动检测 AI 平台 + 安装 skill + pip 依赖
 python install.py
 
 # 手动安装
 pip install -e .
-
-# 单独安装 ui-ux-pro-max（必需依赖）
-npm install -g ui-ux-pro-max-cli
-uipro init --ai <your-platform>
 ```
 
 ### 一句话生成
@@ -78,14 +74,14 @@ ppt-design "AI startup investor pitch"
 
 # VI Build — 基于企业模板精确生成（推荐企业交付模式）
 # 详见第 5 节
-python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+python -m ppt_pro_max.enterprise.template_analyzer template.pptx > analysis.txt
 # → 将 analysis.txt 交给 LLM 生成 build.py → python build.py
 
 # Build Script — 从空白画布逐页精确控制
 # 详见第 4 节
 ```
 
-> **必需依赖**：ui-ux-pro-max 提供设计智能（192 色彩方案、84 风格、74 字体、161 反模式），`python install.py` 会自动安装。缺失时运行会报 `UiUxProMaxNotFoundError`。
+> **内置设计数据库**：提供设计智能（192 色彩方案、84 风格、74 字体搭配、161 反模式），打包在 `ppt_pro_max/data/`，开箱即用，无需外部安装。
 
 ---
 
@@ -686,7 +682,7 @@ else:
 VI Build 是从**企业模板 VI**出发的精确生成模式。与 Build Script 从空白画布开始不同，VI Build：
 
 - **保留框架页**：封面、目录、封底等页面原样保留，不重新渲染
-- **提取 VI Token**：通过 `analyze_template.py` 自动提取模板的颜色、字体、布局等视觉 DNA
+- **提取 VI Token**：通过 `ppt-design analyze` 自动提取模板的颜色、字体、布局等视觉 DNA
 - **新增页用 build_helpers**：用 `build_helpers.py` 的工具函数精确构建新增内容页
 - **复制装饰和 LOGO**：`copy_decorations()` / `copy_logo()` 保持 VI 一致性
 
@@ -696,7 +692,7 @@ VI Build 是从**企业模板 VI**出发的精确生成模式。与 Build Script
 |---|---|---|
 | **起点** | 空白画布 `Presentation()` | 企业模板 `Presentation(template_path)` |
 | **框架页** | 全部手写 | 原样保留（封面/目录/封底不动） |
-| **VI 来源** | 手写 Design Token | `analyze_template.py` 自动提取 |
+| **VI 来源** | 手写 Design Token | `ppt-design analyze` 自动提取 |
 | **装饰/LOGO** | 手写 | `copy_decorations()` / `copy_logo()` 自动复制 |
 | **工具函数** | 自行复制到 build.py | `from ppt_pro_max.build_helpers import *` |
 | **适用场景** | 无模板约束的自由设计 | 必须遵守企业 VI 的交付 |
@@ -705,7 +701,7 @@ VI Build 是从**企业模板 VI**出发的精确生成模式。与 Build Script
 
 ```
 Step 1: 分析模板
-  python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+  python -m ppt_pro_max analyze template.pptx > analysis.txt
 
 Step 2: LLM 读取分析文本，生成 build.py
   将 analysis.txt 交给 LLM，LLM 输出完整的 build.py 脚本
@@ -717,7 +713,7 @@ Step 3: 运行 build.py 生成 PPT
 ### Step 1: 分析模板
 
 ```bash
-python -m ppt_pro_max.analyze_template template.pptx
+python -m ppt_pro_max analyze template.pptx
 ```
 
 输出结构化文本，包含：
@@ -1164,99 +1160,99 @@ content.json 支持自然格式，Pipeline 自动转换：
 
 ---
 
-## 8. 组件库数据库（可选补充）
+## 8. 内置设计数据库
 
-> **注意**：Build 模式和 VI Build 的原子级编辑能力已可完全替代组件库，且品牌一致性和精度更高。组件库依赖已弃用的 Enterprise Pipeline，仅作为可选补充保留。
-
-组件库是从 PPT 素材中提取的图表模板数据库（5,560 组件，SQLite 索引），支持自动匹配和注入专业图表组件。适合需要快速复用已有图表模板的场景，新项目推荐直接用 Build 模式从零构建。
+> **设计智能内置**：192 色彩方案 · 84 视觉风格 · 74 字体搭配 · 161 反模式，来自 7 个 CSV 数据集（colors/typography/styles/products/landing/ui-reasoning/motion），打包在 `src/ppt_pro_max/data/`。BM25 搜索引擎 + DesignSystemGenerator 提供领域驱动的设计决策，开箱即用，无需外部安装。
 
 <details>
-<summary>点击展开组件库详细文档</summary>
+<summary>点击展开设计数据库详细文档</summary>
 
 ### 数据库概览
 
-| 属性 | 值 |
-|------|---|
-| 存储位置 | `component_library/index.db`（SQLite）+ `component_library/storage/`（XML 文件） |
-| 当前规模 | 5,560 组件（5,537 group + 23 smartart） |
-| 压缩方式 | gzip（6.5× 压缩率） |
-| 去重机制 | MD5 checksum |
+| 数据文件 | 记录数 | 用途 |
+|----------|--------|------|
+| `colors.csv` | 192 | 按产品类型的色彩方案（primary/secondary/accent/background/...） |
+| `styles.csv` | 84 | 视觉风格（类型/关键词/特效/明暗模式/性能/无障碍） |
+| `typography.csv` | 74 | 字体搭配（heading/body/Google Fonts URL/CSS Import） |
+| `products.csv` | 192 | 按产品类型的设计建议（风格/落地页模式/调色板重点） |
+| `landing.csv` | 34 | 落地页模式（区块顺序/CTA 位置/转化优化） |
+| `ui-reasoning.csv` | 161 | 领域推理规则（推荐模式/风格优先级/反模式/决策规则） |
+| `motion.csv` | 16 | 动画强度分级（Subtle/Standard/Complex） |
 
-### 构建数据库
-
-```bash
-python -m ppt_pro_max.scripts.build_library --materials-dir "E:\素材目录" --min-node-count 3
-```
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| `--materials-dir` | 必填 | PPT 素材目录路径（支持子目录递归扫描） |
-| `--min-node-count` | 3 | 最低节点数阈值，低于此值的 GroupShape 被过滤 |
-
-### 数据库操作
+### Python API
 
 ```python
-from ppt_pro_max.enterprise.component_library import ComponentLibrary
+from ppt_pro_max.adapters.ui_ux_adapter import (
+    is_available, get_design_system, search_style,
+    search_color, search_typography, search_landing, search_reasoning,
+)
 
-lib = ComponentLibrary("component_library/index.db")
-print(lib.stats())                           # {'total': 5560, ...}
-results = lib.search(type="group", category="process", limit=10)
-matched = lib.match({"type": "group", "category": "process", "node_count": 4})
-lib.close()
+is_available()  # True（数据已内置）
+
+ds = get_design_system("AI startup pitch", variance=5, motion=3, density=6)
+ds["colors"]       # {'primary': '#2563EB', 'accent': '#F97316', ...}
+ds["typography"]   # {'heading': 'Inter', 'body': 'Inter', ...}
+ds["style_name"]   # 匹配的视觉风格名
+ds["pattern_name"] # 落地页模式名
+
+styles = search_style("professional consulting", 2)
+colors = search_color("dark tech", 2)
+typos  = search_typography("modern sans", 2)
+reasoning = search_reasoning("dashboard")  # {'pattern': ..., 'decision_rules': {...}}
 ```
 
-### 在 content.json 中使用组件
+### 三档设计旋钮（Variance / Motion / Density）
 
-在 slides 中指定 `component_type` 和 `component_category`，Pipeline 自动从组件库匹配并注入：
+`get_design_system()` 支持 1-10 设计旋钮，偏置风格选择、动画强度和间距密度：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| `component_type` | str | 组件类型：`"group"` 或 `"smartart"` |
-| `component_category` | str | 组件类别：`process`/`hierarchy`/`infographic`/`swot`/`timeline`/`chart` |
-| `component_fit` | str | 缩放模式：`contain`（默认）/ `width` / `height` / `stretch` |
-| `component_bounds` | list[float] | 显式位置和大小：`[left, top, width, height]` 英寸 |
+| 旋钮 | 1-3 | 4-7 | 8-10 |
+|------|-----|-----|------|
+| variance | Centered / Minimal | Balanced / Modern | Bold / Asymmetric |
+| motion | Subtle | Standard | Complex |
+| density | Spacious | Standard | Dense / Dashboard |
 
 </details>
 
 ---
 
-## 9. 页面修订语法
+## 9. 修订与版本迭代
 
-### 操作类型
+### 修改已生成的 PPT
 
-| 语法 | 操作 | 示例 | 说明 |
-|------|------|------|------|
-| `N` | 修改 | `3` | 标记第 N 页需修改 |
-| `N-M` | 范围修改 | `2-5` | 标记第 2-5 页需修改 |
-| `+N` | 插入 | `+6` | 在第 6 页后插入空白页 |
-| `-N` | 删除 | `-8` | 删除第 8 页 |
-| `N>M` | 移动 | `3>5` | 将第 3 页移到第 5 页后 |
-| `N<>M` | 交换 | `3<>7` | 交换第 3 页和第 7 页 |
+**Build / VI Build 模式**（推荐）：
+- build.py 是单一事实来源，修改脚本后重新运行即可
+- 推荐保存到 `output/v1/`、`output/v2/` 递增版本
 
-### 组合操作
+**FreeStyle 模式**：
+- 修改 content.json 中的内容/字段，重新调用 `generate_ppt(content_file="content.json", ...)`
+- 修改 `--style` / `--palette` / `--fonts` 改变视觉方向
+- 修改 `--variance` / `--motion` / `--density` 改变版式密度
 
-用逗号分隔多个操作：
-
+**示例 — 修订 content.json**：
 ```bash
-# 删除第 3 页，交换第 2 和第 5 页，将第 10 页移到第 3 页后
---pages "-3,2<>5,10>3"
+# 修改标题后重新生成
+ppt-design --content content.json --style "dark-tech"
 
-# 删除第 9、10 页，交换第 2 和第 7 页，交换第 11 和第 15 页
---pages "-9,-10,2<>7,11<>15"
+# 换配色方案
+ppt-design --content content.json --palette "wine-burgundy" --fonts "elegant-serif"
 ```
 
-### 执行顺序
+### 运行 BuildQA 质量检查
 
-1. **交换** (swap) — 先执行，不影响后续索引
-2. **移动** (move) — 交换后执行
-3. **删除** (delete) — 按页码从大到小删除
-4. **插入** (insert) — 最后执行
+```python
+from ppt_pro_max.build_qa import BuildQA
 
-### 页码说明
+qa = BuildQA()
+report = qa.check("output.pptx")
+print(qa.format_report(report))
+if report.is_passable:
+    print("PASS — 可交付")
+```
 
-- 所有页码为 **1-based**，指原始文档页码
-- 删除操作不影响后续操作的页码引用（均基于原始页码）
-- 页码超出范围会报错
+BuildQA 提供三级判定：
+- **fatal** — 占位文本、空白页、图片引用错误、严重越界、页数不符
+- **warning** — 字号过小、文本溢出、轻微越界、标题重复
+- **review** — 装饰性出血（合法）、非调色板颜色、非标准字体（按需审查）
 
 ---
 
@@ -1787,7 +1783,7 @@ print(result["output_path"])
 ppt-design [query] [options]
 
 位置参数:
-  query                  演示主题（--history 模式可省略）
+  query                  演示主题
 
 风格选项:
   --strategy STR         覆盖叙事策略
@@ -1814,28 +1810,23 @@ ppt-design [query] [options]
   --llm-api-key KEY      LLM API Key
   --llm-base-url URL     LLM API 基础 URL
   --llm-model MODEL      LLM 模型名称
+  --no-auto-detect       禁用宿主工具自动检测 LLM 配置
+
+方案选项:
+  --proposal             生成 2-3 个风格预览 PPT
+  --confirmed-proposal X 从确认的方案继续（'A'/'B'/'C'）
+  --materials-dir DIR    方案素材目录
 
 输出选项:
   --persist              保存设计系统为 MASTER.md
   --dry-run              仅输出设计决策
   -o, --output PATH      输出文件路径
+```
 
-企业选项（已弃用）:
-  --project DIR          项目目录（触发 Enterprise Pipeline，已弃用）
-  --business-mode MODE   pitch/education/training/report（已弃用）
-  --review               启用方案确认（已弃用）
-  --review-file PATH     方案输出 JSON 文件（已弃用）
-  --output-version N     指定版本号（已弃用）
-  --from-version N       基于指定版本修订（已弃用）
-  --pages OPS            页面操作（已弃用）
-  --history              查看版本历史（已弃用）
-
-组件选项:
-  --component-library PATH  组件库数据库路径（可选补充）
-
-美化选项（已弃用）:
-  --beautify PPTX        美化现有 PPT 文件（已弃用）
-  --beautify-mode MODE   light（仅换色）或 full（重建+组件注入）（已弃用）
+子命令:
+```
+ppt-design image "keywords" [--llm-provider PROV] [--image-mode MODE] [--llm-api-key KEY]  # 独立图片生成
+ppt-design analyze template.pptx                                                          # 分析模板（VI Build）
 ```
 
 ---
@@ -1869,7 +1860,7 @@ ppt-design "融资路演" --style "elegant luxury" --motion 0
 
 ```bash
 # 1. 分析企业模板
-python -m ppt_pro_max.analyze_template template.pptx > analysis.txt
+python -m ppt_pro_max analyze template.pptx > analysis.txt
 
 # 2. 将 analysis.txt 交给 LLM，生成 build.py
 
@@ -2015,11 +2006,11 @@ A: v0.7.0 起内置 12 种 CJK 字体配对（如 Space Grotesk + Microsoft YaHe
 
 **Q: 企业 VI 合规怎么做？**
 
-A: 推荐使用 **VI Build 模式**：用 `analyze_template.py` 分析企业模板提取 VI Token，LLM 生成 build.py，保留框架页 + 用 `build_helpers` 精确构建新增页。Enterprise Pipeline 已弃用，不推荐使用。
+A: 推荐使用 **VI Build 模式**：用 `ppt-design analyze` 分析企业模板提取 VI Token，LLM 生成 build.py，保留框架页 + 用 `build_helpers` 精确构建新增页。
 
 **Q: 组件库还需要用吗？**
 
-A: Build 模式的原子级编辑能力已可完全替代组件库，且品牌一致性和精度更高。组件库适合需要快速复用已有图表模板的场景，但新项目推荐直接用 Build 模式从零构建。
+A: 不需要。V2 已移除组件库，Build 模式的原子级编辑能力（build_helpers + diagram engine）完全替代组件库，且品牌一致性和精度更高。
 
 ---
 
@@ -2199,16 +2190,8 @@ result = tc.compose(style="水墨", text_effect_preset="gold-shine", image_effec
 
 ---
 
-## 附录：Enterprise 模式（已弃用）
+## 附录：版本更新记录
 
-<details>
-<summary>点击展开已弃用的 Enterprise 文档</summary>
-
-```bash
-# 以下功能已弃用，不推荐使用
-ppt-design "AI Platform" --project . --density 6 --motion 5
-ppt-design "" --project . --pages "-3,2<>5"
-ppt-design "" --project . --history
-```
-
-</details>
+- **v0.16.0** — 移除组件库与 Enterprise Pipeline；设计数据库内置（ui-ux-pro-max 内化）；BuildQA 三级 QA 支持装饰性出血；FreeStyle/Proposal 统一走 PrecisionRenderer
+- **v0.15.0** — Build 模式增强（CJK 字体、cover-fit、渐变/描边/阴影、3D/图案填充、图表/流程图、动画）
+- **v0.14.0** — BuildQA 引入（fatal/warning/review 三级）；结构差异化 build.py 提案

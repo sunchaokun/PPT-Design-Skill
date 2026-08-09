@@ -23,7 +23,7 @@ Removed (template-clone / component-library specific):
   - component_placeholder_residual
 
 New Build-mode checks:
-  - element_out_of_bounds (fatal)
+  - element_out_of_bounds (fatal for content, review for decorative bleed)
   - image_stretched (warning)
 
 Auto-fixable: residual_placeholder, font_too_small
@@ -401,6 +401,42 @@ class BuildQA:
                 ))
         return items[:3]
 
+    _BLEED_MAX_FRACTION = 0.5
+    _MINOR_BLEED_FRACTION = 0.05
+    _DECO_ALPHA_THRESHOLD = 0.20
+
+    def _is_decorative_bleed(self, shape, slide_width: int, slide_height: int) -> bool:
+        if shape.has_text_frame:
+            text = shape.text_frame.text.strip()
+            if text:
+                return False
+
+        alpha = self._get_fill_alpha(shape)
+        if alpha is not None and alpha <= self._DECO_ALPHA_THRESHOLD:
+            return True
+
+        return False
+
+    def _get_fill_alpha(self, shape) -> float | None:
+        try:
+            spPr = shape._element.find(f"{{{_NS['p']}}}spPr")
+            if spPr is None:
+                spPr = shape._element.find(f"{{{_NS['a']}}}spPr")
+            if spPr is None:
+                return None
+            for solidFill in spPr.iter(f"{{{_NS['a']}}}solidFill"):
+                for srgb in solidFill.iter(f"{{{_NS['a']}}}srgbClr"):
+                    alpha_el = srgb.find(f"{{{_NS['a']}}}alpha")
+                    if alpha_el is not None:
+                        return int(alpha_el.get("val", "100000")) / 100000.0
+                for scheme in solidFill.iter(f"{{{_NS['a']}}}schemeClr"):
+                    alpha_el = scheme.find(f"{{{_NS['a']}}}alpha")
+                    if alpha_el is not None:
+                        return int(alpha_el.get("val", "100000")) / 100000.0
+        except Exception:
+            pass
+        return None
+
     def _check_element_out_of_bounds(
         self,
         slide_idx: int,
@@ -416,15 +452,44 @@ class BuildQA:
             h = shape.height
 
             if x < 0 or y < 0 or (x + w) > slide_width or (y + h) > slide_height:
-                items.append(CheckItem(
-                    "layout", "element_out_of_bounds", "fatal", slide_idx,
-                    "Shape extends beyond slide boundaries",
-                    detail=(
-                        f"shape='{shape.name}' pos=({x},{y}) size=({w},{h}) "
-                        f"slide=({slide_width},{slide_height})"
-                    ),
-                    auto_fixable=False,
-                ))
+                bleed_x = max(-x, 0) + max((x + w) - slide_width, 0)
+                bleed_y = max(-y, 0) + max((y + h) - slide_height, 0)
+                bleed_total = bleed_x + bleed_y
+                slide_max = slide_width + slide_height
+
+                is_deco = self._is_decorative_bleed(shape, slide_width, slide_height)
+                bleed_fraction = bleed_total / slide_max if slide_max > 0 else 1.0
+
+                if is_deco and bleed_fraction <= self._BLEED_MAX_FRACTION:
+                    items.append(CheckItem(
+                        "design", "element_out_of_bounds", "review", slide_idx,
+                        "Decorative shape extends beyond slide (intentional bleed)",
+                        detail=(
+                            f"shape='{shape.name}' pos=({x},{y}) size=({w},{h}) "
+                            f"slide=({slide_width},{slide_height})"
+                        ),
+                        auto_fixable=False,
+                    ))
+                elif bleed_fraction <= self._MINOR_BLEED_FRACTION:
+                    items.append(CheckItem(
+                        "layout", "element_out_of_bounds", "warning", slide_idx,
+                        "Shape slightly extends beyond slide boundaries",
+                        detail=(
+                            f"shape='{shape.name}' pos=({x},{y}) size=({w},{h}) "
+                            f"slide=({slide_width},{slide_height}) bleed={bleed_fraction:.1%}"
+                        ),
+                        auto_fixable=False,
+                    ))
+                else:
+                    items.append(CheckItem(
+                        "layout", "element_out_of_bounds", "fatal", slide_idx,
+                        "Shape extends beyond slide boundaries",
+                        detail=(
+                            f"shape='{shape.name}' pos=({x},{y}) size=({w},{h}) "
+                            f"slide=({slide_width},{slide_height}) bleed={bleed_fraction:.1%}"
+                        ),
+                        auto_fixable=False,
+                    ))
         return items
 
     def _check_image_stretched(self, slide_idx: int, slide) -> list[CheckItem]:

@@ -56,32 +56,33 @@ class TestProposalMode:
         result = generate_ppt("AI Pitch", style="dark cyberpunk", proposal=True, output=str(tmp_path / "out"))
         assert len(result["proposals"]) == 3
 
-    def test_proposal_with_project(self, tmp_path):
-        project = _setup_project(tmp_path)
-        result = generate_ppt("Enterprise Test", project=str(project), proposal=True)
-        assert len(result["proposals"]) == 3
+    # Removed in V2: project= param removed from generate_ppt()
+    # def test_proposal_with_project(self, tmp_path):
+    #     project = _setup_project(tmp_path)
+    #     result = generate_ppt("Enterprise Test", project=str(project), proposal=True)
+    #     assert len(result["proposals"]) == 3
 
 
-class TestProposalWithProjectDir:
+# Removed in V2: project= param removed from generate_ppt()
+# class TestProposalWithProjectDir:
+#     def test_proposal_with_project_sets_output_dir(self, tmp_path):
+#         project = _setup_project(tmp_path)
+#         result = generate_ppt("Enterprise Test", project=str(project), proposal=True)
+#         for p in result["proposals"]:
+#             assert project.name in p["path"] or "output" in p["path"]
 
-    def test_proposal_with_project_sets_output_dir(self, tmp_path):
-        project = _setup_project(tmp_path)
-        result = generate_ppt("Enterprise Test", project=str(project), proposal=True)
-        for p in result["proposals"]:
-            assert project.name in p["path"] or "output" in p["path"]
 
-
-class TestMaterialsDir:
-
-    def test_materials_dir_with_project(self, tmp_path):
-        project = _setup_project(tmp_path)
-        materials = tmp_path / "materials"
-        materials.mkdir()
-        _make_png(materials / "hero.png", w=1600, h=900)
-        content = {"meta": {"title": "Materials Test"}, "slides": [{"goal": "hook", "title": "Welcome"}]}
-        (project / "content.json").write_text(json.dumps(content), encoding="utf-8")
-        result = generate_ppt("Materials Test", project=str(project), materials_dir=str(materials))
-        assert result["num_slides"] == 1
+# Removed in V2: project= param removed from generate_ppt()
+# class TestMaterialsDir:
+#     def test_materials_dir_with_project(self, tmp_path):
+#         project = _setup_project(tmp_path)
+#         materials = tmp_path / "materials"
+#         materials.mkdir()
+#         _make_png(materials / "hero.png", w=1600, h=900)
+#         content = {"meta": {"title": "Materials Test"}, "slides": [{"goal": "hook", "title": "Welcome"}]}
+#         (project / "content.json").write_text(json.dumps(content), encoding="utf-8")
+#         result = generate_ppt("Materials Test", project=str(project), materials_dir=str(materials))
+#         assert result["num_slides"] == 1
 
 
 class TestFreestyleNotBroken:
@@ -90,9 +91,10 @@ class TestFreestyleNotBroken:
         result = generate_ppt("Simple Test", slides=3, output=str(tmp_path / "freestyle.pptx"))
         assert os.path.isfile(result["output_path"])
 
-    def test_enterprise_still_works(self, tmp_path):
-        project = _setup_project(tmp_path)
-        content = {"meta": {"title": "Enterprise"}, "slides": [{"goal": "hook", "title": "Welcome"}]}
-        (project / "content.json").write_text(json.dumps(content), encoding="utf-8")
-        result = generate_ppt("Enterprise", project=str(project))
-        assert result["num_slides"] == 1
+    # Removed in V2: project= param removed from generate_ppt()
+    # def test_enterprise_still_works(self, tmp_path):
+    #     project = _setup_project(tmp_path)
+    #     content = {"meta": {"title": "Enterprise"}, "slides": [{"goal": "hook", "title": "Welcome"}]}
+    #     (project / "content.json").write_text(json.dumps(content), encoding="utf-8")
+    #     result = generate_ppt("Enterprise", project=str(project))
+    #     assert result["num_slides"] == 1

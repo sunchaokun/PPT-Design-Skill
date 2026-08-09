@@ -160,8 +160,8 @@ TYPOGRAPHY = {
     'creative': Typography(hero=44, h1=28, h2=22, h3=18, body=13, caption=11, micro=9),
     'professional': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=8),
     'minimal': Typography(hero=40, h1=24, h2=18, h3=14, body=11, caption=9, micro=7),
-    'cjk_mckinsey': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=10),
-    'cjk_professional': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=10),
+    'cjk_mckinsey': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=11),
+    'cjk_professional': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=11),
     'cjk_creative': Typography(hero=44, h1=30, h2=24, h3=20, body=15, caption=13, micro=11),
 }
 
@@ -2031,6 +2031,54 @@ def adjust_image(shape, brightness=0, contrast=0, saturation=100):
 def analyze_pptx(pptx_path):
     from ppt_pro_max import extract_design_dna
     return extract_design_dna(pptx_path)
+
+
+def set_theme_colors(prs, C=None):
+    """Write C dict colors into the PowerPoint theme clrScheme.
+
+    Maps: primary→accent1, secondary→accent2, tertiary→accent3,
+    muted→accent4, light→accent5, text_dark→dk2, text_body→lt2.
+    Makes theme colors recognizable by PowerPoint (fills default to C palette).
+    """
+    C = C or {}
+    _ns = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    theme_part = None
+    for rel in prs.part.rels.values():
+        if 'theme' in rel.reltype:
+            theme_part = rel.target_part
+            break
+    if theme_part is None:
+        return
+    theme_el = etree.fromstring(theme_part.blob)
+    clrScheme = theme_el.find(f'{{{_ns}}}themeElements/{{{_ns}}}clrScheme')
+    if clrScheme is None:
+        return
+
+    mapping = {
+        'dk1': C.get('text_dark'),
+        'lt1': C.get('background'),
+        'dk2': C.get('text_dark'),
+        'lt2': C.get('card_bg'),
+        'accent1': C.get('primary'),
+        'accent2': C.get('secondary', C.get('text_body')),
+        'accent3': C.get('tertiary', C.get('accent')),
+        'accent4': C.get('muted'),
+        'accent5': C.get('light'),
+        'accent6': C.get('divider'),
+    }
+    for tag, val in mapping.items():
+        if not val:
+            continue
+        el = clrScheme.find(f'{{{_ns}}}{tag}')
+        if el is None:
+            continue
+        for child in list(el):
+            el.remove(child)
+        srgb = etree.SubElement(el, f'{{{_ns}}}srgbClr')
+        srgb.set('val', val.lstrip('#'))
+
+    theme_part._blob = etree.tostring(theme_el, xml_declaration=True,
+                                      encoding='UTF-8', standalone=True)
 
 
 Presentation = _Presentation

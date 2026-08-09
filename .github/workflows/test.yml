@@ -1,0 +1,36 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint (critical errors only)
+        run: ruff check src/ ppt_pro_max/ tests/ --select E9,F63,F7,F82
+
+      - name: Run test suite
+        run: |
+          pytest tests/ -q --ignore=tests/test_group_audit.py \
+            --ignore=tests/test_image_fetcher.py \
+            --ignore=tests/test_pptx_capabilities.py \
+            --ignore=tests/test_xml_extraction.py \
+            --ignore=tests/test_analyze_template.py

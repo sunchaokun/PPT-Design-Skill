@@ -22,5 +22,5 @@ python -m pytest tests/ -q
 
 - Use `_add_picture_cover()` for images (Pillow pre-crop, no distortion)
 - Cache-first for all image API calls
-- Never modify ui-ux-pro-max code
+- Design database is bundled in `src/ppt_pro_max/data/` (no external dependency)
 - Windows: use `python` not `python3`

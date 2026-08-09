@@ -35,7 +35,7 @@ PREMIUM_UPGRADE_PLAN.md
 
 .opencode/skills/ui-ux-pro-max/
 
-# Internal design docs �?only keep README_EN.md, usage-guide.md, showcase/
+# Internal design docs �?only keep README_EN.md, usage-guide.md, showcase/
 docs/*-design*.md
 docs/*-plan*.md
 docs/*-review*.md
@@ -61,8 +61,12 @@ docs/revision-plan.md
 skill/src/
 
 # Internal docs
-docs/参考脚�?
+docs/参考脚�?
 docs/enterprise_pipeline_replacement_v*.md
 
 
 component_library/
+
+# === Build output (generated artifacts, not tracked) ===
+output/
+

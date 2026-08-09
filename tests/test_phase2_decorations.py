@@ -147,62 +147,17 @@ class TestDecorationClassification:
         assert sidebar_still_exists, "Sidebar decoration should be preserved at keep_levels {0,1}"
 
 
-class TestBrandColorContext:
-    """BrandColorContext: semantic color view from DesignDNA."""
-
-    def test_from_dna_basic(self):
-        from ppt_pro_max.enterprise.brand_color_context import BrandColorContext
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNA
-
-        dna = DesignDNA(
-            source_path="none",
-            color_palette={"accent1": "#3366CC", "dk1": "#333333", "lt1": "#FFFFFF"},
-            actual_colors={"#3366CC": 10, "#333333": 5, "#F0F0F0": 3},
-        )
-        ctx = BrandColorContext.from_dna(dna)
-        assert ctx.primary is not None
-        assert ctx.foreground is not None
-        assert ctx.background is not None
-
-    def test_from_dna_dark_template(self):
-        from ppt_pro_max.enterprise.brand_color_context import BrandColorContext
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNA
-
-        dna = DesignDNA(
-            source_path="none",
-            color_palette={"accent1": "#FF6600", "dk1": "#FFFFFF", "lt1": "#1A1A2E"},
-            actual_colors={"#1A1A2E": 20, "#FF6600": 8, "#FFFFFF": 5},
-        )
-        ctx = BrandColorContext.from_dna(dna)
-        assert ctx.primary is not None
-        assert ctx.muted is not None
-
-    def test_from_brand_spec(self):
-        from ppt_pro_max.enterprise.brand_color_context import BrandColorContext
-        from ppt_pro_max.enterprise.brand_spec import BrandSpec
-
-        brand = BrandSpec(source="brand_json", colors={"accent1": "#E8A838", "tx1": "#2E6504"})
-        ctx = BrandColorContext.from_brand_spec(brand)
-        assert ctx.accent1 == "#E8A838"
-        assert ctx.foreground == "#2E6504"
+# Removed in V2: BrandColorContext module removed entirely
+# class TestBrandColorContext:
+#     def test_from_dna_basic(self): ...
+#     def test_from_dna_dark_template(self): ...
+#     def test_from_brand_spec(self): ...
 
 
-class TestHardcodedColorReplacement:
-    """Verify hardcoded colors are replaced with BrandColorContext."""
-
-    def test_post_save_inject_uses_brand_colors(self):
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
-        import inspect
-        source = inspect.getsource(DesignDNAExtractor._post_save_inject_groups)
-        assert '"#84AF7D"' not in source or "brand_ctx" in source or "body_color" in source, \
-            "_post_save_inject_groups should not hardcode #84AF7D"
-
-    def test_try_component_render_uses_brand_colors(self):
-        from ppt_pro_max.enterprise.design_dna_extractor import DesignDNAExtractor
-        import inspect
-        source = inspect.getsource(DesignDNAExtractor._try_component_render)
-        assert '"#6096E6"' not in source or "brand_ctx" in source or "accent_color" in source, \
-            "_try_component_render should not hardcode #6096E6"
+# Removed in V2: _post_save_inject_groups and _try_component_render removed from DesignDNAExtractor
+# class TestHardcodedColorReplacement:
+#     def test_post_save_inject_uses_brand_colors(self): ...
+#     def test_try_component_render_uses_brand_colors(self): ...
 
 
 class TestD1DecorationPreservation:
