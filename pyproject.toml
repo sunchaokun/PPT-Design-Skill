@@ -48,7 +48,7 @@ ppt-design = "ppt_pro_max.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-ppt_pro_max = ["../data/ppt/*.csv"]
+ppt_pro_max = ["data/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

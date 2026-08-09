@@ -244,52 +244,23 @@ def install_python_package(skill_dir: Path, project_root: Path | None = None) ->
 
 def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
     print("\n  Checking ui-ux-pro-max skill (required dependency)...")
-    from ppt_pro_max.adapters.ui_ux_adapter import is_available, found_path
+    # Since v2, the design knowledge database is BUNDLED inside ppt_pro_max
+    # (adapters/design_search.py + data/*.csv). No external ui-ux-pro-max
+    # skill / uipro CLI is required — is_available() reflects the bundled DB.
+    # Ensure we inspect THIS project's src (not a stale site-packages copy).
+    _root = Path(__file__).resolve().parent.parent
+    _src = _root / "src"
+    if _src.is_dir() and str(_src) not in sys.path:
+        sys.path.insert(0, str(_src))
+    from ppt_pro_max.adapters.ui_ux_adapter import is_available
 
     if is_available():
-        print(f"  [OK] ui-ux-pro-max found at: {found_path()}")
+        print("  [OK] design knowledge search is bundled (no external install needed)")
         return True
 
-    from installer.detect import PLATFORMS, detect_global_platforms
-
-    PLATFORM_AI_MAP = {p: p for p in PLATFORMS}
-    detected_global = detect_global_platforms()
-    ai_names = [PLATFORM_AI_MAP[p] for p in detected_global if p in PLATFORM_AI_MAP]
-
-    if not ai_names:
-        ai_names = ["opencode"]
-
-    for ai_name in ai_names:
-        print(f"  Installing ui-ux-pro-max for {ai_name}...")
-        try:
-            result = subprocess.run(
-                ["uipro", "init", "--ai", ai_name, "--force"],
-                capture_output=True, text=True, timeout=120,
-                cwd=str(target_dir),
-            )
-            if result.returncode == 0:
-                print(f"  [OK] ui-ux-pro-max installed for {ai_name}")
-            else:
-                print(f"  [WARN] uipro init --ai {ai_name} failed (exit {result.returncode})")
-                if result.stderr:
-                    print(f"  {result.stderr[:200]}")
-        except FileNotFoundError:
-            print("  [WARN] uipro CLI not found. Install it first:")
-            print("    npm install -g ui-ux-pro-max-cli")
-            break
-        except Exception as e:
-            print(f"  [WARN] uipro init failed for {ai_name}: {e}")
-
-    from ppt_pro_max.adapters.ui_ux_adapter import is_available as recheck
-    if recheck():
-        print("  [OK] ui-ux-pro-max is now available")
-        return True
-
-    print()
-    print("  *** ui-ux-pro-max is REQUIRED. Install it manually: ***")
-    print("    npm install -g ui-ux-pro-max-cli")
-    print("    uipro init --ai <your-platform>")
-    print("  Or set UX_PRO_MAX_DIR environment variable to its location.")
+    print("  [WARN] Bundled design database is missing — ui-ux-pro-max not available.")
+    print("  [WARN] Reinstall the python package so data/*.csv is included:")
+    print("          pip install -e .")
     return False
 
 
