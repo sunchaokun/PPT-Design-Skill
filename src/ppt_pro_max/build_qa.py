@@ -329,7 +329,12 @@ class BuildQA:
                                 font_size_pt = r.font.size / 12700
                                 break
                     chars_per_line = max(1, int(width_inches * 72 / font_size_pt * 0.65))
-                    total_est_lines += max(1, len(p.text) / chars_per_line)
+                    # CJK-aware: full-width chars weigh ~1.5x Latin (est. width ratio)
+                    p_text = p.text
+                    cjk = sum(1 for ch in p_text if ord(ch) > 0x2E80)
+                    latin = len(p_text) - cjk
+                    weighted = cjk * 1.5 + latin
+                    total_est_lines += max(1, weighted / chars_per_line)
                 if total_est_lines == 0:
                     continue
                 avg_font_pt = 12
