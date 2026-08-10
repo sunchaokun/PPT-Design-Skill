@@ -1713,6 +1713,40 @@ def ai_image(slide, left, top, width, height, keywords, *,
     return None
 
 
+def preview(pptx_path, out_dir=None, engine=None, open_in_browser=False, title="Slide Preview"):
+    """Render a .pptx to PNG previews for visual inspection — one call.
+
+    Wraps render_preview.render_preview() so build.py can see REAL layout
+    renders without opening PowerPoint manually. Auto-falls back:
+    PowerPoint COM → LibreOffice headless (works in Codex sandbox / CI / no
+    desktop, where COM fails with WinError 1312).
+
+    Args:
+        pptx_path: Path to the saved .pptx.
+        out_dir: Output dir for PNGs + index.html (default: <pptx>/preview/<stem>/).
+        engine: 'powerpoint' | 'libreoffice' | None=auto (falls back gracefully).
+                In Codex sandbox / headless env, use engine='libreoffice'.
+        open_in_browser: Open the HTML contact sheet (interactive env only).
+        title: Heading shown in the HTML preview page.
+
+    Returns:
+        dict {"pngs": [Path, ...], "html": Path, "engine": str, "warnings": [str]}
+    """
+    from ppt_pro_max.render_preview import render_preview as _render_preview
+
+    result = _render_preview(
+        pptx_path,
+        out_dir=out_dir,
+        engine=engine,
+        title=title,
+    )
+    if open_in_browser:
+        import webbrowser
+
+        webbrowser.open(str(result["html"]))
+    return result
+
+
 def circle_image(slide, cx, cy, radius, image_path, border_color=None):
     return _add_circle_image(slide, cx, cy, radius, image_path,
                              border_hex=border_color)

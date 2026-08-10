@@ -19,7 +19,21 @@ python -m ppt_pro_max "AI startup investor pitch" --style "dark cyberpunk" --fet
 ```bash
 # Render every slide to PNG + HTML contact sheet (PowerPoint COM / LibreOffice fallback)
 python -m ppt_pro_max.render_preview output/build_10pages.pptx --open
+
+# Codex sandbox / CI / headless env: PowerPoint COM fails (WinError 1312).
+# Use the LibreOffice engine explicitly, or just call preview() in build.py —
+# render_preview auto-falls-back PowerPoint → LibreOffice.
+python -m ppt_pro_max.render_preview output/build_10pages.pptx --engine libreoffice
 ```
+
+**In build.py — preferred (LLM-friendly):** `from ppt_pro_max.build_helpers import *`
+```python
+preview("output.pptx")                     # auto engine (COM → LibreOffice fallback)
+preview("output.pptx", engine="libreoffice")  # Codex sandbox / headless
+```
+`preview()` renders every slide to PNG + an HTML contact sheet; Codex can then
+visually review real layout renders without PowerPoint. Requires LibreOffice
+(soffice.bin) + poppler (pdftoppm) for the headless path.
 
 ### Standalone Image Generation
 ```bash
@@ -69,7 +83,7 @@ python -m ruff check src/
 - `src/ppt_pro_max/renderer/ppt_renderer.py` — Phase 4: PPT rendering
 - `src/ppt_pro_max/renderer/theme_composer.py` — 40,000+ style combinations
 - `src/ppt_pro_max/renderer/image_fetcher.py` — 4 image generation engines (Seedream/GPT Image/DALL-E/Wanx) + 1 enhancer (Kimi)
-- `src/ppt_pro_max/render_preview.py` — Debug tool: batch-render .pptx slides to PNG + HTML contact sheet (PowerPoint COM / LibreOffice)
+- `src/ppt_pro_max/render_preview.py` — Debug tool: batch-render .pptx slides to PNG + HTML contact sheet (PowerPoint COM / LibreOffice fallback)
 
 ### Enterprise / Renderer (unified)
 

@@ -1113,6 +1113,14 @@ result = render_preview("output.pptx", out_dir="output/preview/deck")
 print(result["html"])   # open this in a browser
 ```
 
+**⚠️ Codex sandbox / CI / headless**: PowerPoint COM fails with WinError 1312 (no interactive desktop). Use `preview()` from build_helpers — it auto-falls-back to LibreOffice headless (needs soffice.bin + poppler/pdftoppm):
+
+```python
+from ppt_pro_max.build_helpers import *
+preview("output.pptx")                        # auto: COM → LibreOffice
+preview("output.pptx", engine="libreoffice")  # Codex sandbox / headless
+```
+
 ## UX Intelligence API (内置设计数据库 — MANDATORY for Build Mode)
 
 **⚠️ BEFORE writing any build.py, you MUST query the bundled design database (ui_ux_adapter → design_search) for domain-specific design intelligence.** This is the single biggest quality differentiator — without it, you're guessing colors/fonts/styles; with it, you get professional-grade design decisions backed by a searchable database of real-world patterns (bundled inside ppt_pro_max, no external dependency required).

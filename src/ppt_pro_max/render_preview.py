@@ -4,18 +4,25 @@ Solves the "改坐标 → 打开 PowerPoint → 肉眼检查 → 再改" loop by
 every slide to PNG plus a single HTML contact sheet, so you see all pages at
 once without manually opening PowerPoint.
 
-Backends (auto-detected in order):
-  1. Microsoft PowerPoint (COM)  — best fidelity, Windows only
-  2. LibreOffice (soffice)       — cross-platform fallback
+Backends (auto-detected in order, graceful fallback if one fails):
+  1. Microsoft PowerPoint (COM)  — best fidelity, Windows interactive session
+  2. LibreOffice headless        — soffice.bin, works in sandbox/CI/no desktop
+                                     (e.g. Codex sandbox where COM fails 1312)
+
+If PowerPoint COM fails (e.g. WinError 1312 in a background/CI session), the
+preview automatically falls back to LibreOffice so the caller can still judge
+layout from real renders.
 
 Usage:
-    python -m ppt_pro_max.render_preview build_crispr.pptx [--out output/preview]
-    python -m ppt_pro_max.render_preview build_crispr.pptx --open
+    python -m ppt_pro_max.render_preview build.pptx [--out output/preview]
+    python -m ppt_pro_max.render_preview build.pptx --open
+    python -m ppt_pro_max.render_preview build.pptx --engine libreoffice
 
 Python API:
     from ppt_pro_max.render_preview import render_preview
-    result = render_preview("build_crispr.pptx")
-    # result == {"pngs": [Path, ...], "html": Path, "engine": "powerpoint"|"libreoffice"}
+    result = render_preview("build.pptx")
+    # result == {"pngs": [Path, ...], "html": Path,
+    #            "engine": "powerpoint"|"libreoffice", "warnings": [...]}
 """
 
 from __future__ import annotations
@@ -29,14 +36,15 @@ from typing import Any
 
 
 def _find_libreoffice() -> str | None:
-    """Locate the soffice executable, or None if LibreOffice is not installed."""
-    for name in ("soffice", "libreoffice"):
-        found = shutil.which(name)
-        if found:
-            return found
+    """Locate the soffice executable, preferring soffice.bin.
+
+    On Windows, `soffice.exe` is a launcher that can hang in headless / CI /
+    sandbox sessions; `soffice.bin` is the real worker and works reliably.
+    """
     candidates = [
-        r"C:\Program Files\LibreOffice\program\soffice.exe",
-        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        r"C:\Program Files\LibreOffice\program\soffice.bin",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.bin",
+        r"/usr/lib/libreoffice/program/soffice.bin",
         r"/usr/bin/libreoffice",
         r"/usr/bin/soffice",
         r"/Applications/LibreOffice.app/Contents/MacOS/soffice",
@@ -44,6 +52,10 @@ def _find_libreoffice() -> str | None:
     for c in candidates:
         if os.path.isfile(c):
             return c
+    for name in ("soffice.bin", "soffice", "libreoffice"):
+        found = shutil.which(name)
+        if found:
+            return found
     return None
 
 
@@ -65,6 +77,34 @@ def detect_engine() -> str:
     if _find_libreoffice():
         return "libreoffice"
     return "none"
+
+
+def describe_com_error(exc: Exception) -> str:
+    """Human-readable description of a PowerPoint COM failure.
+
+    Maps common HRESULT codes (e.g. 0x80070520 = no logon session) to
+    actionable hints so the caller knows WHY the backend failed.
+    """
+    hresult = getattr(exc, "hresult", None)
+    if not hresult:
+        return repr(exc)
+    try:
+        import winerror
+
+        code = winerror.HRESULT_CODE(hresult)
+    except Exception:  # noqa: BLE001
+        code = None
+    detail = f"COM error 0x{hresult:08X}"
+    if code is not None:
+        detail += f" (WinError {code})"
+    if code == 1312:  # ERROR_NO_SUCH_LOGON_SESSION
+        detail += (
+            " — no interactive desktop. This happens in a background/CI/sandbox "
+            "session (e.g. Codex). Use engine='libreoffice' or run interactively."
+        )
+    elif code in (5, 1314):
+        detail += " — access denied. Run under the Windows-signed-in account."
+    return detail
 
 
 def _render_powerpoint(pptx: Path, out_dir: Path, width: int, height: int) -> list[Path]:
@@ -106,34 +146,131 @@ def _render_powerpoint(pptx: Path, out_dir: Path, width: int, height: int) -> li
     return sorted(pngs)
 
 
-def _render_libreoffice(pptx: Path, out_dir: Path) -> list[Path]:
-    """Render via LibreOffice: convert pptx→PDF, then each PDF page→PNG."""
+def _find_pdftoppm() -> str | None:
+    """Locate pdftoppm (poppler), or None if not installed.
+
+    Searches PATH plus common install roots (poppler may be installed to a
+    user-local dir, e.g. under ~/.cache on this machine).
+    """
+    found = shutil.which("pdftoppm")
+    if found:
+        return found
+    candidates = [
+        r"C:\Program Files\poppler\Library\bin\pdftoppm.exe",
+        r"C:\Program Files (x86)\poppler\Library\bin\pdftoppm.exe",
+        r"C:\Users\{user}\AppData\Local\Programs\poppler\Library\bin\pdftoppm.exe",
+    ]
+    # user-local cache roots (codex-runtimes, winget per-user, etc.)
+    home = os.path.expanduser("~")
+    cache_roots = [
+        os.path.join(home, ".cache", "codex-runtimes"),
+        os.path.join(home, "AppData", "Local", "Programs"),
+    ]
+    for root in cache_roots:
+        if os.path.isdir(root):
+            for base, _dirs, files in os.walk(root):
+                if "pdftoppm.exe" in files:
+                    return os.path.join(base, "pdftoppm.exe")
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
+    """Convert a PDF to one PNG per page.
+
+    Tries (in order):
+      1. pdftoppm (poppler)  — best quality/control, fast
+      2. pdf2image           — Python wrapper over poppler
+
+    Returns sorted PNG paths.
+    """
+    from PIL import Image as PILImage
+
+    # Path 1: pdftoppm
+    pdftoppm = _find_pdftoppm()
+    if pdftoppm:
+        base = out_dir / "slide"
+        subprocess.run(
+            [pdftoppm, "-png", "-r", "110", str(pdf), str(base)],
+            check=True,
+            capture_output=True,
+            timeout=300,
+        )
+        pngs = sorted(out_dir.glob("slide*.png"))
+        if pngs:
+            return pngs
+
+    # Path 2: pdf2image
+    from pdf2image import convert_from_path  # type: ignore
+
+    pages = convert_from_path(str(pdf), dpi=110)
+    pngs = []
+    for idx, page in enumerate(pages, start=1):
+        out_png = out_dir / f"slide{idx}.png"
+        PILImage.frombytes(page.mode, page.size, page.tobytes()).save(out_png, "PNG")
+        pngs.append(out_png)
+    return sorted(pngs)
+
+
+def _render_libreoffice(pptx: Path, out_dir: Path, width: int = 1280, height: int = 720) -> list[Path]:
+    """Render via LibreOffice headless: pptx→PDF (soffice.bin), then PDF→PNG.
+
+    Uses `soffice.bin` directly (the `soffice.exe` launcher can hang in
+    headless/sandbox sessions) with a FIXED user profile and --norestore.
+    width/height are accepted for interface parity with the PowerPoint engine
+    but LibreOffice output resolution is controlled by pdftoppm's -r flag.
+
+    LibreOffice quirk: a brand-new profile fails on FIRST launch (RC 81) but
+    initializes enough that a retry with the same profile succeeds. We use a
+    stable profile dir and retry once on failure.
+    """
     soffice = _find_libreoffice()
     if soffice is None:
         raise RuntimeError("LibreOffice not found")
     import tempfile
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp = Path(tmp)
-        subprocess.run(
-            [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(tmp), str(pptx)],
-            check=True,
-            capture_output=True,
-            timeout=300,
-        )
-        pdfs = list(tmp.glob("*.pdf"))
-        if not pdfs:
-            raise RuntimeError("LibreOffice produced no PDF")
-        pdf = pdfs[0]
-        from pdf2image import convert_from_path  # type: ignore
+    _kill_libreoffice()
 
-        pages = convert_from_path(str(pdf), dpi=110)
-        pngs: list[Path] = []
-        for idx, page in enumerate(pages, start=1):
-            out_png = out_dir / f"slide{idx}.png"
-            page.save(out_png, "PNG")
-            pngs.append(out_png)
-    return sorted(pngs)
+    profile = Path(tempfile.gettempdir()) / "ppt_lo_profile"
+    profile.mkdir(parents=True, exist_ok=True)
+    prof_arg = "-env:UserInstallation=file:///" + str(profile).replace("\\", "/")
+
+    def _convert() -> list[Path]:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            cmd = [
+                soffice, prof_arg,
+                "--headless", "--norestore",
+                "--convert-to", "pdf",
+                "--outdir", str(tmp),
+                str(pptx),
+            ]
+            subprocess.run(cmd, check=True, capture_output=True, timeout=300)
+            pdfs = list(tmp.glob("*.pdf"))
+            if not pdfs:
+                raise RuntimeError("LibreOffice produced no PDF")
+            return _pdf_to_pngs(pdfs[0], out_dir)
+
+    try:
+        return _convert()
+    except subprocess.CalledProcessError:
+        # First-run profile init often fails once; retry with initialized profile.
+        return _convert()
+
+
+def _kill_libreoffice() -> None:
+    """Terminate stray soffice processes (Windows) to avoid profile lock / RC 81."""
+    if sys.platform != "win32":
+        return
+    try:
+        subprocess.run(
+            ["taskkill", "/F", "/IM", "soffice.bin", "/T"],
+            capture_output=True, timeout=30,
+        )
+    except Exception:  # noqa: BLE001, S110 - best-effort cleanup
+        pass
 
 
 def _build_html(pngs: list[Path], pptx: Path, title: str = "Slide Preview") -> Path:
@@ -176,16 +313,23 @@ def render_preview(
 ) -> dict[str, Any]:
     """Render every slide of a .pptx to PNG plus an HTML contact sheet.
 
+    Multi-tier fallback so a preview is ALWAYS produced:
+      1. 'powerpoint'  — PowerPoint COM (Windows, interactive session)
+      2. 'libreoffice' — soffice.bin headless (sandbox/CI/no-desktop safe)
+
+    If the default engine fails, the next tier is tried automatically.
+
     Args:
         pptx_path: Path to the .pptx file.
         out_dir: Output directory for PNGs + index.html. Defaults to
             <pptx_dir>/preview/<stem>/.
-        width/height: Pixel size for PowerPoint export (LibreOffice ignores).
-        engine: Force backend: 'powerpoint', 'libreoffice', or None=auto.
+        width/height: Pixel size for PowerPoint export.
+        engine: Force backend: 'powerpoint' | 'libreoffice', or None=auto
+            (tries tiers in order, falls back gracefully).
         title: Heading shown in the HTML preview page.
 
     Returns:
-        {"pngs": [Path, ...], "html": Path, "engine": str}
+        {"pngs": [Path, ...], "html": Path, "engine": str, "warnings": [str]}
     """
     src = Path(pptx_path).resolve()
     if not src.is_file():
@@ -198,22 +342,36 @@ def render_preview(
         out = (src.parent / out).resolve()
     out.mkdir(parents=True, exist_ok=True)
 
-    selected = engine or detect_engine()
-    if selected == "powerpoint":
-        pngs = _render_powerpoint(src, out, width, height)
-    elif selected == "libreoffice":
-        pngs = _render_libreoffice(src, out)
+    warnings: list[str] = []
+    pngs: list[Path] | None = None
+    used_engine: str | None = None
+
+    if engine:
+        order = [engine]
     else:
+        order = ["powerpoint", "libreoffice"]
+
+    for eng in order:
+        try:
+            if eng == "powerpoint":
+                pngs = _render_powerpoint(src, out, width, height)
+            elif eng == "libreoffice":
+                pngs = _render_libreoffice(src, out, width, height)
+            else:
+                raise RuntimeError(f"Unknown engine: {eng}")
+            used_engine = eng
+            break
+        except Exception as e:  # noqa: BLE001 - any engine failure falls back
+            warnings.append(f"engine '{eng}' failed: {e}")
+            pngs = None
+
+    if not pngs or not used_engine:
         raise RuntimeError(
-            "No rendering engine available. Install PowerPoint (Windows) or "
-            "LibreOffice, or run from a machine that has one."
+            "All rendering engines failed.\n  " + "\n  ".join(warnings)
         )
 
-    if not pngs:
-        raise RuntimeError("Rendering produced no slide images")
-
     html = _build_html(pngs, src, title=title)
-    return {"pngs": pngs, "html": html, "engine": selected}
+    return {"pngs": pngs, "html": html, "engine": used_engine, "warnings": warnings}
 
 
 if __name__ == "__main__":
@@ -238,6 +396,8 @@ if __name__ == "__main__":
         title=args.title,
     )
     print(f"[render_preview] engine={result['engine']}")
+    for w in result.get("warnings", []):
+        print(f"[render_preview] warn: {w}")
     print(f"[render_preview] {len(result['pngs'])} slides -> {result['pngs'][0].parent}")
     print(f"[render_preview] HTML: {result['html']}")
     if args.open:
