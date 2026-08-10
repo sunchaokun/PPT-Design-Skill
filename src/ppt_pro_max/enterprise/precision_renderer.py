@@ -623,6 +623,7 @@ class PrecisionRenderer:
         exercise = page.get("exercise")
         chart = page.get("chart")
         notes = page.get("notes")
+        links = page.get("links") or []
         _image_grid = page.get("image_grid")
         _icons = page.get("icons")
         explicit_layout = page.get("layout")
@@ -664,6 +665,7 @@ class PrecisionRenderer:
                 self._render_blocks(slide, blocks, is_hero=True)
             else:
                 self._render_hero_content(slide, title, subtitle, bullets, has_image=has_image)
+            self._render_standalone_links(slide, links)
         else:
             self._draw_sidebar(slide, variant)
             deco_cfg = variant.get("decoration") or {}
@@ -688,7 +690,7 @@ class PrecisionRenderer:
             elif exercise:
                 self._render_exercise_on_slide(slide, exercise, cx, cy, cw, ch)
             elif bullets:
-                self._render_bullets_on_slide(slide, bullets, cx, cy, cw, ch)
+                self._render_bullets_on_slide(slide, bullets, cx, cy, cw, ch, links=links)
 
             if image_path and os.path.isfile(image_path):
                 self._render_content_image(slide, image_path, cx, cy, cw, ch)
@@ -772,6 +774,47 @@ class PrecisionRenderer:
             bullet_text = "  \u2022  ".join(bullets[:4])
             self.add_text(slide, bullet_text, 2.0, 4.75, SLIDE_WIDTH - 4.0, 0.5,
                           font=self._font_b(), size=13, color_role="muted-foreground", align="center")
+
+    def _render_standalone_links(self, slide, links: list | None) -> None:
+        """Render standalone link buttons (text + url + position) for hero/cta pages.
+
+        Links without bullet_index are drawn as accent-colored underlined text
+        at the given position (default bottom_right).
+        """
+        if not links:
+            return
+        from ppt_pro_max.renderer.theme_mapper import get_cjk_companion
+        body_font = self._font_b()
+        cjk = get_cjk_companion(body_font, "body")
+        accent = self._c("accent", self._c("primary", "#2563EB"))
+        for lnk in links:
+            if lnk.get("bullet_index") is not None:
+                continue  # handled by bullet renderer
+            url = lnk.get("url")
+            text = lnk.get("text") or url or "Link"
+            if not url:
+                continue
+            position = lnk.get("position", "bottom_right")
+            pos = {
+                "bottom_right": (SLIDE_WIDTH - 4.6, SLIDE_HEIGHT - 1.1, 3.8, 0.5),
+                "bottom_left": (0.8, SLIDE_HEIGHT - 1.1, 3.8, 0.5),
+                "center": ((SLIDE_WIDTH - 4.0) / 2, 5.6, 4.0, 0.5),
+            }.get(position, (SLIDE_WIDTH - 4.6, SLIDE_HEIGHT - 1.1, 3.8, 0.5))
+            x, y, w, h = pos
+            tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+            tf = tb.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
+            r = p.add_run()
+            r.text = text
+            r.font.name = body_font
+            r.font.size = Pt(13)
+            r.font.bold = True
+            r.font.color.rgb = self._rgb(accent)
+            r.font.underline = True
+            self._set_font_with_cjk(r, body_font, cjk)
+            r.hyperlink.address = url
 
     def _render_cards(self, slide, cards, cx: float, cy: float, cw: float, ch: float) -> None:
         n = len(cards)
@@ -917,16 +960,21 @@ class PrecisionRenderer:
 
     def _render_bullets_on_slide(self, slide, bullets: list,
                                  cx: float = 0.75, cy: float = 2.05,
-                                 cw: float = 11.83, ch: float = 4.8) -> None:
+                                 cw: float = 11.83, ch: float = 4.8,
+                                 links: list | None = None) -> None:
         accent = self._c("accent", self._c("primary", "#2563EB"))
+        links = links or []
         if len(bullets) >= 6:
             mid = (len(bullets) + 1) // 2
             col_gap = 0.6
             col_w = (cw - col_gap) / 2
-            self._render_bullet_column(slide, bullets[:mid], cx, cy, col_w, ch, accent)
-            self._render_bullet_column(slide, bullets[mid:], cx + col_w + col_gap, cy, col_w, ch, accent)
+            self._render_bullet_column(slide, bullets[:mid], cx, cy, col_w, ch, accent,
+                                       links=links, link_base_index=0)
+            self._render_bullet_column(slide, bullets[mid:], cx + col_w + col_gap, cy, col_w, ch, accent,
+                                       links=links, link_base_index=mid)
         else:
-            self._render_bullet_column(slide, bullets[:8], cx, cy, cw, ch, accent)
+            self._render_bullet_column(slide, bullets[:8], cx, cy, cw, ch, accent,
+                                       links=links, link_base_index=0)
 
     def _estimate_bullet_height(self, bullets: list, w: float, size: int, spacing: int) -> float:
         """Rough text-height estimate (CJK-aware) to drive adaptive sizing."""
@@ -955,12 +1003,20 @@ class PrecisionRenderer:
         return max(lo, min(hi, size))
 
     def _render_bullet_column(self, slide, bullets: list, x: float, y: float,
-                              w: float, h: float, accent: str) -> None:
+                              w: float, h: float, accent: str,
+                              links: list | None = None,
+                              link_base_index: int = 0) -> None:
         from ppt_pro_max.renderer.theme_mapper import get_cjk_companion
         size = self._fit_bullet_size(bullets, w, h)
         spacing = max(11, int(size * 0.9))
         total_h = self._estimate_bullet_height(bullets, w, size, spacing)
         top = y + max(0.0, (h - total_h) / 2)
+
+        # map bullet_index (global) → url
+        link_map: dict[int, str] = {}
+        for lnk in links or []:
+            if lnk.get("bullet_index") is not None and lnk.get("url"):
+                link_map[int(lnk["bullet_index"])] = lnk["url"]
 
         tb = slide.shapes.add_textbox(Inches(x), Inches(top), Inches(w), Inches(h))
         tf = tb.text_frame
@@ -968,6 +1024,7 @@ class PrecisionRenderer:
         body_font = self._font_b()
         cjk = get_cjk_companion(body_font, "body")
         text_color = self._c("foreground", "#1E293B")
+        accent_rgb = self._rgb(accent)
         marker = "\u25AA  "
         for i, b in enumerate(bullets):
             p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
@@ -976,7 +1033,7 @@ class PrecisionRenderer:
             r1.text = marker
             r1.font.name = body_font
             r1.font.size = Pt(size)
-            r1.font.color.rgb = self._rgb(accent)
+            r1.font.color.rgb = accent_rgb
             r1.font.bold = True
             self._set_font_with_cjk(r1, body_font, cjk)
             r2 = p.add_run()
@@ -985,6 +1042,11 @@ class PrecisionRenderer:
             r2.font.size = Pt(size)
             r2.font.color.rgb = self._rgb(text_color)
             self._set_font_with_cjk(r2, body_font, cjk)
+            url = link_map.get(link_base_index + i)
+            if url:
+                r2.hyperlink.address = url
+                r2.font.color.rgb = self._rgb(accent)
+                r2.font.underline = True
         return tb
 
     def _compute_content_area(self, page: dict[str, Any]) -> tuple[float, float, float, float]:

@@ -29,6 +29,7 @@ tests/test_art_*
 tests/test_smartart_*
 tests/test_groupshape_*
 tests/test_xml_extraction.py
+tests/test_pptx_capabilities.py
 tests/test_db_e2e.py
 
 PREMIUM_UPGRADE_PLAN.md
