@@ -26,6 +26,11 @@ python -m ppt_pro_max.render_preview output/build_10pages.pptx --open
 python -m ppt_pro_max.render_preview output/build_10pages.pptx --engine libreoffice
 ```
 
+**Installer auto-installs render deps**: `python install.py` detects LibreOffice +
+poppler (pdftoppm) and installs any missing via winget, so the headless render
+path works right after installation. Add `--no-render-deps` to skip. Check
+status with `python install.py --check`.
+
 **In build.py — preferred (LLM-friendly):** `from ppt_pro_max.build_helpers import *`
 ```python
 preview("output.pptx")                     # auto engine (COM → LibreOffice fallback)

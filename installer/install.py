@@ -264,6 +264,124 @@ def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
     return False
 
 
+# ── Render dependencies (LibreOffice + poppler) ────────────────────────────
+def _find_soffice_bin() -> str | None:
+    """Locate LibreOffice's soffice.bin (the real worker; soffice.exe launcher
+    can hang headless)."""
+    candidates = [
+        r"C:\Program Files\LibreOffice\program\soffice.bin",
+        r"C:\Program Files (x86)\LibreOffice\program\soffice.bin",
+        r"/usr/lib/libreoffice/program/soffice.bin",
+        r"/usr/bin/soffice",
+        r"/usr/bin/libreoffice",
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    for name in ("soffice.bin", "soffice", "libreoffice"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def _find_pdftoppm_exe() -> str | None:
+    """Locate a real pdftoppm.exe (skip .CMD/.bat shims)."""
+    # user-local codex-runtimes native poppler
+    home = os.path.expanduser("~")
+    for root in (os.path.join(home, ".cache", "codex-runtimes"),):
+        if os.path.isdir(root):
+            for base, _dirs, files in os.walk(root):
+                if "pdftoppm.exe" in files:
+                    return os.path.join(base, "pdftoppm.exe")
+    # direct .exe on PATH
+    found = shutil.which("pdftoppm")
+    if found and found.lower().endswith(".exe"):
+        return found
+    return None
+
+
+def detect_render_deps() -> dict[str, bool]:
+    """Check which render dependencies are present.
+
+    Returns:
+        {"libreoffice": bool, "poppler": bool}
+    """
+    return {
+        "libreoffice": _find_soffice_bin() is not None,
+        "poppler": _find_pdftoppm_exe() is not None,
+    }
+
+
+def _winget_install(package_id: str, label: str) -> bool:
+    """Install a package via winget (silent). Returns True on success."""
+    winget = shutil.which("winget")
+    if not winget:
+        print(f"  [WARN] winget not found — cannot auto-install {label}.")
+        return False
+    print(f"  Installing {label} via winget (this may take a few minutes)...")
+    try:
+        result = subprocess.run(
+            [winget, "install", package_id,
+             "--accept-source-agreements", "--accept-package-agreements",
+             "--silent"],
+            capture_output=True, text=True, timeout=1200,
+        )
+        if result.returncode == 0:
+            print(f"  [OK] {label} installed")
+            return True
+        print(f"  [WARN] {label} install failed (exit {result.returncode})")
+        if result.stderr.strip():
+            print(f"          {result.stderr.strip()[:300]}")
+        return False
+    except subprocess.TimeoutExpired:
+        print(f"  [WARN] {label} install timed out (1200s)")
+        return False
+    except Exception as e:  # noqa: BLE001
+        print(f"  [WARN] {label} install failed: {e}")
+        return False
+
+
+def ensure_render_deps() -> dict[str, str]:
+    """Detect render deps and auto-install any that are missing.
+
+    Uses winget to install LibreOffice + Poppler so the user is ready to
+    render previews (Codex sandbox / headless) right after installation.
+
+    Returns:
+        {"libreoffice": "ok"|"installed"|"failed"|"skipped",
+         "poppler":    "ok"|"installed"|"failed"|"skipped"}
+    """
+    print("\n  Checking render dependencies (LibreOffice + poppler)...")
+    status = {"libreoffice": "ok", "poppler": "ok"}
+    deps = detect_render_deps()
+
+    if not deps["libreoffice"]:
+        if _winget_install("TheDocumentFoundation.LibreOffice", "LibreOffice"):
+            status["libreoffice"] = "installed"
+        else:
+            status["libreoffice"] = "failed"
+    else:
+        print("  [OK] LibreOffice found")
+
+    if not deps["poppler"]:
+        if _winget_install("oschwartz10612.Poppler", "Poppler (pdftoppm)"):
+            status["poppler"] = "installed"
+        else:
+            status["poppler"] = "failed"
+    else:
+        print("  [OK] poppler (pdftoppm) found")
+
+    # Re-detect after install to confirm
+    for name, key in (("libreoffice", "libreoffice"), ("poppler", "poppler")):
+        if status[key] in ("installed", "failed"):
+            if (_find_soffice_bin() if key == "libreoffice" else _find_pdftoppm_exe()):
+                status[key] = "installed"
+            elif status[key] == "failed":
+                pass
+    return status
+
+
 def check_installation(target_dir: Path, project_root: Path) -> None:
     version = _get_version(project_root)
     from installer.detect import PLATFORMS, detect_project_platforms
@@ -314,6 +432,8 @@ def main() -> None:
     parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing installation")
     parser.add_argument("--check", "-c", action="store_true", help="Check installation status only")
     parser.add_argument("--no-pip", action="store_true", help="Skip pip install")
+    parser.add_argument("--no-render-deps", action="store_true",
+                        help="Skip auto-installing LibreOffice + poppler render deps")
     args = parser.parse_args()
 
     from installer.detect import PLATFORMS, detect_project_platforms, detect_global_platforms
@@ -324,6 +444,13 @@ def main() -> None:
 
     if args.check:
         check_installation(target_dir, project_root)
+        print()
+        deps = detect_render_deps()
+        print("Render dependencies:")
+        for name, ok in deps.items():
+            mark = "OK" if ok else "MISSING"
+            print(f"  {name:12s} [{mark}]")
+        print()
         return
 
     print(f"\n{'='*60}")
@@ -411,6 +538,10 @@ def main() -> None:
 
     # --- ui-ux-pro-max skill (required) ---
     install_ui_ux_pro_max(target_dir, force=args.force)
+
+    # --- render dependencies (LibreOffice + poppler) auto-install ---
+    if not args.no_render_deps:
+        ensure_render_deps()
 
     # --- Summary ---
     print(f"\n{'='*60}")
