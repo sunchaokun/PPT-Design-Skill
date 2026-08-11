@@ -4,6 +4,7 @@ Backend engines are mocked so tests run on any machine (CI included).
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from unittest.mock import patch
 
@@ -218,14 +219,18 @@ def test_pdf_to_pngs_normalizes_to_slide_names(tmp_path):
 
     out = tmp_path / "out"
     out.mkdir()
+    fake_exe = tmp_path / "bin" / "pdftoppm.exe"
+    fake_exe.parent.mkdir()
+    fake_exe.write_bytes(b"EXE")
 
     def _fake_run(cmd, **kw):
+        assert kw.get("env")  # PATH injection must be present
         # pdftoppm writes lo_slide-1.png / lo_slide-2.png
         (out / "lo_slide-1.png").write_bytes(b"PNG")
         (out / "lo_slide-2.png").write_bytes(b"PNG")
         return subprocess.CompletedProcess(cmd, 0)
 
-    with patch("ppt_pro_max.render_preview._find_pdftoppm", return_value="pdftoppm"), \
+    with patch("ppt_pro_max.render_preview._find_pdftoppm", return_value=str(fake_exe)), \
          patch("ppt_pro_max.render_preview.subprocess.run", side_effect=_fake_run):
         pngs = _pdf_to_pngs(tmp_path / "deck.pdf", out)
 
@@ -233,3 +238,67 @@ def test_pdf_to_pngs_normalizes_to_slide_names(tmp_path):
     assert names == ["slide1.png", "slide2.png"]
     # temp lo_slide-* files cleaned up
     assert not list(out.glob("lo_slide-*"))
+
+
+# ── _find_pdftoppm ────────────────────────────────────────────────────────
+def test_find_pdftoppm_prefers_exe_over_cmd_shim(tmp_path):
+    """Must skip .CMD/.bat shims (codex override wrapper) and return the real exe."""
+    from ppt_pro_max.render_preview import _find_pdftoppm
+
+    # fake a codex-runtimes native poppler with a real exe
+    native = tmp_path / ".cache" / "codex-runtimes" / "p" / "native" / "poppler" / "Library" / "bin"
+    native.mkdir(parents=True)
+    (native / "pdftoppm.exe").write_bytes(b"EXE")
+
+    with patch("ppt_pro_max.render_preview.os.path.expanduser", return_value=str(tmp_path)):
+        found = _find_pdftoppm()
+    assert found == str(native / "pdftoppm.exe")
+
+
+def test_find_pdftoppm_skips_cmd_shim_on_path(tmp_path):
+    """If PATH only has a .CMD shim, prefer nothing over a shim that can't load DLLs."""
+    from ppt_pro_max.render_preview import _find_pdftoppm
+
+    shim = tmp_path / "pdftoppm.cmd"
+    shim.write_text("@echo off\r\nexit /b 3\r\n")
+
+    # no real exe anywhere
+    with patch("ppt_pro_max.render_preview.os.path.expanduser", return_value=str(tmp_path)), \
+         patch("ppt_pro_max.render_preview.shutil.which", return_value=str(shim)):
+        found = _find_pdftoppm()
+    assert found is None  # .CMD shim rejected
+
+
+def test_find_pdftoppm_exe_on_path(tmp_path):
+    from ppt_pro_max.render_preview import _find_pdftoppm
+
+    exe = tmp_path / "bin" / "pdftoppm.exe"
+    exe.parent.mkdir(parents=True)
+    exe.write_bytes(b"EXE")
+
+    with patch("ppt_pro_max.render_preview.os.path.expanduser", return_value=str(tmp_path)), \
+         patch("ppt_pro_max.render_preview.shutil.which", return_value=str(exe)):
+        found = _find_pdftoppm()
+    assert found == str(exe)
+
+
+def test_run_pdftoppm_injects_exe_dir_to_path(tmp_path):
+    from ppt_pro_max.render_preview import _run_pdftoppm
+
+    out = tmp_path / "out"
+    out.mkdir()
+    captured = {}
+
+    def _fake_run(cmd, **kw):
+        captured["cmd"] = cmd
+        captured["env_path"] = kw.get("env", {}).get("PATH", "")
+        (out / "lo_slide-1.png").write_bytes(b"PNG")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    exe = r"C:\poppler\Library\bin\pdftoppm.exe"
+    with patch("ppt_pro_max.render_preview.subprocess.run", side_effect=_fake_run):
+        pngs = _run_pdftoppm(exe, tmp_path / "deck.pdf", out)
+
+    # exe's dir must be prepended to PATH (DLL resolution)
+    assert captured["env_path"].startswith(r"C:\poppler\Library\bin" + os.pathsep)
+    assert len(pngs) == 1

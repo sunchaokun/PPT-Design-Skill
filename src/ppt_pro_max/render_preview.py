@@ -147,34 +147,73 @@ def _render_powerpoint(pptx: Path, out_dir: Path, width: int, height: int) -> li
 
 
 def _find_pdftoppm() -> str | None:
-    """Locate pdftoppm (poppler), or None if not installed.
+    """Locate the REAL pdftoppm.exe (poppler), or None if not installed.
 
-    Searches PATH plus common install roots (poppler may be installed to a
-    user-local dir, e.g. under ~/.cache on this machine).
+    Skips `.CMD`/`.bat` shims: on Codex sandbox the PATH may expose an
+    override wrapper (pdftoppm.cmd) whose chained exe can't find its DLLs.
+    We return the actual .exe path so its directory can be added to PATH
+    (poppler needs its sibling DLLs on the DLL search path).
+
+    Search order:
+      1. Well-known codex-runtimes native poppler (Library\\bin\\pdftoppm.exe)
+      2. A direct pdftoppm.exe on PATH (skip .CMD shims)
+      3. winget per-user poppler install
+      4. Program Files poppler
     """
-    found = shutil.which("pdftoppm")
-    if found:
-        return found
-    candidates = [
-        r"C:\Program Files\poppler\Library\bin\pdftoppm.exe",
-        r"C:\Program Files (x86)\poppler\Library\bin\pdftoppm.exe",
-        r"C:\Users\{user}\AppData\Local\Programs\poppler\Library\bin\pdftoppm.exe",
-    ]
-    # user-local cache roots (codex-runtimes, winget per-user, etc.)
+    exe_names = ("pdftoppm.exe", "pdftoppm")  # prefer .exe
     home = os.path.expanduser("~")
-    cache_roots = [
-        os.path.join(home, ".cache", "codex-runtimes"),
-        os.path.join(home, "AppData", "Local", "Programs"),
-    ]
-    for root in cache_roots:
+
+    # 1) codex-runtimes native poppler (the real install with DLLs)
+    codex_roots = [os.path.join(home, ".cache", "codex-runtimes")]
+    for root in codex_roots:
         if os.path.isdir(root):
             for base, _dirs, files in os.walk(root):
                 if "pdftoppm.exe" in files:
                     return os.path.join(base, "pdftoppm.exe")
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
+
+    # 2) direct .exe on PATH (skip .CMD/.bat shims)
+    for name in exe_names:
+        found = shutil.which(name)
+        if found and found.lower().endswith(".exe"):
+            return found
+
+    # 3) winget per-user + 4) Program Files
+    candidates = [
+        os.path.join(home, "AppData", "Local", "Microsoft", "WinGet", "Packages"),
+        r"C:\Program Files\poppler\Library\bin\pdftoppm.exe",
+        r"C:\Program Files (x86)\poppler\Library\bin\pdftoppm.exe",
+    ]
+    for root in candidates:
+        if os.path.isfile(root):
+            return root
+        if os.path.isdir(root):
+            for base, _dirs, files in os.walk(root):
+                if "pdftoppm.exe" in files:
+                    return os.path.join(base, "pdftoppm.exe")
     return None
+
+
+def _run_pdftoppm(pdftoppm: str, pdf: Path, out_dir: Path) -> list[Path]:
+    """Run pdftoppm with the exe's directory added to PATH (DLL resolution).
+
+    poppler's pdftoppm.exe needs sibling DLLs (poppler-*.dll etc.) on the DLL
+    search path. In a sandbox the chained wrapper may run without those dirs,
+    producing a bare `exit status 3`. Adding the exe dir to PATH fixes it.
+    """
+    import copy
+
+    env = copy.deepcopy(os.environ)
+    exe_dir = os.path.dirname(os.path.abspath(pdftoppm))
+    env["PATH"] = exe_dir + os.pathsep + env.get("PATH", "")
+    base = out_dir / "lo_slide"
+    subprocess.run(
+        [pdftoppm, "-png", "-r", "110", str(pdf), str(base)],
+        check=True,
+        capture_output=True,
+        timeout=300,
+        env=env,
+    )
+    return sorted(out_dir.glob("lo_slide-*.png"))
 
 
 def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
@@ -191,17 +230,23 @@ def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
 
     tmp_pngs: list[Path] = []
 
-    # Path 1: pdftoppm
+    # Path 1: pdftoppm (with DLL-path injection + pre-flight diagnostics)
     pdftoppm = _find_pdftoppm()
     if pdftoppm:
-        base = out_dir / "lo_slide"
-        subprocess.run(
-            [pdftoppm, "-png", "-r", "110", str(pdf), str(base)],
-            check=True,
-            capture_output=True,
-            timeout=300,
-        )
-        tmp_pngs = sorted(out_dir.glob("lo_slide-*.png"))
+        if not os.path.isfile(pdftoppm):
+            raise RuntimeError(
+                f"pdftoppm resolved to a non-existent file: {pdftoppm}. "
+                "Install poppler (winget install oschwartz10612.Poppler)."
+            )
+        try:
+            tmp_pngs = _run_pdftoppm(pdftoppm, pdf, out_dir)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"pdftoppm failed (exit {e.returncode}). File: {pdftoppm}\n"
+                f"stderr: {(e.stderr or '').decode(errors='replace')[:300]}\n"
+                "This usually means poppler DLLs are not resolvable. The exe "
+                "directory is auto-added to PATH; verify poppler is installed."
+            ) from e
 
     if not tmp_pngs:
         # Path 2: pdf2image
