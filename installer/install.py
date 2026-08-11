@@ -372,13 +372,13 @@ def ensure_render_deps() -> dict[str, str]:
     else:
         print("  [OK] poppler (pdftoppm) found")
 
-    # Re-detect after install to confirm
-    for name, key in (("libreoffice", "libreoffice"), ("poppler", "poppler")):
-        if status[key] in ("installed", "failed"):
-            if (_find_soffice_bin() if key == "libreoffice" else _find_pdftoppm_exe()):
-                status[key] = "installed"
-            elif status[key] == "failed":
-                pass
+    # Re-detect after install to confirm (installed-but-unfindable → failed)
+    for key, locator in (("libreoffice", _find_soffice_bin),
+                         ("poppler", _find_pdftoppm_exe)):
+        if status[key] == "installed":
+            if not locator():
+                status[key] = "failed"
+                print(f"  [WARN] {key} installed but not found after install — check PATH")
     return status
 
 

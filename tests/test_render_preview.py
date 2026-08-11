@@ -302,3 +302,45 @@ def test_run_pdftoppm_injects_exe_dir_to_path(tmp_path):
     # exe's dir must be prepended to PATH (DLL resolution)
     assert captured["env_path"].startswith(r"C:\poppler\Library\bin" + os.pathsep)
     assert len(pngs) == 1
+
+
+def test_natural_sort_key_orders_pages_numerically(tmp_path):
+    """12+ page decks must keep slide order (lexicographic would put page 10
+    before page 2)."""
+    from ppt_pro_max.render_preview import _natural_sort_key
+
+    out = tmp_path / "out"
+    out.mkdir()
+    # simulate pdftoppm output for 12 pages
+    for i in range(1, 13):
+        (out / f"lo_slide-{i}.png").write_bytes(b"PNG")
+
+    ordered = sorted(out.glob("lo_slide-*.png"), key=_natural_sort_key)
+    nums = [int(p.stem.split("-")[1]) for p in ordered]
+    assert nums == list(range(1, 13))  # 1,2,3,...,11,12 — NOT lexicographic
+
+
+def test_pdf_to_pngs_preserves_page_order_over_9(tmp_path):
+    """Renaming 12 pages to slide1..12 must preserve sequence (regression for
+    the lexicographic sort bug that swapped page 2 and page 10)."""
+    from ppt_pro_max.render_preview import _pdf_to_pngs
+
+    out = tmp_path / "out"
+    out.mkdir()
+    fake_exe = tmp_path / "bin" / "pdftoppm.exe"
+    fake_exe.parent.mkdir()
+    fake_exe.write_bytes(b"EXE")
+
+    def _fake_run(cmd, **kw):
+        for i in range(1, 13):
+            (out / f"lo_slide-{i}.png").write_bytes(f"PNG-{i}".encode())
+        return subprocess.CompletedProcess(cmd, 0)
+
+    with patch("ppt_pro_max.render_preview._find_pdftoppm", return_value=str(fake_exe)), \
+         patch("ppt_pro_max.render_preview.subprocess.run", side_effect=_fake_run):
+        pngs = _pdf_to_pngs(tmp_path / "deck.pdf", out)
+
+    # slide2 must contain page-2 content, slide10 must contain page-10 content
+    assert pngs[1].read_bytes() == b"PNG-2"
+    assert pngs[9].read_bytes() == b"PNG-10"
+    assert len(pngs) == 12

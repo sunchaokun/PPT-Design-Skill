@@ -193,6 +193,14 @@ def _find_pdftoppm() -> str | None:
     return None
 
 
+def _natural_sort_key(path: Path):
+    """Sort key that orders lo_slide-2.png before lo_slide-10.png (numeric)."""
+    import re
+
+    m = re.search(r"(\d+)", path.stem)
+    return int(m.group(1)) if m else path.name
+
+
 def _run_pdftoppm(pdftoppm: str, pdf: Path, out_dir: Path) -> list[Path]:
     """Run pdftoppm with the exe's directory added to PATH (DLL resolution).
 
@@ -213,7 +221,9 @@ def _run_pdftoppm(pdftoppm: str, pdf: Path, out_dir: Path) -> list[Path]:
         timeout=300,
         env=env,
     )
-    return sorted(out_dir.glob("lo_slide-*.png"))
+    # Numeric sort: lo_slide-2.png before lo_slide-10.png (lexicographic would
+    # reorder pages >9, breaking slide order for multi-page decks).
+    return sorted(out_dir.glob("lo_slide-*.png"), key=_natural_sort_key)
 
 
 def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
@@ -258,9 +268,9 @@ def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
             PILImage.frombytes(page.mode, page.size, page.tobytes()).save(out_png, "PNG")
             tmp_pngs.append(out_png)
 
-    # Rename to fixed slide{i}.png
+    # Rename to fixed slide{i}.png (numeric order preserves page sequence)
     final: list[Path] = []
-    for idx, tmp in enumerate(sorted(tmp_pngs), start=1):
+    for idx, tmp in enumerate(sorted(tmp_pngs, key=_natural_sort_key), start=1):
         final_path = out_dir / f"slide{idx}.png"
         if tmp != final_path:
             final_path.write_bytes(tmp.read_bytes())

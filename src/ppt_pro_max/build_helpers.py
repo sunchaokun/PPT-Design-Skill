@@ -1713,7 +1713,8 @@ def ai_image(slide, left, top, width, height, keywords, *,
     return None
 
 
-def preview(pptx_path, out_dir=None, engine=None, open_in_browser=False, title="Slide Preview"):
+def preview(pptx_path, out_dir=None, engine=None, open_in_browser=False, title="Slide Preview",
+            width=1280, height=720):
     """Render a .pptx to PNG previews for visual inspection — one call.
 
     Wraps render_preview.render_preview() so build.py can see REAL layout
@@ -1728,6 +1729,7 @@ def preview(pptx_path, out_dir=None, engine=None, open_in_browser=False, title="
                 In Codex sandbox / headless env, use engine='libreoffice'.
         open_in_browser: Open the HTML contact sheet (interactive env only).
         title: Heading shown in the HTML preview page.
+        width/height: Pixel size for PowerPoint export (LibreOffice uses 110dpi).
 
     Returns:
         dict {"pngs": [Path, ...], "html": Path, "engine": str, "warnings": [str]}
@@ -1737,6 +1739,8 @@ def preview(pptx_path, out_dir=None, engine=None, open_in_browser=False, title="
     result = _render_preview(
         pptx_path,
         out_dir=out_dir,
+        width=width,
+        height=height,
         engine=engine,
         title=title,
     )
