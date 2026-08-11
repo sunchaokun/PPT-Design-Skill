@@ -2192,6 +2192,7 @@ result = tc.compose(style="水墨", text_effect_preset="gold-shine", image_effec
 
 ## 附录：版本更新记录
 
+- **v0.17.0** — `.env` 自动加载（build_helpers/generate_ppt/fetch_image/CLI 统一入口，扫描 cwd/包目录/全局/skill 目录），build.py 无需显式 load_dotenv 即可获取 API key
 - **v0.16.0** — 移除组件库与 Enterprise Pipeline；设计数据库内置（ui-ux-pro-max 内化）；BuildQA 三级 QA 支持装饰性出血；FreeStyle/Proposal 统一走 PrecisionRenderer
 - **v0.15.0** — Build 模式增强（CJK 字体、cover-fit、渐变/描边/阴影、3D/图案填充、图表/流程图、动画）
 - **v0.14.0** — BuildQA 引入（fatal/warning/review 三级）；结构差异化 build.py 提案

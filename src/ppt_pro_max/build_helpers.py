@@ -15,6 +15,39 @@ from __future__ import annotations
 
 import copy
 import os
+from pathlib import Path
+
+
+def _load_dotenv():
+    global _LOADED
+    if _LOADED:
+        return
+    _LOADED = True
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    candidates = []
+    cwd = Path.cwd()
+    candidates.append(cwd / ".env")
+    pkg_dir = Path(__file__).resolve().parent
+    for p in (pkg_dir, pkg_dir.parent, pkg_dir.parent.parent):
+        candidates.append(p / ".env")
+    home = Path.home()
+    candidates.append(home / ".ppt-pro-max" / ".env")
+    try:
+        for skill_dir in (home / ".agents" / "skills").iterdir():
+            env_path = skill_dir / ".env"
+            if env_path not in candidates:
+                candidates.append(env_path)
+    except (FileNotFoundError, OSError):
+        pass
+    for env_path in candidates:
+        if env_path.is_file():
+            load_dotenv(env_path, override=False)
+
+
+_LOADED = False
 
 from lxml import etree
 from pptx.util import Inches, Pt, Emu
@@ -2183,6 +2216,9 @@ def set_theme_colors(prs, C=None):
 
     theme_part._blob = etree.tostring(theme_el, xml_declaration=True,
                                       encoding='UTF-8', standalone=True)
+
+
+_load_dotenv()
 
 
 Presentation = _Presentation

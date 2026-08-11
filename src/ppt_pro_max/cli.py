@@ -16,26 +16,8 @@ from ppt_pro_max import generate_ppt, fetch_image, extract_design_dna  # noqa: E
 
 
 def _load_dotenv():
-    from pathlib import Path
-
-    try:
-        from dotenv import load_dotenv
-    except ImportError:
-        return
-
-    candidates = []
-    cwd = Path.cwd()
-    candidates.append(cwd / ".env")
-    pkg_dir = Path(__file__).resolve().parent
-    for p in (pkg_dir, pkg_dir.parent, pkg_dir.parent.parent):
-        candidates.append(p / ".env")
-    home = Path.home()
-    candidates.append(home / ".ppt-pro-max" / ".env")
-
-    for env_path in candidates:
-        if env_path.is_file():
-            load_dotenv(env_path, override=False)
-            return
+    from ppt_pro_max.build_helpers import _load_dotenv as _bh_load
+    _bh_load()
 
 
 def _add_image_options(parser):

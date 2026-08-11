@@ -7,12 +7,17 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 from ppt_pro_max.planner.story_planner import StoryPlanner
 from ppt_pro_max.decider.design_decider import DesignDecider
 from ppt_pro_max.content.content_generator import ContentGenerator
 from ppt_pro_max.renderer.theme_composer import ThemeComposer
+
+
+def _ensure_dotenv():
+    from ppt_pro_max.build_helpers import _load_dotenv
+    _load_dotenv()
 
 
 def fetch_image(
@@ -36,6 +41,7 @@ def fetch_image(
 
     Returns dict with keys: path (str|None), mode, provider, keywords, width, height.
     """
+    _ensure_dotenv()
     from ppt_pro_max.renderer.image_fetcher import ImageFetcher
 
     fetcher = ImageFetcher(
@@ -144,6 +150,7 @@ def generate_ppt(
     content: dict[str, Any] | None = None,
     auto_detect: bool = True,
 ) -> dict:
+    _ensure_dotenv()
     if content is not None and content_file is None:
         import tempfile as _tf
         _content_dir = _tf.mkdtemp(prefix="ppt_content_")
