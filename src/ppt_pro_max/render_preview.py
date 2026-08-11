@@ -178,40 +178,50 @@ def _find_pdftoppm() -> str | None:
 
 
 def _pdf_to_pngs(pdf: Path, out_dir: Path) -> list[Path]:
-    """Convert a PDF to one PNG per page.
+    """Convert a PDF to one PNG per page, named slide1..N (same as PowerPoint).
 
     Tries (in order):
       1. pdftoppm (poppler)  — best quality/control, fast
       2. pdf2image           — Python wrapper over poppler
 
-    Returns sorted PNG paths.
+    The engine writes temp files (lo_slide-*) then renames to slide{i}.png so
+    the output dir is identical regardless of engine.
     """
     from PIL import Image as PILImage
+
+    tmp_pngs: list[Path] = []
 
     # Path 1: pdftoppm
     pdftoppm = _find_pdftoppm()
     if pdftoppm:
-        base = out_dir / "slide"
+        base = out_dir / "lo_slide"
         subprocess.run(
             [pdftoppm, "-png", "-r", "110", str(pdf), str(base)],
             check=True,
             capture_output=True,
             timeout=300,
         )
-        pngs = sorted(out_dir.glob("slide*.png"))
-        if pngs:
-            return pngs
+        tmp_pngs = sorted(out_dir.glob("lo_slide-*.png"))
 
-    # Path 2: pdf2image
-    from pdf2image import convert_from_path  # type: ignore
+    if not tmp_pngs:
+        # Path 2: pdf2image
+        from pdf2image import convert_from_path  # type: ignore
 
-    pages = convert_from_path(str(pdf), dpi=110)
-    pngs = []
-    for idx, page in enumerate(pages, start=1):
-        out_png = out_dir / f"slide{idx}.png"
-        PILImage.frombytes(page.mode, page.size, page.tobytes()).save(out_png, "PNG")
-        pngs.append(out_png)
-    return sorted(pngs)
+        pages = convert_from_path(str(pdf), dpi=110)
+        for idx, page in enumerate(pages, start=1):
+            out_png = out_dir / f"lo_slide{idx}.png"
+            PILImage.frombytes(page.mode, page.size, page.tobytes()).save(out_png, "PNG")
+            tmp_pngs.append(out_png)
+
+    # Rename to fixed slide{i}.png
+    final: list[Path] = []
+    for idx, tmp in enumerate(sorted(tmp_pngs), start=1):
+        final_path = out_dir / f"slide{idx}.png"
+        if tmp != final_path:
+            final_path.write_bytes(tmp.read_bytes())
+            tmp.unlink(missing_ok=True)
+        final.append(final_path)
+    return final
 
 
 def _render_libreoffice(pptx: Path, out_dir: Path, width: int = 1280, height: int = 720) -> list[Path]:
@@ -345,6 +355,15 @@ def render_preview(
     warnings: list[str] = []
     pngs: list[Path] | None = None
     used_engine: str | None = None
+
+    # Clear stale PNGs from previous renders so the output dir always holds
+    # exactly one fresh set (fixed names slide1..N). Prevents the LLM from
+    # accumulating / re-reading old images across runs.
+    for stale in out.glob("*.png"):
+        try:
+            stale.unlink()
+        except OSError:  # noqa: S110 - ignore transient lock
+            pass
 
     if engine:
         order = [engine]

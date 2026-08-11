@@ -4,6 +4,7 @@ Backend engines are mocked so tests run on any machine (CI included).
 """
 from __future__ import annotations
 
+import subprocess
 from unittest.mock import patch
 
 import pytest
@@ -207,3 +208,28 @@ def test_build_html_embeds_every_png(tmp_path):
     assert "slide2.png" in text
     assert "My Deck" in text
     assert "2 slides" in text
+
+
+# ── _pdf_to_pngs ──────────────────────────────────────────────────────────
+def test_pdf_to_pngs_normalizes_to_slide_names(tmp_path):
+    """LibreOffice PNGs must be renamed to slide1..N (same as PowerPoint) so
+    the output dir is identical regardless of engine."""
+    from ppt_pro_max.render_preview import _pdf_to_pngs
+
+    out = tmp_path / "out"
+    out.mkdir()
+
+    def _fake_run(cmd, **kw):
+        # pdftoppm writes lo_slide-1.png / lo_slide-2.png
+        (out / "lo_slide-1.png").write_bytes(b"PNG")
+        (out / "lo_slide-2.png").write_bytes(b"PNG")
+        return subprocess.CompletedProcess(cmd, 0)
+
+    with patch("ppt_pro_max.render_preview._find_pdftoppm", return_value="pdftoppm"), \
+         patch("ppt_pro_max.render_preview.subprocess.run", side_effect=_fake_run):
+        pngs = _pdf_to_pngs(tmp_path / "deck.pdf", out)
+
+    names = [p.name for p in pngs]
+    assert names == ["slide1.png", "slide2.png"]
+    # temp lo_slide-* files cleaned up
+    assert not list(out.glob("lo_slide-*"))
