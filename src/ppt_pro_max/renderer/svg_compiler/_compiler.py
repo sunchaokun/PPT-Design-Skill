@@ -8,6 +8,7 @@ Public API::
 from __future__ import annotations
 
 import math
+import re
 import time
 from dataclasses import dataclass, field
 
@@ -21,6 +22,7 @@ from ppt_pro_max.renderer.freeform_builder import FreeformBuilder
 from ppt_pro_max.renderer.visual_effects import set_solid_fill_with_alpha
 
 from ._affine import Affine, parse_transform
+from ._errors import SVGCompileError
 from ._paint import GradientDef
 from ._paint import apply_gradient as _apply_gradient
 from ._paint import resolve_paint as _resolve_paint
@@ -153,10 +155,10 @@ def _resolve_svg_color(raw: str | None, C: dict | None, fallback: str) -> str:
     raise SVGCompileError(f"unsupported color value: {v!r}")
 
 
-_RGB_RE = __import__("re").compile(
+_RGB_RE = re.compile(
     r"rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*([\d.]+)\s*)?\)"
 )
-_HSL_RE = __import__("re").compile(
+_HSL_RE = re.compile(
     r"hsla?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)%\s*,\s*(\d+(?:\.\d+)?)%\s*(?:,\s*([\d.]+)\s*)?\)"
 )
 
@@ -172,11 +174,7 @@ class SVGResult:
     shape_count: int = 0
 
 
-class SVGCompileError(Exception):
-    pass
-
-
-# ─────────────────────────── compiler ───────────────────────────
+# ─────────────��───────────── compiler ───────────────────────────
 
 class SVGCompiler:
     """Compile a subset of SVG to native editable PPTX shapes."""
@@ -202,8 +200,6 @@ class SVGCompiler:
                 vals = [float(v) for v in vb_el.replace(",", " ").split()]
                 if len(vals) >= 4:
                     vb = (vals[0], vals[1], vals[2], vals[3])
-            else:
-                vb = (0.0, 0.0, 400.0, 300.0)
             if vb is None:
                 vb = (0.0, 0.0, 400.0, 300.0)
 

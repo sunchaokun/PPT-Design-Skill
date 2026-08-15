@@ -1,0 +1,2 @@
+class SVGCompileError(Exception):
+    pass

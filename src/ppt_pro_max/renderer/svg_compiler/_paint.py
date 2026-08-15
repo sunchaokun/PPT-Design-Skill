@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from ppt_pro_max.renderer.visual_effects import GradientFill, GradientStop
 
 from ._affine import Affine, parse_transform
+from ._errors import SVGCompileError
 
 
 @dataclass
@@ -51,7 +52,6 @@ def collect_linear_gradient(g, C: dict, resolve_color_fn) -> GradientDef:
 
     spread = g.get("spreadMethod", "pad")
     if spread not in ("pad",):
-        from . import SVGCompileError
         raise SVGCompileError(f"unsupported gradient spreadMethod: {spread}")
 
     tf_str = g.get("gradientTransform")
@@ -79,7 +79,6 @@ def collect_radial_gradient(g, C: dict, resolve_color_fn) -> GradientDef:
 
     spread = g.get("spreadMethod", "pad")
     if spread not in ("pad",):
-        from . import SVGCompileError
         raise SVGCompileError(f"unsupported gradient spreadMethod: {spread}")
 
     tf_str = g.get("gradientTransform")

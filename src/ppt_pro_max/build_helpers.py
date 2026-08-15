@@ -80,6 +80,7 @@ from ppt_pro_max.renderer.animation import (
     add_slide_transition, add_entrance_animation,
     add_exit_animation, add_emphasis_animation,
 )
+from ppt_pro_max.renderer.svg_compiler import SVGCompiler as _SVGCompiler
 
 # Re-exported so build.py `from build_helpers import *` gets the image API too.
 # ai_image() is the one-call generate+place helper; fetch_image() returns a path.
@@ -1110,6 +1111,24 @@ def native_chart(slide, left, top, width, height, chart_type,
     position = {"x": left, "y": top, "width": width, "height": height}
     builder = ChartBuilder()
     return builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
+
+
+def svg_chart(slide, svg_text, x, y, w, h, C=None, vb=None):
+    """Compile an SVG fragment to native editable PPTX shapes on a slide.
+
+    This is the Tier 3 component-level brush — same level as kpi_card(),
+    native_chart(), and rect(). The SVG uses var(--name) tokens resolved
+    from the C dict, so all shapes share the same color system.
+
+    svg_text: SVG string (viewBox recommended, no hardcoded colors)
+    x, y, w, h: placement rect in inches
+    C: color dictionary (same C used for all other build_helpers calls)
+    vb: optional viewBox override (x, y, w, h); auto-detected from SVG if omitted
+
+    Returns SVGResult (shapes, warnings, features, compile_ms, shape_count).
+    """
+    C = C or {}
+    return _SVGCompiler(C=C).compile(svg_text, slide, (x, y, w, h), vb=vb)
 
 
 def _draw_connector(slide, x1, y1, x2, y2, width_pt=1.0, color='#A0A0A0', dash=False):

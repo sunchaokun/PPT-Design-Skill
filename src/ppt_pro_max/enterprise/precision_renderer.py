@@ -619,6 +619,7 @@ class PrecisionRenderer:
         cards = page.get("cards") or []
         diagram_type = page.get("diagram_type")
         diagram_data = page.get("diagram_data")
+        svg_diagram = page.get("svg_diagram")
         code = page.get("code")
         exercise = page.get("exercise")
         chart = page.get("chart")
@@ -685,6 +686,8 @@ class PrecisionRenderer:
                 self._render_cards(slide, cards, cx, cy, cw, ch)
             elif diagram_type and diagram_data:
                 self._render_diagram_on_slide(slide, diagram_type, diagram_data, cx, cy, cw, ch)
+            elif svg_diagram:
+                self._render_svg_diagram_on_slide(slide, svg_diagram, cx, cy, cw, ch)
             elif code:
                 self._render_code_on_slide(slide, code, cx, cy, cw, ch)
             elif exercise:
@@ -1119,6 +1122,34 @@ class PrecisionRenderer:
             engine.render(slide, diagram_type, diagram_data, style, region)
         except Exception:
             pass
+
+    def _render_svg_diagram_on_slide(self, slide, svg_diagram,
+                                     cx: float | None = None, cy: float | None = None,
+                                     cw: float | None = None, ch: float | None = None) -> None:
+        from ppt_pro_max.renderer.svg_compiler import SVGCompileError, SVGCompiler
+        if cx is None:
+            cx, cy, cw, ch = self._content_rect(LAYOUT_GRID["margin_left"])
+        svg_text = svg_diagram if isinstance(svg_diagram, str) else svg_diagram.get("svg", "")
+        if not svg_text:
+            return
+        C = self._build_svg_context()
+        try:
+            SVGCompiler(C=C).compile(svg_text, slide, (cx, cy, cw, ch))
+        except SVGCompileError:
+            pass
+
+    def _build_svg_context(self) -> dict:
+        C = {}
+        if self._brand and self._brand.colors:
+            C.update(self._brand.colors)
+        elif getattr(self, "_colors", None) or getattr(self, "colors", None):
+            C.update(getattr(self, "_colors", None) or getattr(self, "colors", None))
+        if self._brand and self._brand.fonts:
+            C["font_heading"] = self._brand.fonts.get("heading", "Inter")
+            C["font_body"] = self._brand.fonts.get("body", "Inter")
+        if self._brand and self._brand.dark_mode:
+            C["dark_mode"] = True
+        return C
 
     def _render_code_on_slide(self, slide, code_data,
                               cx: float | None = None, cy: float | None = None,
