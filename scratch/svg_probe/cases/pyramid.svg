@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 360">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7DA92F"/><stop offset="1" stop-color="#2E6504"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B9BD5"/><stop offset="1" stop-color="#2E75B6"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFC000"/><stop offset="1" stop-color="#BF8F00"/>
+    </linearGradient>
+  </defs>
+  <polygon points="200,30 380,320 20,320" fill="url(#g1)"/>
+  <polygon points="200,120 320,320 80,320" fill="url(#g2)"/>
+  <polygon points="200,210 260,320 140,320" fill="url(#g3)"/>
+  <text x="200" y="85" text-anchor="middle" font-size="16" fill="#fff" font-family="Arial">战略愿景</text>
+  <text x="200" y="175" text-anchor="middle" font-size="14" fill="#fff" font-family="Arial">三年目标</text>
+  <text x="200" y="265" text-anchor="middle" font-size="14" fill="#fff" font-family="Arial">年度计划</text>
+</svg>

@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
@@ -182,9 +183,7 @@ def render_svg_text(
     run = p.add_run()
     run.text = content
     run.font.size = Pt(fs)
-    run.font.color.rgb = __import__("pptx.dml.color", fromlist=["RGBColor"]).RGBColor.from_string(
-        fval.lstrip("#")
-    )
+    run.font.color.rgb = RGBColor.from_string(fval.lstrip("#"))
     run.font.name = font_family
 
     bold = el.get("font-weight")

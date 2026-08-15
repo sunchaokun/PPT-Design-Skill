@@ -129,7 +129,7 @@ def apply_stroke_style(shape, style: StrokeStyle) -> None:
         cap_val = style.linecap
         ln.set("cap", cap_val)
 
-    if style.linejoin != "round":
+    if style.linejoin != "miter" or style.miterlimit != 4.0:
         existing_jn = ln.find(f"{{{_NS_A}}}round")
         if existing_jn is not None:
             ln.remove(existing_jn)
@@ -138,6 +138,8 @@ def apply_stroke_style(shape, style: StrokeStyle) -> None:
             jn.set("lim", str(int(style.miterlimit * 1000)))
         elif style.linejoin == "bevel":
             etree.SubElement(ln, f"{{{_NS_A}}}bevel")
+        elif style.linejoin == "round":
+            etree.SubElement(ln, f"{{{_NS_A}}}round")
 
     if style.dash_array:
         preset = _match_dash_preset(style.dash_array)

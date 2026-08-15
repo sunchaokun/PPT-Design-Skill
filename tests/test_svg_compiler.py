@@ -257,3 +257,36 @@ class TestEditabilityAudit:
         pptx_path = tmp_path / f"audit_{name}.pptx"
         has_pic, _has_sp = _audit_pptx(_prs, pptx_path)
         assert not has_pic, f"{name}: <p:pic> found — editability guarantee violated"
+
+
+RADIAL_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="rg" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+  </defs>
+  <circle cx="200" cy="200" r="150" fill="url(#rg)"/>
+</svg>"""
+
+
+class TestRadialGradient:
+    def test_radial_gradient_centertext(self):
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(RADIAL_SVG, slide, (1, 1, 6, 6))
+        assert "gradient" in result.features
+        assert result.shape_count > 0
+
+    def test_radial_gradient_no_crash(self):
+        """Regression: radialGradient with percentage cx/cy/r previously crashed."""
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' \
+              '<defs><radialGradient id="g" cx="80%" cy="20%" r="60%">' \
+              '<stop offset="0" stop-color="#F00"/><stop offset="1" stop-color="#00F"/>' \
+              '</radialGradient></defs>' \
+              '<circle cx="50" cy="50" r="40" fill="url(#g)"/></svg>'
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count > 0
+        assert "gradient" in result.features

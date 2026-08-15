@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260">
+  <path d="M150,130 a80,80 0 1,0 0.1,0 Z M250,130 a80,80 0 1,0 0.1,0 Z"
+        fill="#E8534E" fill-opacity="0.85"/>
+  <text x="105" y="135" text-anchor="middle" font-size="15" fill="#fff">客户A</text>
+  <text x="295" y="135" text-anchor="middle" font-size="15" fill="#fff">客户B</text>
+  <text x="200" y="135" text-anchor="middle" font-size="13" fill="#fff">交叉用户</text>
+</svg>

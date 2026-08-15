@@ -135,12 +135,20 @@ class TestApplyStrokeStyle:
         xml = sh._element.xml
         assert 'cap="round"' in xml
 
-    def test_miter_join_applied(self):
+    def test_miter_join_with_limit_applied(self):
         sh = self._make_shape()
         style = StrokeStyle(linejoin="miter", miterlimit=6.0)
         apply_stroke_style(sh, style)
         xml = sh._element.xml
         assert "miter" in xml
+        assert "lim" in xml
+
+    def test_default_miter_join_not_written(self):
+        sh = self._make_shape()
+        style = StrokeStyle()
+        apply_stroke_style(sh, style)
+        xml = sh._element.xml
+        assert "miter" not in xml
 
     def test_bevel_join_applied(self):
         sh = self._make_shape()

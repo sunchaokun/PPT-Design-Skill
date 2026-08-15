@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 340">
+  <g transform="translate(20,20)">
+    <rect x="0" y="0" width="360" height="300" fill="#FFFFFF" stroke="#BFBFBF" stroke-width="1"/>
+    <line x1="180" y1="0" x2="180" y2="300" stroke="#BFBFBF" stroke-width="1" stroke-dasharray="4,4"/>
+    <line x1="0" y1="150" x2="360" y2="150" stroke="#BFBFBF" stroke-width="1" stroke-dasharray="4,4"/>
+    <text x="180" y="20" text-anchor="middle" font-size="11" fill="#7F7F7F">高</text>
+    <text x="180" y="296" text-anchor="middle" font-size="11" fill="#7F7F7F">低</text>
+    <g transform="translate(30,30)">
+      <circle cx="0" cy="0" r="24" fill="#2E75B6"/><text x="0" y="5" text-anchor="middle" font-size="11" fill="#fff">明星</text>
+      <circle cx="90" cy="0" r="24" fill="#BF8F00"/><text x="90" y="5" text-anchor="middle" font-size="11" fill="#fff">问题</text>
+    </g>
+    <g transform="translate(30,90)">
+      <circle cx="0" cy="0" r="24" fill="#70AD47"/><text x="0" y="5" text-anchor="middle" font-size="11" fill="#fff">现金牛</text>
+      <circle cx="90" cy="0" r="24" fill="#C00000"/><text x="90" y="5" text-anchor="middle" font-size="11" fill="#fff">瘦狗</text>
+    </g>
+  </g>
+</svg>

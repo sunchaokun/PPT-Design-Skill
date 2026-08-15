@@ -8,26 +8,25 @@ Public API::
 from __future__ import annotations
 
 import math
+import time
 from dataclasses import dataclass, field
 
 from lxml import etree
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 
 from ppt_pro_max.renderer.boolean_shapes import bool_shape
 from ppt_pro_max.renderer.freeform_builder import FreeformBuilder
-from ppt_pro_max.renderer.text_measurer import estimate_text_size
-from ppt_pro_max.renderer.visual_effects import (
-    GradientFill,
-    GradientStop,
-    set_solid_fill_with_alpha,
-)
+from ppt_pro_max.renderer.visual_effects import set_solid_fill_with_alpha
 
 from ._affine import Affine, parse_transform
+from ._paint import GradientDef
+from ._paint import apply_gradient as _apply_gradient
+from ._paint import resolve_paint as _resolve_paint
 from ._path import parse_path, to_beziers
 from ._sanitizer import sanitize
+from ._text import render_svg_text as _render_svg_text
 
 SVG_NS = "http://www.w3.org/2000/svg"
 SVG = f"{{{SVG_NS}}}"
@@ -165,24 +164,12 @@ _HSL_RE = __import__("re").compile(
 # ─────────────────────────── data classes ───────────────────────────
 
 @dataclass
-class GradientDef:
-    stops: list[tuple[float, str, float]]  # (offset, hex_color, opacity)
-    x1: float = 0.0
-    y1: float = 0.0
-    x2: float = 1.0
-    y2: float = 0.0
-    cx: float = 0.5
-    cy: float = 0.5
-    r: float = 0.5
-    gradient_type: str = "linear"  # linear or radial
-
-
-@dataclass
 class SVGResult:
     shapes: list = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     features: set = field(default_factory=set)
     compile_ms: float = 0.0
+    shape_count: int = 0
 
 
 class SVGCompileError(Exception):
@@ -205,7 +192,7 @@ class SVGCompiler:
         vb: tuple[float, float, float, float] | None = None,
     ) -> SVGResult:
         result = SVGResult()
-        t0 = __import__("time").perf_counter()
+        t0 = time.perf_counter()
 
         root = sanitize(svg_text)
 
@@ -233,7 +220,7 @@ class SVGCompiler:
 
         result.features = self._features
         result.shape_count = self._shape_count
-        result.compile_ms = (__import__("time").perf_counter() - t0) * 1000
+        result.compile_ms = (time.perf_counter() - t0) * 1000
         return result
 
     # ── coordinate transforms ────────────────────────────────
@@ -275,12 +262,12 @@ class SVGCompiler:
                 col = _resolve_svg_color(s.get("stop-color", "#000000"), self.C, "#000000")
                 op = float(s.get("stop-opacity", "1"))
                 stops.append((pos, col, op))
-            cx = float(g.get("cx", "50%"))
-            cy = float(g.get("cy", "50%"))
-            r_ = float(g.get("r", "50%"))
-            for v in (cx, cy, r_):
-                if isinstance(v, str) and v.endswith("%"):
-                    v = float(v.rstrip("%")) / 100.0
+            cx_raw = g.get("cx", "50%")
+            cy_raw = g.get("cy", "50%")
+            r_raw = g.get("r", "50%")
+            cx = float(cx_raw.rstrip("%")) / 100.0 if isinstance(cx_raw, str) and cx_raw.endswith("%") else float(cx_raw)
+            cy = float(cy_raw.rstrip("%")) / 100.0 if isinstance(cy_raw, str) and cy_raw.endswith("%") else float(cy_raw)
+            r_ = float(r_raw.rstrip("%")) / 100.0 if isinstance(r_raw, str) and r_raw.endswith("%") else float(r_raw)
             self._grads[g.get("id")] = GradientDef(
                 stops=stops, cx=cx, cy=cy, r=r_, gradient_type="radial"
             )
@@ -411,26 +398,7 @@ class SVGCompiler:
     def _paint(
         self, el: etree._Element, which: str
     ) -> tuple[str, object | None, int]:
-        """Returns (kind, value, alpha_pct). kind: 'solid', 'grad', 'none'."""
-        v = el.get(which)
-        op = el.get(f"{which}-opacity")
-        alpha = int(float(op) * 100) if op else 100
-        if v is None:
-            return "none", None, alpha
-        if v.startswith("url(#"):
-            gid = v[v.index("#") + 1 : -1]
-            grad = self._grads.get(gid)
-            if grad is not None:
-                self._features.add("gradient")
-                return "grad", grad, alpha
-            return "none", None, alpha
-        if v == "none":
-            return "none", None, alpha
-        resolved = _resolve_svg_color(v, self.C, "")
-        if resolved is None:
-            return "none", None, alpha
-        self._features.add("solid")
-        return "solid", resolved, alpha
+        return _resolve_paint(el, which, self._grads, self.C, _resolve_svg_color, self._features)
 
     # ── rendering ────────────────────────────────────────────
 
@@ -613,24 +581,7 @@ class SVGCompiler:
     def _apply_gradient_to_elem(
         self, elem: object, grad: GradientDef
     ) -> None:
-        """Apply a GradientDef to a shape element via GradientFill."""
-        if grad.gradient_type == "radial":
-            gf = GradientFill(
-                gradient_type="path",
-                fill_to_rect={"l": "0", "t": "0", "r": "100000", "b": "100000"},
-            )
-        else:
-            dx = grad.x2 - grad.x1
-            dy = grad.y2 - grad.y1
-            angle_rad = math.atan2(dy, dx)
-            gf = GradientFill(angle=int(math.degrees(angle_rad) * 60000))
-
-        for pos, col, op in grad.stops:
-            alpha = int(op * 100000) if op < 1.0 else 100000
-            gf.stops.append(GradientStop(color=col, position=int(pos * 100000), alpha=alpha))
-
-        wrapper = self._wrap_elem(elem)
-        gf.apply(wrapper)
+        _apply_gradient(elem, grad, self._wrap_elem)
 
     def _apply_alpha_to_elem(self, elem: object, fill: str, alpha: int) -> None:
         if alpha >= 100:
@@ -651,41 +602,13 @@ class SVGCompiler:
     # ── text ─────────────────────────────────────────────────
 
     def _render_text(self, el: etree._Element, tf: Affine) -> None:
-        self._features.add("text")
-        x = float(el.get("x", 0))
-        y = float(el.get("y", 0))
-        ix, iy = self._to_inches(*tf.apply(x, y))
-
-        content = "".join(el.itertext()).strip()
-        if not content:
-            return
-
-        fs = float(el.get("font-size", "14").replace("px", ""))
-        anchor = el.get("text-anchor", "start")
-        fkind, fval, _ = self._paint(el, "fill")
-        if fkind == "solid":
-            fval = _resolve_svg_color(fval, self.C, "#000000") or "#000000"
-        else:
-            fval = "#000000"
-
-        # estimate text box size (Phase 1 approximation)
-        _, h_est = estimate_text_size(content, max(8, int(fs)), 8.0)
-        left = ix - 4.0
-        top = iy - h_est - fs / 72.0
-        width = 8.0
-        height = h_est * 2.0
-
-        tb = self._slide.shapes.add_textbox(Inches(left), Inches(top), Inches(width), Inches(height))
-        tf_el = tb.text_frame
-        tf_el.word_wrap = False
-        tf_el.vertical_anchor = MSO_ANCHOR.MIDDLE
-        p = tf_el.paragraphs[0]
-        p.alignment = {
-            "middle": PP_ALIGN.CENTER,
-            "end": PP_ALIGN.RIGHT,
-        }.get(anchor, PP_ALIGN.LEFT)
-        run = p.add_run()
-        run.text = content
-        run.font.size = Pt(fs)
-        run.font.color.rgb = RGBColor.from_string(fval.lstrip("#"))
+        _render_svg_text(
+            el=el,
+            tf=tf,
+            to_inches_fn=self._to_inches,
+            slide=self._slide,
+            C=self.C,
+            resolve_color_fn=_resolve_svg_color,
+            features=self._features,
+        )
         self._shape_count += 1
