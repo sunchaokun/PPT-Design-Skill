@@ -210,11 +210,13 @@ class SVGCompiler:
         self._clips: dict[str, list[list[tuple[float, float]]]] = {}
         self._shape_count = 0
         self._features: set[str] = set()
+        self._warnings: list[str] = []
 
         self._collect_defs(root)
         self._walk(root, Affine(), [])
 
         result.features = self._features
+        result.warnings = self._warnings
         result.shape_count = self._shape_count
         result.compile_ms = (time.perf_counter() - t0) * 1000
         return result
@@ -415,7 +417,7 @@ class SVGCompiler:
             pass  # already collected
         elif tag in ("image", "filter", "mask"):
             self._features.add(tag)
-            raise SVGCompileError(f"unsupported SVG feature: <{tag}> element")
+            self._warnings.append(f"unsupported SVG feature: <{tag}> element (skipped)")
         elif tag == "text":
             self._render_text(el, tf)
         elif tag in (
@@ -461,10 +463,19 @@ class SVGCompiler:
             in_pts = [self._to_inches(px, py) for px, py in sub]
             local.append([(px - ix0, py - iy0) for px, py in in_pts])
 
+        # clip polygons in slide inches, local coords (relative to shape bbox)
+        clip_local: list[list[tuple[float, float]]] = []
+        for clip_subpath in clip_stack:
+            cpts = [self._to_inches(px, py) for px, py in clip_subpath]
+            clip_local.append([(px - ix0, py - iy0) for px, py in cpts])
+
         needs_bool = bool(clip_stack) or el.get("fill-rule") == "evenodd"
 
         if needs_bool:
-            self._render_bool(local, ix0, iy0, iw, ih, fkind, fval, fa, skind, sval)
+            self._render_bool(
+                local, clip_local, ix0, iy0, iw, ih,
+                fkind, fval, fa, skind, sval,
+            )
             return
 
         # Fast path: rect with solid fill and no stroke → native shape
@@ -490,10 +501,11 @@ class SVGCompiler:
     def _render_bool(
         self,
         local_subpaths: list[list[tuple[float, float]]],
+        clip_local: list[list[tuple[float, float]]],
         ix0: float, iy0: float, iw: float, ih: float,
         fkind: str, fval, fa: int, skind: str, sval,
     ) -> None:
-        """Boolean-compute shapes and render."""
+        """Boolean-compute shapes and render, intersecting with clip regions."""
         try:
             from shapely.errors import GEOSException, TopologicalError
             from shapely.geometry import Polygon as ShapelyPoly
@@ -515,6 +527,22 @@ class SVGCompiler:
                 poly = p if poly is None else poly.union(p)
 
         if poly is None or poly.is_empty:
+            return
+
+        # Apply clip regions: intersect shape with clip in slide inches
+        for clip_poly in clip_local:
+            cpts = [(p[0] + ix0, p[1] + iy0) for p in clip_poly]
+            if len(cpts) < 3:
+                continue
+            try:
+                cpoly = ShapelyPoly(cpts).buffer(0)
+                cpoly = make_valid(cpoly)
+            except (TopologicalError, ValueError, GEOSException):
+                cpoly = None
+            if cpoly is not None and not cpoly.is_empty:
+                poly = poly.intersection(cpoly)
+
+        if poly.is_empty:
             return
 
         stroke_hex = _resolve_svg_color(sval, self.C, "") if skind == "solid" else None

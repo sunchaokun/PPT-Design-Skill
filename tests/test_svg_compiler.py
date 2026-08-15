@@ -194,25 +194,25 @@ class TestCompileProbeCases:
 
 
 class TestUnsupportedFeatures:
-    def test_image_raises(self):
+    def test_image_soft_warning(self):
         _prs, slide = _make_slide()
         compiler = SVGCompiler()
-        with pytest.raises(SVGCompileError, match="unsupported"):
-            compiler.compile(UNSUPPORTED_SVG, slide, (3.0, 0.9, 7.0, 5.7))
+        result = compiler.compile(UNSUPPORTED_SVG, slide, (3.0, 0.9, 7.0, 5.7))
+        assert any("unsupported" in w for w in result.warnings)
 
-    def test_filter_element_raises(self):
+    def test_filter_element_soft_warning(self):
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><filter id="f"><feGaussianBlur stdDeviation="3"/></filter></svg>'
         _prs, slide = _make_slide()
         compiler = SVGCompiler()
-        with pytest.raises(SVGCompileError, match="unsupported"):
-            compiler.compile(svg, slide, (1, 1, 5, 5))
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert any("filter" in w for w in result.warnings)
 
-    def test_mask_element_raises(self):
+    def test_mask_element_soft_warning(self):
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><mask id="m"><rect width="100" height="100" fill="white"/></mask></svg>'
         _prs, slide = _make_slide()
         compiler = SVGCompiler()
-        with pytest.raises(SVGCompileError, match="unsupported"):
-            compiler.compile(svg, slide, (1, 1, 5, 5))
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert any("mask" in w for w in result.warnings)
 
 
 class TestColorResolution:

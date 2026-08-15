@@ -1,9 +1,10 @@
-"""SVG text rendering with baseline-aware positioning.
+"""SVG text rendering with baseline-aware positioning and <tspan> support.
 
 Extracts text rendering from _compiler.py and adds:
 - Pillow-based text measurement (with graceful fallback to estimate_text_size)
 - SVG baseline (dominant-baseline, alignment-baseline) → PPT vertical anchor mapping
-- Multi-line <tspan> support
+- Multi-line <tspan> support — each tspan with x/y becomes a new paragraph;
+  tspans without x/y are inline runs within the same paragraph
 - font-family → PPT font mapping
 """
 from __future__ import annotations
@@ -64,6 +65,21 @@ class TextMetrics:
     descent_ratio: float = 0.2
 
 
+@dataclass
+class _SpanSpec:
+    text: str = ""
+    x: float | None = None
+    y: float | None = None
+    dx: float = 0.0
+    dy: float = 0.0
+    font_size: float | None = None
+    font_family: str | None = None
+    fill: str | None = None
+    bold: bool = False
+    italic: bool = False
+    is_new_line: bool = False
+
+
 def _resolve_font_family(raw: str | None) -> str:
     if not raw:
         return "Calibri"
@@ -117,6 +133,103 @@ def _measure_text(
         )
 
 
+def _resolve_fill(raw: str | None, C: dict, resolve_color_fn) -> str:
+    if not raw or raw == "none":
+        return "#000000"
+    if raw.startswith("url(#"):
+        return "#000000"
+    resolved = resolve_color_fn(raw, C, "")
+    return resolved if resolved else "#000000"
+
+
+def _parse_font_size(raw: str | None, parent_fs: float) -> float:
+    if not raw:
+        return parent_fs
+    clean = re.sub(r"[^\d.]", "", raw)
+    return float(clean) if clean else parent_fs
+
+
+def _parse_font_weight(raw: str | None) -> bool:
+    if not raw:
+        return False
+    return raw not in ("normal", "100", "200", "300")
+
+
+def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
+                   C: dict, resolve_color_fn) -> list[_SpanSpec]:
+    spans: list[_SpanSpec] = []
+
+    direct_text = el.text
+    if direct_text and direct_text.strip():
+        spans.append(_SpanSpec(
+            text=direct_text.strip(),
+            font_size=parent_fs,
+            font_family=parent_ff,
+            fill=parent_fill,
+        ))
+
+    for child in el:
+        tag = child.tag.split("}")[-1] if child.tag else ""
+        if tag != "tspan":
+            tail = child.tail
+            if tail and tail.strip():
+                spans.append(_SpanSpec(
+                    text=tail.strip(),
+                    font_size=parent_fs,
+                    font_family=parent_ff,
+                    fill=parent_fill,
+                ))
+            continue
+
+        fs = _parse_font_size(child.get("font-size"), parent_fs)
+        ff = _resolve_font_family(child.get("font-family")) if child.get("font-family") else parent_ff
+        fill = _resolve_fill(child.get("fill", parent_fill), C, resolve_color_fn)
+        bold = _parse_font_weight(child.get("font-weight"))
+        italic = child.get("font-style") == "italic"
+
+        has_x = child.get("x") is not None
+        has_y = child.get("y") is not None
+
+        span = _SpanSpec(
+            text=(child.text or "").strip(),
+            x=float(child.get("x")) if has_x else None,
+            y=float(child.get("y")) if has_y else None,
+            dx=float(child.get("dx", "0")),
+            dy=float(child.get("dy", "0")),
+            font_size=fs,
+            font_family=ff,
+            fill=fill,
+            bold=bold,
+            italic=italic,
+            is_new_line=has_x or has_y,
+        )
+        spans.append(span)
+
+        tail = child.tail
+        if tail and tail.strip():
+            spans.append(_SpanSpec(
+                text=tail.strip(),
+                font_size=parent_fs,
+                font_family=parent_ff,
+                fill=parent_fill,
+            ))
+
+    return spans
+
+
+def _group_spans_into_lines(spans: list[_SpanSpec]) -> list[list[_SpanSpec]]:
+    lines: list[list[_SpanSpec]] = []
+    current: list[_SpanSpec] = []
+    for sp in spans:
+        if sp.is_new_line and current:
+            lines.append(current)
+            current = []
+        current.append(sp)
+    if current:
+        lines.append(current)
+    return lines if lines else [[]]
+
+
 def render_svg_text(
     el,
     tf: Affine,
@@ -132,28 +245,45 @@ def render_svg_text(
     y = float(el.get("y", 0))
     ix, iy = to_inches_fn(*tf.apply(x, y))
 
-    content = "".join(el.itertext()).strip()
-    if not content:
-        return
-
-    fs = float(re.sub(r"[^\d.]", "", el.get("font-size", "14")))
+    parent_fs = _parse_font_size(el.get("font-size"), 14.0)
+    parent_ff = _resolve_font_family(el.get("font-family"))
+    parent_fill = _resolve_fill(el.get("fill"), C, resolve_color_fn)
     anchor = el.get("text-anchor", "start")
-    font_family = _resolve_font_family(el.get("font-family"))
     v_anchor = _resolve_baseline(el)
 
-    fval = el.get("fill", "#000000")
-    if fval and fval.startswith("url(#"):
-        fval = "#000000"
-    elif fval and fval != "none":
-        resolved = resolve_color_fn(fval, C, "")
-        if resolved:
-            fval = resolved
-        else:
-            fval = "#000000"
-    else:
-        fval = "#000000"
+    spans = _collect_spans(el, parent_fs, parent_ff, parent_fill, C, resolve_color_fn)
 
-    metrics = _measure_text(content, fs, font_family, 8.0)
+    has_tspan_children = any(
+        c.tag.split("}")[-1] == "tspan" for c in el
+    )
+
+    if not has_tspan_children:
+        content = "".join(el.itertext()).strip()
+        if not content:
+            return
+        _render_simple_text(
+            content, ix, iy, parent_fs, parent_ff, parent_fill,
+            anchor, v_anchor, el, slide, C, resolve_color_fn,
+        )
+        return
+
+    if not any(s.text for s in spans):
+        return
+
+    _render_tspan_text(
+        spans, ix, iy, parent_fs, parent_ff, parent_fill,
+        anchor, v_anchor, el, slide, to_inches_fn, tf,
+        C, resolve_color_fn,
+    )
+
+
+def _render_simple_text(
+    content: str, ix: float, iy: float,
+    fs: float, ff: str, fill: str,
+    anchor: str, v_anchor, el, slide,
+    C: dict, resolve_color_fn,
+) -> None:
+    metrics = _measure_text(content, fs, ff, 8.0)
 
     if anchor == "middle":
         left = ix - metrics.width_inches / 2
@@ -183,8 +313,8 @@ def render_svg_text(
     run = p.add_run()
     run.text = content
     run.font.size = Pt(fs)
-    run.font.color.rgb = RGBColor.from_string(fval.lstrip("#"))
-    run.font.name = font_family
+    run.font.color.rgb = RGBColor.from_string(fill.lstrip("#"))
+    run.font.name = ff
 
     bold = el.get("font-weight")
     if bold and bold not in ("normal", "100", "200", "300"):
@@ -193,3 +323,65 @@ def render_svg_text(
     italic = el.get("font-style")
     if italic == "italic":
         run.font.italic = True
+
+
+def _render_tspan_text(
+    spans: list[_SpanSpec], ix: float, iy: float,
+    parent_fs: float, parent_ff: str, parent_fill: str,
+    anchor: str, v_anchor, el, slide,
+    to_inches_fn, tf: Affine,
+    C: dict, resolve_color_fn,
+) -> None:
+    lines = _group_spans_into_lines(spans)
+
+    all_text = " ".join(s.text for line in lines for s in line if s.text)
+    metrics = _measure_text(all_text, parent_fs, parent_ff, 8.0)
+    line_h = metrics.height_inches * 1.3
+
+    if anchor == "middle":
+        left = ix - metrics.width_inches / 2
+    elif anchor == "end":
+        left = ix - metrics.width_inches
+    else:
+        left = ix - 0.1
+
+    if v_anchor == MSO_ANCHOR.TOP:
+        top = iy
+    elif v_anchor == MSO_ANCHOR.BOTTOM:
+        top = iy - line_h * len(lines)
+    else:
+        top = iy - metrics.height_inches * metrics.ascent_ratio
+
+    width = metrics.width_inches + 0.4
+    height = line_h * len(lines) + 0.2
+
+    tb = slide.shapes.add_textbox(
+        Inches(left), Inches(top), Inches(width), Inches(height)
+    )
+    tf_el = tb.text_frame
+    tf_el.word_wrap = True
+    tf_el.vertical_anchor = v_anchor
+
+    first_para = True
+    for line in lines:
+        if first_para:
+            p = tf_el.paragraphs[0]
+            first_para = False
+        else:
+            p = tf_el.add_paragraph()
+
+        p.alignment = _ANCHOR_MAP.get(anchor, PP_ALIGN.LEFT)
+        p.space_after = Pt(0)
+
+        for sp in line:
+            if not sp.text:
+                continue
+            run = p.add_run()
+            run.text = sp.text
+            run.font.size = Pt(sp.font_size or parent_fs)
+            run.font.color.rgb = RGBColor.from_string((sp.fill or parent_fill).lstrip("#"))
+            run.font.name = sp.font_family or parent_ff
+            if sp.bold:
+                run.font.bold = True
+            if sp.italic:
+                run.font.italic = True
