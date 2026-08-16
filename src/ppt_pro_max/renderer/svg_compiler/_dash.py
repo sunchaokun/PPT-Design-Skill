@@ -109,10 +109,13 @@ _NS_P = "http://schemas.openxmlformats.org/presentationml/2006/main"
 
 
 def apply_stroke_style(shape, style: StrokeStyle) -> None:
-    if not hasattr(shape, "_element"):
-        return
+    if hasattr(shape, "_element"):
+        sp = shape._element
+    else:
+        sp = shape
 
-    sp = shape._element
+    if not hasattr(sp, "find"):
+        return
     sp_pr = sp.find(f"{{{_NS_P}}}spPr")
     if sp_pr is None:
         sp_pr = sp.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}spPr")

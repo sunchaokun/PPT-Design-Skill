@@ -96,10 +96,18 @@ def collect_radial_gradient(g, C: dict, resolve_color_fn) -> GradientDef:
 
 
 def apply_gradient(elem, grad: GradientDef, wrap_fn) -> None:
+    tf = grad.transform
+
     if grad.gradient_type == "radial":
-        cx_pct = int(grad.cx * 100000)
-        cy_pct = int(grad.cy * 100000)
-        r_pct = int(grad.r * 100000)
+        cx, cy, r = grad.cx, grad.cy, grad.r
+        if tf is not None:
+            cx_new, cy_new = tf.apply(cx, cy)
+            ex, ey = tf.apply(cx + r, cy)
+            r = math.hypot(ex - cx_new, ey - cy_new)
+            cx, cy = cx_new, cy_new
+        cx_pct = int(cx * 100000)
+        cy_pct = int(cy * 100000)
+        r_pct = int(r * 100000)
         l_val = str(cx_pct - r_pct) if cx_pct > r_pct else "0"
         t_val = str(cy_pct - r_pct) if cy_pct > r_pct else "0"
         r_val = str(cx_pct + r_pct)
@@ -109,8 +117,12 @@ def apply_gradient(elem, grad: GradientDef, wrap_fn) -> None:
             fill_to_rect={"l": l_val, "t": t_val, "r": r_val, "b": b_val},
         )
     else:
-        dx = grad.x2 - grad.x1
-        dy = grad.y2 - grad.y1
+        x1, y1, x2, y2 = grad.x1, grad.y1, grad.x2, grad.y2
+        if tf is not None:
+            x1, y1 = tf.apply(x1, y1)
+            x2, y2 = tf.apply(x2, y2)
+        dx = x2 - x1
+        dy = y2 - y1
         angle_rad = math.atan2(dy, dx)
         gf = GradientFill(angle=int(math.degrees(angle_rad) * 60000))
 

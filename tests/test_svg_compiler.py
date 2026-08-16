@@ -360,3 +360,161 @@ class TestLinearGradientPercentCoords:
         compiler = SVGCompiler()
         result = compiler.compile(svg, slide, (1, 1, 5, 5))
         assert result.shape_count >= 1
+
+
+class TestRectCornerSymmetry:
+    """SVG spec: if only one of rx/ry is set, the other inherits it."""
+
+    def test_rect_with_ry_only_renders(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" ry="10" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_rect_with_rx_only_renders(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" rx="10" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_rect_with_neither_renders_native(self):
+        """Rect without rx/ry should still take native fast path."""
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+
+class TestRoundedRect:
+    """rect rx/ry produces freeform with rounded corners."""
+
+    def test_rounded_rect_shape_count(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="10" y="10" width="80" height="60" rx="10" ry="10" fill="#4472C4"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_rounded_rect_is_freeform(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="10" y="10" width="80" height="60" rx="10" ry="10" fill="#4472C4"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        sp = slide.shapes[-1]
+        assert sp.shape_type is not None
+
+    def test_rounded_rect_rx_only(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" rx="15" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_rounded_rect_ry_only(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" ry="12" fill="blue"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_rounded_rect_oversized_rx_clamped(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="40" height="40" rx="30" fill="green"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_sharp_rect_no_rounding(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="0" y="0" width="100" height="100" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+
+class TestScalingModes:
+    """contain / cover / stretch scaling modes."""
+
+    def test_contain_default(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<rect x="0" y="0" width="200" height="100" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count == 1
+
+    def test_cover_scaling(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<rect x="0" y="0" width="200" height="100" fill="blue"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5), scaling="cover")
+        assert result.shape_count == 1
+
+    def test_stretch_scaling(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<rect x="0" y="0" width="200" height="100" fill="green"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5), scaling="stretch")
+        assert result.shape_count == 1
+
+    def test_invalid_scaling_falls_back_to_contain(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<rect x="0" y="0" width="200" height="100" fill="red"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = SVGCompiler().compile(svg, slide, (1, 1, 5, 5), scaling="invalid")
+        assert result.shape_count == 1
+
+    def test_svg_chart_scaling_param(self):
+        from ppt_pro_max.build_helpers import svg_chart
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<rect x="0" y="0" width="200" height="100" fill="#4472C4"/>'
+            "</svg>"
+        )
+        _prs, slide = _make_slide()
+        result = svg_chart(slide, svg, 1, 1, 5, 5, scaling="cover")
+        assert result.shape_count >= 1

@@ -168,3 +168,45 @@ class TestApplyStrokeStyle:
         apply_stroke_style(sh, style)
         xml = sh._element.xml
         assert 'cap=' not in xml
+
+
+class TestStrokeStyleIntegration:
+    """E2E test to verify stroke styles are wired up and rendered correctly."""
+
+    def test_stroke_dasharray_rect_integration(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<rect x="10" y="10" width="80" height="80" fill="none" '
+            'stroke="#FF0000" stroke-width="2" stroke-dasharray="4,4"/>'
+            '</svg>'
+        )
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        from ppt_pro_max.renderer.svg_compiler import SVGCompiler
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count >= 1
+
+        # Retrieve shape and inspect XML
+        rect_shape = slide.shapes[0]
+        xml = rect_shape._element.xml
+        assert "prstDash" in xml or "custDash" in xml
+
+    def test_stroke_linejoin_bevel_integration(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+            '<polyline points="10,10 50,50 90,10" fill="none" '
+            'stroke="#000" stroke-width="3" stroke-linejoin="bevel"/>'
+            '</svg>'
+        )
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        from ppt_pro_max.renderer.svg_compiler import SVGCompiler
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count >= 1
+
+        poly_shape = slide.shapes[0]
+        xml = poly_shape._element.xml
+        assert "bevel" in xml
+

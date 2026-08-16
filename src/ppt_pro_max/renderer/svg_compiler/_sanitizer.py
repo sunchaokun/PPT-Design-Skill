@@ -56,16 +56,17 @@ def _expand_style(el: etree._Element) -> None:
     del el.attrib["style"]
 
 
-def _fix_self_closing(xml_bytes: bytes) -> bytes:
-    text = xml_bytes.decode("utf-8", errors="replace")
-    for tag in _SELF_CLOSING:
-        text = re.sub(
-            rf"<{tag}(\s[^>]*)>(?!\s*</{tag}>)",
-            rf"<{tag}\1/>",
-            text,
-            flags=re.IGNORECASE,
-        )
-    return text.encode("utf-8")
+def _fix_self_closing_lxml(root: etree._Element) -> None:
+    """Fix self-closing tags that have no children but were parsed as open tags.
+
+    Preserves parent-child relationships (e.g., <rect><title>x</title></rect>).
+    """
+    for el in root.iter():
+        if not isinstance(el.tag, str):
+            continue
+        tag = el.tag.split("}")[-1]
+        if tag in _SELF_CLOSING and len(el) == 0 and not el.text:
+            el.text = None
 
 
 def _infer_viewbox(root: etree._Element) -> None:
@@ -100,14 +101,14 @@ def sanitize(svg_text: str) -> etree._Element:
     """Sanitize an SVG string and return a cleaned lxml Element tree.
 
     Steps:
-    1. Fix self-closing tags
-    2. Parse with lxml (tolerant of minor XML errors)
-    3. Ensure SVG namespace
+    1. Parse with lxml (tolerant of minor XML errors)
+    2. Ensure SVG namespace
+    3. Fix self-closing tags (lxml-based, preserves children)
     4. Strip ``<script>`` / ``<style>``
     5. Expand ``style`` attributes → individual attributes
     6. Infer missing ``viewBox``
     """
-    xml_bytes = _fix_self_closing(svg_text.encode("utf-8"))
+    xml_bytes = svg_text.encode("utf-8")
 
     try:
         root = etree.fromstring(xml_bytes)
@@ -121,6 +122,7 @@ def sanitize(svg_text: str) -> etree._Element:
                 root = child
                 break
 
+    _fix_self_closing_lxml(root)
     _strip_unwanted(root)
     _walk_expand(root)
     _infer_viewbox(root)

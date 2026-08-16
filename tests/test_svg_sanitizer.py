@@ -70,3 +70,62 @@ class TestSanitizeBrokenXML:
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect x="0" y="0" width="100" height="100" fill="red"><circle cx="50" cy="50" r="20"/></svg>'
         root = sanitize(svg)
         assert root is not None
+
+
+class TestSanitizeSelfClosingWithChildren:
+    """Test that _fix_self_closing doesn't break tags that have children."""
+
+    def test_rect_with_title_preserved(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">'
+            '<rect x="0" y="0" width="100" height="100" fill="red">'
+            '<title>My Rect</title>'
+            '</rect>'
+            '</svg>'
+        )
+        root = sanitize(svg)
+        rects = root.findall(f".//{SVG}rect")
+        if not rects:
+            rects = root.findall(".//rect")
+        assert len(rects) >= 1
+        rect = rects[0]
+        titles = rect.findall(f"{SVG}title")
+        if not titles:
+            titles = rect.findall("title")
+        assert len(titles) >= 1
+        assert titles[0].text == "My Rect"
+
+    def test_path_with_desc_preserved(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">'
+            '<path d="M0,0 L100,100" fill="none" stroke="black">'
+            '<desc>A diagonal line</desc>'
+            '</path>'
+            '</svg>'
+        )
+        root = sanitize(svg)
+        paths = root.findall(f".//{SVG}path")
+        if not paths:
+            paths = root.findall(".//path")
+        assert len(paths) >= 1
+        path = paths[0]
+        descs = path.findall(f"{SVG}desc")
+        if not descs:
+            descs = path.findall("desc")
+        assert len(descs) >= 1
+        assert descs[0].text == "A diagonal line"
+
+    def test_empty_rect_self_closed(self):
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">'
+            '<rect x="0" y="0" width="100" height="100" fill="red">'
+            '</rect>'
+            '</svg>'
+        )
+        root = sanitize(svg)
+        rects = root.findall(f".//{SVG}rect")
+        if not rects:
+            rects = root.findall(".//rect")
+        assert len(rects) >= 1
+        # Empty rect should still be valid
+        assert rects[0].get("fill") == "red"

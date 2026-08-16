@@ -608,3 +608,109 @@ class TestMeasureTextCJK:
         m4 = _measure_text("战略", 14.0, "Arial", 8.0)
         m6 = _measure_text("战略愿景", 14.0, "Arial", 8.0)
         assert m6.width_inches > m4.width_inches
+
+
+class TestTspanDxDy:
+    """Tests for tspan dx/dy offset and absolute x/y positioning."""
+
+    def _make_svg_el(self, svg_str):
+        from lxml import etree
+        return etree.fromstring(svg_str)
+
+    def test_collect_spans_dx_dy(self):
+        svg = (
+            '<text xmlns="http://www.w3.org/2000/svg" x="10" y="20" font-size="14">'
+            '<tspan dx="5" dy="3">Hello</tspan>'
+            '<tspan dx="10" dy="0">World</tspan>'
+            '</text>'
+        )
+        el = self._make_svg_el(svg)
+        spans = _collect_spans(el, 14.0, "Arial", "#000000", {}, lambda v, C, fb: fb or v)
+        assert len(spans) == 2
+        assert spans[0].dx == 5.0
+        assert spans[0].dy == 3.0
+        assert spans[1].dx == 10.0
+        assert spans[1].dy == 0.0
+
+    def test_collect_spans_absolute_xy(self):
+        svg = (
+            '<text xmlns="http://www.w3.org/2000/svg" x="10" y="20" font-size="14">'
+            '<tspan x="30" y="40">Line1</tspan>'
+            '<tspan x="30" y="60">Line2</tspan>'
+            '</text>'
+        )
+        el = self._make_svg_el(svg)
+        spans = _collect_spans(el, 14.0, "Arial", "#000000", {}, lambda v, C, fb: fb or v)
+        assert len(spans) == 2
+        assert spans[0].x == 30.0
+        assert spans[0].y == 40.0
+        assert spans[0].is_new_line is True
+        assert spans[1].x == 30.0
+        assert spans[1].y == 60.0
+        assert spans[1].is_new_line is True
+
+    def test_tspan_absolute_y_creates_separate_paragraphs(self):
+        """tspan with absolute y should create separate paragraphs with distinct Y positions."""
+        from pptx import Presentation
+        from pptx.util import Inches
+        from ppt_pro_max.renderer.svg_compiler import SVGCompiler
+
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<text x="10" y="20" font-size="14" fill="#000">'
+            '<tspan x="10" y="20">Line1</tspan>'
+            '<tspan x="10" y="50">Line2</tspan>'
+            '</text>'
+            '</svg>'
+        )
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 3))
+        assert result.shape_count == 1
+        tb = slide.shapes[0]
+        assert len(tb.text_frame.paragraphs) == 2
+        assert tb.text_frame.paragraphs[0].text == "Line1"
+        assert tb.text_frame.paragraphs[1].text == "Line2"
+
+    def test_tspan_absolute_y_sets_space_before(self):
+        """tspan with absolute y should set space_before on subsequent paragraphs."""
+        from pptx import Presentation
+        from pptx.util import Inches, Pt
+        from ppt_pro_max.renderer.svg_compiler import SVGCompiler
+
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<text x="10" y="20" font-size="14" fill="#000">'
+            '<tspan x="10" y="20">Line1</tspan>'
+            '<tspan x="10" y="50">Line2</tspan>'
+            '</text>'
+            '</svg>'
+        )
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 3))
+        tb = slide.shapes[0]
+        # Second paragraph should have space_before set (y=50 vs y=20 = 30 SVG units gap)
+        p2 = tb.text_frame.paragraphs[1]
+        assert p2.space_before is not None
+
+    def test_tspan_dy_offset_applied(self):
+        """tspan with dy offset should shift subsequent text vertically."""
+        from pptx import Presentation
+        from pptx.util import Inches
+        from ppt_pro_max.renderer.svg_compiler import SVGCompiler
+
+        svg = (
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">'
+            '<text x="10" y="20" font-size="14" fill="#000">'
+            'Hello<tspan dy="5">sub</tspan>'
+            '</text>'
+            '</svg>'
+        )
+        prs = Presentation()
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 3))
+        assert result.shape_count == 1

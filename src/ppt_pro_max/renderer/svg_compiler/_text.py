@@ -39,17 +39,6 @@ _FONT_MAP: dict[str, str] = {
     "comic sans ms": "Comic Sans MS",
 }
 
-_BASELINE_MAP: dict[str, MSO_ANCHOR] = {
-    "auto": MSO_ANCHOR.MIDDLE,
-    "alphabetic": MSO_ANCHOR.BOTTOM,
-    "text-after-edge": MSO_ANCHOR.BOTTOM,
-    "text-before-edge": MSO_ANCHOR.TOP,
-    "central": MSO_ANCHOR.MIDDLE,
-    "middle": MSO_ANCHOR.MIDDLE,
-    "hanging": MSO_ANCHOR.TOP,
-    "mathematical": MSO_ANCHOR.MIDDLE,
-}
-
 _ANCHOR_MAP: dict[str, PP_ALIGN] = {
     "middle": PP_ALIGN.CENTER,
     "end": PP_ALIGN.RIGHT,
@@ -262,19 +251,21 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
 
         has_x = child.get("x") is not None
         has_y = child.get("y") is not None
+        dy_val = float(child.get("dy", "0"))
+        is_new_line = has_x or has_y or abs(dy_val) > 0.5
 
         span = _SpanSpec(
             text=(child.text or "").strip(),
             x=float(child.get("x")) if has_x else None,
             y=float(child.get("y")) if has_y else None,
             dx=float(child.get("dx", "0")),
-            dy=float(child.get("dy", "0")),
+            dy=dy_val,
             font_size=fs,
             font_family=ff,
             fill=fill,
             bold=bold,
             italic=italic,
-            is_new_line=has_x or has_y,
+            is_new_line=is_new_line,
         )
         spans.append(span)
 
@@ -315,8 +306,6 @@ def render_svg_text(
     svg_h: float = 0.0,
     slide_w: float = 0.0,
     slide_h: float = 0.0,
-    rect_x: float = 0.0,
-    rect_y: float = 0.0,
 ) -> None:
     features.add("text")
 
@@ -368,8 +357,7 @@ def _render_simple_text(
 ) -> None:
     metrics = _measure_text(content, fs, ff, 8.0)
 
-    # Do not shrink font based on avail_w. SVG text is allowed to overflow viewBox.
-    # We only use avail_w as a hint for textbox width, but allow it to grow.
+    # SVG text is allowed to overflow viewBox; textbox width uses natural measurement.
     width = metrics.width_inches + 0.2
 
     if anchor == "middle":
@@ -442,6 +430,7 @@ def _render_tspan_text(
     tf_el.vertical_anchor = v_anchor
 
     first_para = True
+    prev_line_iy = None
     for line in lines:
         if first_para:
             p = tf_el.paragraphs[0]
@@ -452,9 +441,33 @@ def _render_tspan_text(
         p.alignment = _ANCHOR_MAP.get(anchor, PP_ALIGN.LEFT)
         p.space_after = Pt(0)
 
+        first_sp = next((s for s in line if s.text), None)
+        if first_sp and first_sp.y is not None and prev_line_iy is not None:
+            line_iy = to_inches_fn(*tf.apply(first_sp.x or 0, first_sp.y))[1]
+            gap = line_iy - prev_line_iy
+            if gap > 0:
+                p.space_before = Pt(max(0, gap * 72 - line_h * 72 * 0.3))
+        elif first_sp and first_sp.dy != 0.0 and prev_line_iy is not None:
+            dy_inches = first_sp.dy * (line_h / parent_fs) if parent_fs > 0 else 0
+            if dy_inches > 0:
+                p.space_before = Pt(max(0, dy_inches * 72 - line_h * 72 * 0.3))
+        if first_sp and first_sp.y is not None:
+            prev_line_iy = to_inches_fn(*tf.apply(first_sp.x or 0, first_sp.y))[1]
+        else:
+            prev_line_iy = None
+
         for sp in line:
             if not sp.text:
                 continue
+
+            if sp.dx != 0.0:
+                dx_pt = sp.dx * (parent_fs / 14.0) * 0.5
+                spacer = p.add_run()
+                spacer.text = " "
+                spacer.font.size = Pt(sp.font_size or parent_fs)
+                spacer_rPr = spacer._r.get_or_add_rPr()
+                spacer_rPr.set("spc", str(int(dx_pt * 100)))
+
             run = p.add_run()
             run.text = sp.text
             run.font.size = Pt(sp.font_size or parent_fs)

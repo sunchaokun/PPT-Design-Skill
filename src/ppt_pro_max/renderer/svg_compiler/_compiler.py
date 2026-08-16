@@ -22,6 +22,7 @@ from ppt_pro_max.renderer.freeform_builder import FreeformBuilder
 from ppt_pro_max.renderer.visual_effects import set_solid_fill_with_alpha
 
 from ._affine import Affine, parse_transform
+from ._dash import apply_stroke_style, parse_stroke_style
 from ._errors import SVGCompileError
 from ._paint import GradientDef
 from ._paint import _parse_percent_or_float as _parse_pct
@@ -93,7 +94,7 @@ _NAMED_COLORS: dict[str, str] = {
 }
 
 
-def _resolve_svg_color(raw: str | None, C: dict | None, fallback: str) -> str:
+def _resolve_svg_color(raw: str | None, C: dict | None, fallback: str) -> str | None:
     """Resolve an SVG fill/stroke color value against a C (context) dict.
 
     Priority:
@@ -104,10 +105,14 @@ def _resolve_svg_color(raw: str | None, C: dict | None, fallback: str) -> str:
       5. hsl()/hsla()
       6. named-color
       7. currentColor → C.get("text_dark", "#000000")
+
+    Returns None for empty / "none" input (callers rely on None being falsy).
     """
-    if not raw or raw == "none":
+    if not raw:
         return None
     v = raw.strip()
+    if not v or v == "none":
+        return None
 
     if v.startswith("var("):
         name = v[4:-1].strip().lstrip("-")
@@ -189,6 +194,7 @@ class SVGCompiler:
         slide,
         rect: tuple[float, float, float, float],
         vb: tuple[float, float, float, float] | None = None,
+        scaling: str = "contain",
     ) -> SVGResult:
         result = SVGResult()
         t0 = time.perf_counter()
@@ -206,9 +212,11 @@ class SVGCompiler:
 
         self._vb = vb
         self._rect = rect
+        self._scaling = scaling if scaling in ("contain", "cover", "stretch") else "contain"
         self._slide = slide
         self._grads: dict[str, GradientDef] = {}
         self._clips: dict[str, list[list[tuple[float, float]]]] = {}
+        self._defs: dict[str, etree._Element] = {}
         self._shape_count = 0
         self._features: set[str] = set()
         self._warnings: list[str] = []
@@ -233,7 +241,14 @@ class SVGCompiler:
     def _to_inches(self, x: float, y: float) -> tuple[float, float]:
         lx, ly, w, h = self._rect
         vx, vy, vw, vh = self._vb
-        s = min(w / vw, h / vh)
+        if self._scaling == "stretch":
+            sx = w / vw if vw > 0 else 1.0
+            sy = h / vh if vh > 0 else 1.0
+            return lx + (x - vx) * sx, ly + (y - vy) * sy
+        if self._scaling == "cover":
+            s = max(w / vw, h / vh) if vw > 0 and vh > 0 else 1.0
+        else:
+            s = min(w / vw, h / vh) if vw > 0 and vh > 0 else 1.0
         ox = lx + (w - vw * s) / 2.0
         oy = ly + (h - vh * s) / 2.0
         return ox + (x - vx) * s, oy + (y - vy) * s
@@ -283,6 +298,16 @@ class SVGCompiler:
                     polys.extend(sub)
             self._clips[c.get("id")] = polys
 
+        for el in root.iter():
+            if not isinstance(el.tag, str):
+                continue
+            el_id = el.get("id")
+            if el_id and el.tag.split("}")[-1] in (
+                "symbol", "g", "rect", "circle", "ellipse", "path",
+                "polygon", "polyline", "line",
+            ) and el_id not in self._defs:
+                self._defs[el_id] = el
+
     # ── SVG element → polygon points (SVG-space) ─────────────
 
     def _svg_polygon(
@@ -296,7 +321,14 @@ class SVGCompiler:
             y = float(el.get("y", 0))
             w = float(el.get("width", 0))
             h = float(el.get("height", 0))
-            pts = [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
+            rx = float(el.get("rx", 0))
+            ry = float(el.get("ry", 0))
+            if rx > 0 or ry > 0:
+                rx = min(rx, w / 2) if rx > 0 else (ry if ry > 0 else 0)
+                ry = min(ry, h / 2) if ry > 0 else (rx if rx > 0 else 0)
+                pts = self._rounded_rect_cubics(x, y, w, h, rx, ry)
+            else:
+                pts = [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
         elif tag == "circle":
             cx = float(el.get("cx", 0))
             cy = float(el.get("cy", 0))
@@ -331,6 +363,49 @@ class SVGCompiler:
         else:
             return []
         return [[tf.apply(px, py) for px, py in pts]]
+
+    @staticmethod
+    def _rounded_rect_cubics(
+        x: float, y: float, w: float, h: float,
+        rx: float, ry: float,
+    ) -> list[tuple[float, float]]:
+        """Return cubic Bezier points for a rounded rectangle.
+
+        4 corners × 4 points (start, c1, c2, end) = 16 points,
+        plus 4 straight-edge start points = 20 points total.
+        """
+        k = (4 / 3) * (math.sqrt(2) - 1)
+        pts: list[tuple[float, float]] = []
+
+        # Top-left corner → top-right corner
+        pts.append((x + rx, y))
+        pts.extend([
+            (x + rx - k * rx, y),
+            (x, y + ry - k * ry),
+            (x, y + ry),
+        ])
+        # Top-right corner → bottom-right corner
+        pts.append((x, y + h - ry))
+        pts.extend([
+            (x, y + h - ry + k * ry),
+            (x + rx - k * rx, y + h),
+            (x + rx, y + h),
+        ])
+        # Bottom-right corner → bottom-left corner
+        pts.append((x + w - rx, y + h))
+        pts.extend([
+            (x + w - rx + k * rx, y + h),
+            (x + w, y + h - ry + k * ry),
+            (x + w, y + h - ry),
+        ])
+        # Bottom-left corner → top-left corner
+        pts.append((x + w, y + ry))
+        pts.extend([
+            (x + w, y + ry - k * ry),
+            (x + w - rx + k * rx, y),
+            (x + w - rx, y),
+        ])
+        return pts
 
     @staticmethod
     def _circle_cubics(cx: float, cy: float, r: float) -> list[tuple[float, float]]:
@@ -424,6 +499,8 @@ class SVGCompiler:
                 self._walk(child, tf, clip_stack)
         elif tag == "defs":
             pass  # already collected
+        elif tag == "use":
+            self._render_use(el, tf, clip_stack)
         elif tag in ("image", "filter", "mask"):
             self._features.add(tag)
             self._warnings.append(f"unsupported SVG feature: <{tag}> element (skipped)")
@@ -434,6 +511,39 @@ class SVGCompiler:
         ):
             self._render_shape(el, tag, tf, clip_stack)
 
+    def _render_use(
+        self, el: etree._Element, tf: Affine, clip_stack: list
+    ) -> None:
+        self._features.add("use")
+        href = (
+            el.get("href")
+            or el.get(f"{SVG}href")
+            or el.get("{http://www.w3.org/1999/xlink}href")
+            or ""
+        )
+        href = href.removeprefix("#")
+        ref = self._defs.get(href)
+        if ref is None:
+            self._warnings.append(f"<use> references unknown id '{href}' (skipped)")
+            return
+
+        ux = float(el.get("x", 0))
+        uy = float(el.get("y", 0))
+        use_tf = tf.compose(Affine(1, 0, 0, 1, ux, uy))
+
+        ref_tag = ref.tag.split("}")[-1] if isinstance(ref.tag, str) else ""
+        if ref_tag in ("g", "symbol", "svg"):
+            for child in ref:
+                self._walk(child, use_tf, clip_stack)
+        elif ref_tag == "text":
+            self._render_text(ref, use_tf)
+        elif ref_tag in (
+            "rect", "circle", "ellipse", "polygon", "polyline", "line", "path",
+        ):
+            self._render_shape(ref, ref_tag, use_tf, clip_stack)
+        else:
+            self._warnings.append(f"<use> references unsupported element <{ref_tag}> (skipped)")
+
     def _render_shape(
         self, el: etree._Element, tag: str, tf: Affine, clip_stack: list
     ) -> None:
@@ -442,6 +552,7 @@ class SVGCompiler:
         fkind, fval, fa = self._paint(el, "fill")
         skind, sval, _ = self._paint(el, "stroke")
         sw = float(el.get("stroke-width", "1"))
+        stroke_style = parse_stroke_style(el)
 
         subpaths = self._svg_polygon(el, tf)
         if not subpaths:
@@ -484,6 +595,7 @@ class SVGCompiler:
             self._render_bool(
                 local, clip_local, ix0, iy0, iw, ih,
                 fkind, fval, fa, skind, sval,
+                stroke_style,
             )
             return
 
@@ -491,6 +603,7 @@ class SVGCompiler:
         if (
             tag == "rect"
             and not el.get("rx")
+            and not el.get("ry")
             and fkind == "solid"
             and skind == "none"
             and not clip_stack
@@ -504,6 +617,8 @@ class SVGCompiler:
         elem = self._add_freeform(
             local, ix0, iy0, iw, ih, fill_hex or "#FFFFFF", fa, stroke_hex, sw
         )
+        if stroke_style and elem is not None:
+            apply_stroke_style(elem, stroke_style)
         if fkind == "grad":
             self._apply_gradient_to_elem(elem, fval)
 
@@ -513,6 +628,7 @@ class SVGCompiler:
         clip_local: list[list[tuple[float, float]]],
         ix0: float, iy0: float, iw: float, ih: float,
         fkind: str, fval, fa: int, skind: str, sval,
+        stroke_style=None,
     ) -> None:
         """Boolean-compute shapes and render, intersecting with clip regions."""
         try:
@@ -568,6 +684,8 @@ class SVGCompiler:
                 poly, self._slide, ix0, iy0, iw, ih, fill=fill_hex, line=stroke_hex, alpha=fa
             )
         if elem is not None:
+            if stroke_style:
+                apply_stroke_style(elem, stroke_style)
             self._shape_count += 1
 
     def _add_native(
@@ -650,8 +768,6 @@ class SVGCompiler:
             svg_h=svg_h,
             slide_w=rw,
             slide_h=rh,
-            rect_x=lx,
-            rect_y=ly,
         )
         self._shape_count += 1
 

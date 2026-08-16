@@ -116,6 +116,82 @@ python -m ruff check src/
 - `src/ppt_pro_max/renderer/decoration_library.py` — Phase 6: brush divider, seal stamp, scroll frame, neon border, grid background, glass panel, ink splash
 - `src/ppt_pro_max/renderer/theme_composer.py` — Phase 7: `_MOOD_TEXT_EFFECT_MAP`, `_MOOD_IMAGE_EFFECT_MAP`; `compose()` returns `text_effect_preset` + `image_effect`
 
+### SVG Compiler
+
+- `src/ppt_pro_max/renderer/svg_compiler/` — SVG→native editable PPTX shapes compiler
+- `src/ppt_pro_max/build_helpers.py:svg_chart()` — Tier 3 component-level brush: `svg_chart(slide, svg_text, x, y, w, h, C=C)`
+
+#### When to use `svg_chart()` vs build_helpers atoms
+
+**Decision tree (3 layers):**
+
+**Layer 1 — If build_helpers has a direct atom, use it:**
+
+| Need | Atom function | Notes |
+|------|--------------|-------|
+| Single rect/circle/shape | `rect()`, `oval()`, `shape()` | |
+| KPI number card | `kpi_card()` | Grouped: bg + accent bar + number + label + trend |
+| Horizontal bar chart | `bar_chart()` | Grouped: bg bars + value bars + labels |
+| Comparison bars (left/right) | `comparison_bars()` | |
+| Donut/pie chart | `donut_chart()` | Native chart when sectors>1, shape fallback for 1 sector |
+| Native chart (bar/line/pie/radar/bubble/...) | `native_chart()` | 20+ chart types, editable data |
+| Code block | `code_block()` | Dark bg + language badge + monospace |
+| Flow chart single node | `flow_process()`, `flow_decision()`, `flow_data()`, `flow_document()` | |
+| Text / multiline | `text()`, `multiline()` | CJK font injection automatic |
+| Image in shape | `circle_image()`, `hex_image()`, `diamond_image()`, `star_image()`, `heart_image()` | |
+| Single funnel shape | `funnel()` | MSO_SHAPE.FUNNEL only — no labels or segments |
+
+**Layer 2 — If atoms cannot compose the target, use `svg_chart()`:**
+
+| Need | Why svg_chart | Key SVG features used |
+|------|--------------|----------------------|
+| Pyramid (3-5 tiers + side labels + connectors) | Multi-trapezoid coordinate alignment | `<polygon>`, `<text>`, `<line>` |
+| Pentagon/radar (5+ vertices + radial lines + labels) | Radial vertex layout | `<polygon>`, `<circle>`, `<text>` |
+| Multi-segment funnel (graduated width + per-segment labels) | `funnel()` is a single shape, no labels | `<polygon>`, `<text>`, `linearGradient` |
+| Venn diagram (overlapping circles + transparency) | Circle intersection + alpha blending | `<circle>`, `fill-opacity` |
+| Gauge/dashboard (arc + pointer + tick marks) | Arc paths + rotation | `<path>` (A command), `transform` |
+| Org chart / tree (multi-level + polyline connectors) | Rectangles + bent connectors | `<rect>`, `<polyline>`, `<text>` |
+| Sankey diagram (flows + curved connections) | Bezier paths | `<path>` (C/Q commands) |
+
+**Layer 3 — Mixed (recommended default):**
+```python
+slide = page_header(...)                                          # atom
+       + svg_chart(slide, pyramid_svg, 2, 1.5, 6, 5.5, C=C)    # complex region
+       + kpi_card(slide, 8.5, 1.5, ...)                          # atom
+       + text(slide, 0.5, 7, ...)                                 # atom
+```
+
+**Quick decision signals:**
+
+| Signal | Choose |
+|--------|--------|
+| ≥ 3 shapes needing **coordinate interdependence** (pyramid tiers aligned, radar vertices radiating) | `svg_chart()` |
+| `defs`/`linearGradient`/`radialGradient`/`clipPath` needed | `svg_chart()` |
+| Freeform curves (`path` with Q/C Bezier commands) | `svg_chart()` |
+| Single responsibility (one shape, one text, one card) | atom |
+| Atom function fully covers the need | atom |
+
+#### SVG Compiler internals
+
+- **Font scale**: SVG `font-size` is in SVG user units (viewBox pixels), not points. Conversion: `scaled_fs = max(parent_fs * scale * 72.0, 6.0)` where `scale = region_w / viewBox_w`. The `72.0` factor converts inches to points (1 inch = 72 pt). See `_text.py:324`.
+- **Text overflow**: SVG `<text>` may overflow the viewBox — the compiler preserves SVG-specified font sizes and does not shrink text to fit the region. Textbox width uses natural measurement (`metrics.width_inches + 0.2`).
+- **CJK measurement**: When PIL `truetype` fails and content has CJK characters, falls back to `estimate_text_size()` (character-based width table). See `_text.py:_has_cjk()`.
+- **Overlap warnings**: `_detect_text_overlaps()` uses O(n²) pairwise check on text boxes — emits warnings for overlaps > 0.05". Adjacent text boxes within a card (badge + title) trigger cosmetic warnings; these are expected and do not affect rendered output.
+- **Scaling mode**: Currently "contain" only (`min(w/vw, h/vh)`). No "cover" or "stretch" option yet.
+- **`<use>` element**: Supported — `_render_use()` resolves `href`/`xlink:href` against `_defs`, applies x/y offset via Affine, and recursively walks the referenced element.
+- **`gradientTransform`**: Supported — `apply_gradient()` transforms gradient coordinates via `tf.apply()` for both radial and linear gradients.
+- **Stroke dash/cap/join**: Supported — `parse_stroke_style()` and `apply_stroke_style()` are called in `_render_shape()`.
+- **Sanitizer**: Uses `_fix_self_closing_lxml()` (not regex) — preserves child elements like `<rect><title>...</title></rect>`.
+
+#### SVG Compiler known gaps
+
+| Gap | Location | Impact |
+|-----|----------|--------|
+| `_BASELINE_MAP` defined twice | `_text.py:42-51` and `_text.py:94-103` | Maintenance risk — future edits may only change one copy |
+| `tspan` `dx`/`dy` offsets — partial | `_text.py:_render_tspan_text` | `dx` approximated via spacer run with `spc`; `dy` triggers new line when >0.5 units, adjusts `space_before`. Intra-line `dy` not pixel-perfect |
+| `rect` `rx`/`ry` — implemented | `_compiler.py:_rounded_rect_cubics` | Rounded rectangles rendered as freeform with 4 cubic Bezier arcs per corner |
+| Scaling modes — implemented | `_compiler.py:_to_inches`, `svg_chart(scaling=...)` | "contain" (default), "cover", "stretch" all supported |
+
 ### Installer & Skill Source
 
 - `skill/` — **唯一 skill 源目录**（SKILL.md, AGENTS.md, .env.example, scripts/, data/, src/ junction）

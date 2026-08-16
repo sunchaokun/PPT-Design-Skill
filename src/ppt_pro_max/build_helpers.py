@@ -1113,7 +1113,7 @@ def native_chart(slide, left, top, width, height, chart_type,
     return builder.build(slide, chart_config, position=position, brand_colors=brand_colors)
 
 
-def svg_chart(slide, svg_text, x, y, w, h, C=None, vb=None):
+def svg_chart(slide, svg_text, x, y, w, h, C=None, vb=None, scaling="contain"):
     """Compile an SVG fragment to native editable PPTX shapes on a slide.
 
     This is the Tier 3 component-level brush — same level as kpi_card(),
@@ -1124,11 +1124,13 @@ def svg_chart(slide, svg_text, x, y, w, h, C=None, vb=None):
     x, y, w, h: placement rect in inches
     C: color dictionary (same C used for all other build_helpers calls)
     vb: optional viewBox override (x, y, w, h); auto-detected from SVG if omitted
+    scaling: "contain" (fit, may leave whitespace), "cover" (fill, may clip),
+             or "stretch" (distort to fill exactly)
 
     Returns SVGResult (shapes, warnings, features, compile_ms, shape_count).
     """
     C = C or {}
-    return _SVGCompiler(C=C).compile(svg_text, slide, (x, y, w, h), vb=vb)
+    return _SVGCompiler(C=C).compile(svg_text, slide, (x, y, w, h), vb=vb, scaling=scaling)
 
 
 def _draw_connector(slide, x1, y1, x2, y2, width_pt=1.0, color='#A0A0A0', dash=False):
