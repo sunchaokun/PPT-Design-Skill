@@ -69,7 +69,7 @@ class GradientFill:
             return
         _remove_existing_fill(spPr)
 
-        gradFill = etree.SubElement(spPr, qn("a:gradFill"))
+        gradFill = etree.Element(qn("a:gradFill"))
         gradFill.set("rotWithShape", "1")
         gradFill.set("flip", "none")
         gsLst = etree.SubElement(gradFill, qn("a:gsLst"))
@@ -111,6 +111,8 @@ class GradientFill:
                 fillToRect.set("t", "50000")
                 fillToRect.set("r", "50000")
                 fillToRect.set("b", "50000")
+
+        _insert_fill_before_ln(spPr, gradFill)
 
 
 @dataclass
@@ -241,16 +243,25 @@ def _remove_existing_fill(spPr: etree._Element) -> None:
             spPr.remove(el)
 
 
+def _insert_fill_before_ln(spPr: etree._Element, fill_el: etree._Element) -> None:
+    ln = spPr.find(qn("a:ln"))
+    if ln is not None:
+        spPr.insert(list(spPr).index(ln), fill_el)
+    else:
+        spPr.append(fill_el)
+
+
 def set_solid_fill_with_alpha(shape, color: str, alpha_pct: int) -> None:
     spPr = shape._element.find(qn("p:spPr"))
     if spPr is None:
         return
     _remove_existing_fill(spPr)
-    solidFill = etree.SubElement(spPr, qn("a:solidFill"))
+    solidFill = etree.Element(qn("a:solidFill"))
     srgbClr = etree.SubElement(solidFill, qn("a:srgbClr"))
     srgbClr.set("val", color.lstrip("#"))
     alpha_el = etree.SubElement(srgbClr, qn("a:alpha"))
     alpha_el.set("val", str(alpha_pct * 1000))
+    _insert_fill_before_ln(spPr, solidFill)
 
 
 def set_line_gradient(shape, color1: str, color2: str, width_pt: float = 2.0, angle: int = 5400000) -> None:

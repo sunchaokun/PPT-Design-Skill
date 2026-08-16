@@ -24,6 +24,7 @@ from ppt_pro_max.renderer.visual_effects import set_solid_fill_with_alpha
 from ._affine import Affine, parse_transform
 from ._errors import SVGCompileError
 from ._paint import GradientDef
+from ._paint import _parse_percent_or_float as _parse_pct
 from ._paint import apply_gradient as _apply_gradient
 from ._paint import resolve_paint as _resolve_paint
 from ._path import parse_path, to_beziers
@@ -211,6 +212,9 @@ class SVGCompiler:
         self._shape_count = 0
         self._features: set[str] = set()
         self._warnings: list[str] = []
+        self._text_rects: list[tuple[float, float, float, float]] = []
+
+        pre_shape_count = len(slide.shapes)
 
         self._collect_defs(root)
         self._walk(root, Affine(), [])
@@ -219,6 +223,9 @@ class SVGCompiler:
         result.warnings = self._warnings
         result.shape_count = self._shape_count
         result.compile_ms = (time.perf_counter() - t0) * 1000
+
+        self._detect_text_overlaps(slide, pre_shape_count, result)
+
         return result
 
     # ── coordinate transforms ────────────────────────────────
@@ -246,10 +253,10 @@ class SVGCompiler:
                 col = _resolve_svg_color(col, self.C, "#000000")
                 op = float(s.get("stop-opacity", "1"))
                 stops.append((pos, col, op))
-            x1 = float(g.get("x1", "0"))
-            y1 = float(g.get("y1", "0"))
-            x2 = float(g.get("x2", "1"))
-            y2 = float(g.get("y2", "0"))
+            x1 = _parse_pct(g.get("x1", "0"))
+            y1 = _parse_pct(g.get("y1", "0"))
+            x2 = _parse_pct(g.get("x2", "1"))
+            y2 = _parse_pct(g.get("y2", "0"))
             self._grads[g.get("id")] = GradientDef(stops=stops, x1=x1, y1=y1, x2=x2, y2=y2)
 
         for g in root.iter(f"{SVG}radialGradient"):
@@ -260,12 +267,9 @@ class SVGCompiler:
                 col = _resolve_svg_color(s.get("stop-color", "#000000"), self.C, "#000000")
                 op = float(s.get("stop-opacity", "1"))
                 stops.append((pos, col, op))
-            cx_raw = g.get("cx", "50%")
-            cy_raw = g.get("cy", "50%")
-            r_raw = g.get("r", "50%")
-            cx = float(cx_raw.rstrip("%")) / 100.0 if isinstance(cx_raw, str) and cx_raw.endswith("%") else float(cx_raw)
-            cy = float(cy_raw.rstrip("%")) / 100.0 if isinstance(cy_raw, str) and cy_raw.endswith("%") else float(cy_raw)
-            r_ = float(r_raw.rstrip("%")) / 100.0 if isinstance(r_raw, str) and r_raw.endswith("%") else float(r_raw)
+            cx = _parse_pct(g.get("cx", "50%"))
+            cy = _parse_pct(g.get("cy", "50%"))
+            r_ = _parse_pct(g.get("r", "50%"))
             self._grads[g.get("id")] = GradientDef(
                 stops=stops, cx=cx, cy=cy, r=r_, gradient_type="radial"
             )
@@ -284,6 +288,8 @@ class SVGCompiler:
     def _svg_polygon(
         self, el: etree._Element, tf: Affine
     ) -> list[list[tuple[float, float]]]:
+        if not isinstance(el.tag, str):
+            return []
         tag = el.tag.split("}")[-1]
         if tag == "rect":
             x = float(el.get("x", 0))
@@ -401,6 +407,9 @@ class SVGCompiler:
     # ── rendering ────────────────────────────────────────────
 
     def _walk(self, el: etree._Element, tf: Affine, clip_stack: list) -> None:
+        # Skip non-element nodes (e.g., lxml Comment, ProcessingInstruction)
+        if not isinstance(el.tag, str):
+            return
         tag = el.tag.split("}")[-1] if el.tag else ""
         tf = tf.compose(parse_transform(el.get("transform")))
 
@@ -626,6 +635,9 @@ class SVGCompiler:
     # ── text ─────────────────────────────────────────────────
 
     def _render_text(self, el: etree._Element, tf: Affine) -> None:
+        # scale for font-size: svg region size / viewBox size
+        lx, ly, rw, rh = self._rect
+        svg_w, svg_h = self._vb[2], self._vb[3]
         _render_svg_text(
             el=el,
             tf=tf,
@@ -634,5 +646,58 @@ class SVGCompiler:
             C=self.C,
             resolve_color_fn=_resolve_svg_color,
             features=self._features,
+            svg_w=svg_w,
+            svg_h=svg_h,
+            slide_w=rw,
+            slide_h=rh,
+            rect_x=lx,
+            rect_y=ly,
         )
         self._shape_count += 1
+
+    # ── collision detection ──────────────────────────────────
+
+    @staticmethod
+    def _detect_text_overlaps(slide, pre_count: int, result: SVGResult) -> None:
+        """Detect overlapping text boxes among shapes added during this compile.
+
+        Walks all text boxes added since pre_count, collects their bounding
+        rects in slide inches, and emits a warning for each pair that overlaps
+        by more than a small tolerance (avoiding false positives from adjacent
+        text boxes that touch at edges).
+        """
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
+        text_rects: list[tuple[float, float, float, float]] = []
+        for shape in slide.shapes:
+            if slide.shapes.index(shape) < pre_count:
+                continue
+            if shape.shape_type != MSO_SHAPE_TYPE.TEXT_BOX:
+                continue
+            try:
+                x = shape.left / 914400.0
+                y = shape.top / 914400.0
+                w = shape.width / 914400.0
+                h = shape.height / 914400.0
+            except (AttributeError, TypeError):
+                continue
+            text_rects.append((x, y, x + w, y + h))
+
+        n = len(text_rects)
+        if n < 2:
+            return
+
+        tol = 0.05
+        for i in range(n):
+            for j in range(i + 1, n):
+                ax0, ay0, ax1, ay1 = text_rects[i]
+                bx0, by0, bx1, by1 = text_rects[j]
+                dx = min(ax1, bx1) - max(ax0, bx0)
+                dy = min(ay1, by1) - max(ay0, by0)
+                if dx > tol and dy > tol:
+                    result.warnings.append(
+                        f"text box overlap detected: "
+                        f"rect1=({ax0:.2f},{ay0:.2f},{ax1:.2f},{ay1:.2f}) "
+                        f"rect2=({bx0:.2f},{by0:.2f},{bx1:.2f},{by1:.2f}) "
+                        f"overlap=({dx:.2f}x{dy:.2f})"
+                    )

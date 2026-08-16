@@ -91,46 +91,119 @@ def _resolve_font_family(raw: str | None) -> str:
     return families[0].strip().strip("'\"")
 
 
+_BASELINE_MAP: dict[str, MSO_ANCHOR] = {
+    "auto": MSO_ANCHOR.MIDDLE,
+    "alphabetic": MSO_ANCHOR.BOTTOM,
+    "text-after-edge": MSO_ANCHOR.BOTTOM,
+    "text-before-edge": MSO_ANCHOR.TOP,
+    "central": MSO_ANCHOR.MIDDLE,
+    "middle": MSO_ANCHOR.MIDDLE,
+    "hanging": MSO_ANCHOR.TOP,
+    "mathematical": MSO_ANCHOR.MIDDLE,
+}
+
+_BASELINE_OFFSET: dict[str, str] = {
+    "auto": "middle",
+    "alphabetic": "baseline",
+    "text-after-edge": "descent",
+    "text-before-edge": "top",
+    "central": "middle",
+    "middle": "middle",
+    "hanging": "top",
+    "mathematical": "middle",
+}
+
+
 def _resolve_baseline(el) -> MSO_ANCHOR:
     db = el.get("dominant-baseline", el.get("alignment-baseline", "auto"))
     return _BASELINE_MAP.get(db.lower(), MSO_ANCHOR.MIDDLE)
 
 
+def _resolve_baseline_mode(el) -> str:
+    """Return y-anchor mode for precise vertical positioning."""
+    db = el.get("dominant-baseline", el.get("alignment-baseline", "auto"))
+    return _BASELINE_OFFSET.get(db.lower(), "middle")
+
+
+def _compute_text_top(
+    iy: float, metrics: TextMetrics, v_anchor, baseline_mode: str = "middle"
+) -> float:
+    """Compute textbox top position from SVG y coordinate and baseline.
+
+    SVG y coordinate semantics by dominant-baseline:
+      - alphabetic: y is at the baseline (ascent above, descent below)
+      - text-before-edge / hanging: y is at the top of the em box
+      - central / middle / auto: y is at the vertical center
+      - text-after-edge: y is at the bottom of the em box
+
+    PPT textbox top = iy minus the portion of the glyph above the y anchor.
+    """
+    asc = metrics.height_inches * metrics.ascent_ratio
+    desc = metrics.height_inches * metrics.descent_ratio
+
+    if baseline_mode == "top":
+        return iy
+    elif baseline_mode == "baseline":
+        return iy - asc
+    elif baseline_mode == "descent":
+        return iy - asc - desc
+    else:
+        return iy - asc / 2.0
+
+
+def _has_cjk(text: str) -> bool:
+    for ch in text:
+        cp = ord(ch)
+        if (0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF
+                or 0x3000 <= cp <= 0x303F or 0xFF00 <= cp <= 0xFFEF):
+            return True
+    return False
+
+
 def _measure_text(
     content: str, font_size_pt: float, font_family: str, max_width_inches: float
 ) -> TextMetrics:
+    use_pil = False
     try:
         from PIL import ImageFont
 
         try:
             font = ImageFont.truetype(font_family + ".ttf", int(font_size_pt))
+            use_pil = True
         except OSError:
-            font = ImageFont.load_default()
+            if not _has_cjk(content):
+                font = ImageFont.load_default()
+                use_pil = True
+    except ImportError:
+        pass
 
+    if use_pil:
         bbox = font.getbbox(content)
         w_px = bbox[2] - bbox[0]
         h_px = bbox[3] - bbox[1]
-        ascent = font.getmetrics()[0]
-        total_h = font.getmetrics()[0] + font.getmetrics()[1]
+        ascent, descent = font.getmetrics()
+        total_h = ascent + descent
 
         px_per_inch = 96.0
         w_in = w_px / px_per_inch
-        h_in = h_px / px_per_inch
+        h_in = (total_h if total_h > 0 else h_px) / px_per_inch
 
         return TextMetrics(
             width_inches=max(w_in, 0.5),
             height_inches=max(h_in, 0.3),
             ascent_ratio=ascent / total_h if total_h > 0 else 0.8,
-            descent_ratio=1.0 - (ascent / total_h if total_h > 0 else 0.8),
+            descent_ratio=descent / total_h if total_h > 0 else 0.2,
         )
-    except ImportError:
-        _, h_est = estimate_text_size(content, max(8, int(font_size_pt)), max_width_inches)
-        return TextMetrics(
-            width_inches=max_width_inches,
-            height_inches=h_est,
-            ascent_ratio=0.8,
-            descent_ratio=0.2,
-        )
+
+    w_est, h_est = estimate_text_size(
+        content, max(8, int(font_size_pt)), max_width_inches, font_family
+    )
+    return TextMetrics(
+        width_inches=max(w_est, 0.5),
+        height_inches=max(h_est, 0.3),
+        ascent_ratio=0.75,
+        descent_ratio=0.25,
+    )
 
 
 def _resolve_fill(raw: str | None, C: dict, resolve_color_fn) -> str:
@@ -169,7 +242,7 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
         ))
 
     for child in el:
-        tag = child.tag.split("}")[-1] if child.tag else ""
+        tag = child.tag.split("}")[-1] if isinstance(child.tag, str) else ""
         if tag != "tspan":
             tail = child.tail
             if tail and tail.strip():
@@ -238,6 +311,12 @@ def render_svg_text(
     C: dict,
     resolve_color_fn,
     features: set,
+    svg_w: float = 0.0,
+    svg_h: float = 0.0,
+    slide_w: float = 0.0,
+    slide_h: float = 0.0,
+    rect_x: float = 0.0,
+    rect_y: float = 0.0,
 ) -> None:
     features.add("text")
 
@@ -250,11 +329,15 @@ def render_svg_text(
     parent_fill = _resolve_fill(el.get("fill"), C, resolve_color_fn)
     anchor = el.get("text-anchor", "start")
     v_anchor = _resolve_baseline(el)
+    baseline_mode = _resolve_baseline_mode(el)
+
+    scale = slide_w / svg_w if svg_w > 0 and slide_w > 0 else 1.0
+    scaled_fs = max(parent_fs * scale * 72.0, 6.0)
 
     spans = _collect_spans(el, parent_fs, parent_ff, parent_fill, C, resolve_color_fn)
 
     has_tspan_children = any(
-        c.tag.split("}")[-1] == "tspan" for c in el
+        isinstance(c.tag, str) and c.tag.split("}")[-1] == "tspan" for c in el
     )
 
     if not has_tspan_children:
@@ -262,8 +345,8 @@ def render_svg_text(
         if not content:
             return
         _render_simple_text(
-            content, ix, iy, parent_fs, parent_ff, parent_fill,
-            anchor, v_anchor, el, slide, C, resolve_color_fn,
+            content, ix, iy, scaled_fs, parent_ff, parent_fill,
+            anchor, v_anchor, baseline_mode, el, slide, C, resolve_color_fn,
         )
         return
 
@@ -271,8 +354,8 @@ def render_svg_text(
         return
 
     _render_tspan_text(
-        spans, ix, iy, parent_fs, parent_ff, parent_fill,
-        anchor, v_anchor, el, slide, to_inches_fn, tf,
+        spans, ix, iy, scaled_fs, parent_ff, parent_fill,
+        anchor, v_anchor, baseline_mode, el, slide, to_inches_fn, tf,
         C, resolve_color_fn,
     )
 
@@ -280,26 +363,24 @@ def render_svg_text(
 def _render_simple_text(
     content: str, ix: float, iy: float,
     fs: float, ff: str, fill: str,
-    anchor: str, v_anchor, el, slide,
+    anchor: str, v_anchor, baseline_mode: str, el, slide,
     C: dict, resolve_color_fn,
 ) -> None:
     metrics = _measure_text(content, fs, ff, 8.0)
 
+    # Do not shrink font based on avail_w. SVG text is allowed to overflow viewBox.
+    # We only use avail_w as a hint for textbox width, but allow it to grow.
+    width = metrics.width_inches + 0.2
+
     if anchor == "middle":
-        left = ix - metrics.width_inches / 2
+        left = ix - width / 2
     elif anchor == "end":
-        left = ix - metrics.width_inches
+        left = ix - width
     else:
         left = ix - 0.1
 
-    if v_anchor == MSO_ANCHOR.TOP:
-        top = iy
-    elif v_anchor == MSO_ANCHOR.BOTTOM:
-        top = iy - metrics.height_inches
-    else:
-        top = iy - metrics.height_inches * metrics.ascent_ratio
+    top = _compute_text_top(iy, metrics, v_anchor, baseline_mode)
 
-    width = metrics.width_inches + 0.2
     height = metrics.height_inches * 1.5
 
     tb = slide.shapes.add_textbox(
@@ -328,7 +409,7 @@ def _render_simple_text(
 def _render_tspan_text(
     spans: list[_SpanSpec], ix: float, iy: float,
     parent_fs: float, parent_ff: str, parent_fill: str,
-    anchor: str, v_anchor, el, slide,
+    anchor: str, v_anchor, baseline_mode: str, el, slide,
     to_inches_fn, tf: Affine,
     C: dict, resolve_color_fn,
 ) -> None:
@@ -338,21 +419,19 @@ def _render_tspan_text(
     metrics = _measure_text(all_text, parent_fs, parent_ff, 8.0)
     line_h = metrics.height_inches * 1.3
 
+    width = metrics.width_inches + 0.4
+
     if anchor == "middle":
-        left = ix - metrics.width_inches / 2
+        left = ix - width / 2
     elif anchor == "end":
-        left = ix - metrics.width_inches
+        left = ix - width
     else:
         left = ix - 0.1
 
-    if v_anchor == MSO_ANCHOR.TOP:
-        top = iy
-    elif v_anchor == MSO_ANCHOR.BOTTOM:
-        top = iy - line_h * len(lines)
-    else:
-        top = iy - metrics.height_inches * metrics.ascent_ratio
+    top = _compute_text_top(iy, metrics, v_anchor, baseline_mode)
+    if baseline_mode == "descent":
+        top = top - line_h * (len(lines) - 1)
 
-    width = metrics.width_inches + 0.4
     height = line_h * len(lines) + 0.2
 
     tb = slide.shapes.add_textbox(

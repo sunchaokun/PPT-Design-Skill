@@ -17,11 +17,17 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from ppt_pro_max.renderer.svg_compiler._text import (
     _ANCHOR_MAP,
     _BASELINE_MAP,
+    _BASELINE_OFFSET,
     _FONT_MAP,
     _SpanSpec,
+    TextMetrics,
     _collect_spans,
+    _compute_text_top,
     _group_spans_into_lines,
+    _has_cjk,
+    _measure_text,
     _resolve_baseline,
+    _resolve_baseline_mode,
     _resolve_font_family,
     _parse_font_size,
     _parse_font_weight,
@@ -486,3 +492,119 @@ class TestTspanIntegration:
         assert len(slide.shapes) == 1
         tb = slide.shapes[0]
         assert len(tb.text_frame.paragraphs) == 1
+
+
+class TestBaselineOffsetMode:
+    """Baseline mode resolution — precise y-anchor for vertical positioning."""
+
+    def test_auto_maps_to_middle(self):
+        class FakeEl:
+            def get(self, _, default=None):
+                return "auto"
+        assert _resolve_baseline_mode(FakeEl()) == "middle"
+
+    def test_alphabetic_maps_to_baseline(self):
+        class FakeEl:
+            def get(self, _, default=None):
+                return "alphabetic"
+        assert _resolve_baseline_mode(FakeEl()) == "baseline"
+
+    def test_hanging_maps_to_top(self):
+        class FakeEl:
+            def get(self, _, default=None):
+                return "hanging"
+        assert _resolve_baseline_mode(FakeEl()) == "top"
+
+    def test_central_maps_to_middle(self):
+        class FakeEl:
+            def get(self, _, default=None):
+                return "central"
+        assert _resolve_baseline_mode(FakeEl()) == "middle"
+
+    def test_unknown_falls_back_to_middle(self):
+        class FakeEl:
+            def get(self, _, default=None):
+                return "xyz"
+        assert _resolve_baseline_mode(FakeEl()) == "middle"
+
+    def test_baseline_offset_map_size(self):
+        assert len(_BASELINE_OFFSET) >= 8
+
+
+class TestComputeTextTop:
+    """Precise textbox top computation from SVG y + baseline."""
+
+    METRICS = TextMetrics(
+        width_inches=0.5,
+        height_inches=0.3,
+        ascent_ratio=0.75,
+        descent_ratio=0.25,
+    )
+
+    def test_middle_centers_on_y(self):
+        # top = iy - (h*0.75)/2 = 1.0 - 0.1125
+        top = _compute_text_top(1.0, self.METRICS, MSO_ANCHOR.MIDDLE, "middle")
+        assert abs(top - (1.0 - 0.3 * 0.75 / 2)) < 1e-6
+
+    def test_alphabetic_baseline_y(self):
+        # top = iy - h*0.75 = 1.0 - 0.225
+        top = _compute_text_top(1.0, self.METRICS, MSO_ANCHOR.BOTTOM, "baseline")
+        assert abs(top - (1.0 - 0.3 * 0.75)) < 1e-6
+
+    def test_top_edge_y(self):
+        # top = iy
+        top = _compute_text_top(1.0, self.METRICS, MSO_ANCHOR.TOP, "top")
+        assert abs(top - 1.0) < 1e-6
+
+    def test_descent_y(self):
+        # top = iy - h*0.75 - h*0.25 = iy - h
+        top = _compute_text_top(1.0, self.METRICS, MSO_ANCHOR.BOTTOM, "descent")
+        assert abs(top - (1.0 - 0.3)) < 1e-6
+
+    def test_metrics_consistency(self):
+        # ascent + descent should equal height ratio ~1.0
+        assert abs(self.METRICS.ascent_ratio + self.METRICS.descent_ratio - 1.0) < 1e-6
+
+
+class TestHasCJK:
+    def test_cjk_hanzi(self):
+        assert _has_cjk("战略") is True
+
+    def test_cjk_fullwidth(self):
+        assert _has_cjk("Ａ") is True
+
+    def test_ascii_only(self):
+        assert _has_cjk("Hello") is False
+
+    def test_mixed(self):
+        assert _has_cjk("Hello世界") is True
+
+    def test_empty(self):
+        assert _has_cjk("") is False
+
+    def test_cjk_punctuation(self):
+        assert _has_cjk("、") is True
+
+
+class TestMeasureTextCJK:
+    def test_cjk_wider_than_ascii(self):
+        m_cjk = _measure_text("战略愿景", 14.0, "Arial", 8.0)
+        m_ascii = _measure_text("ABCD", 14.0, "Arial", 8.0)
+        assert m_cjk.width_inches > m_ascii.width_inches
+
+    def test_cjk_not_clamped_to_minimum(self):
+        m = _measure_text("核心竞争力构建", 14.0, "Arial", 8.0)
+        assert m.width_inches > 0.6
+
+    def test_cjk_height_reasonable(self):
+        m = _measure_text("战略愿景", 14.0, "Arial", 8.0)
+        assert m.height_inches >= 0.3
+
+    def test_ascii_uses_pil_or_fallback(self):
+        m = _measure_text("Hello", 14.0, "Arial", 8.0)
+        assert m.width_inches >= 0.5
+
+    def test_cjk_more_chars_wider(self):
+        m4 = _measure_text("战略", 14.0, "Arial", 8.0)
+        m6 = _measure_text("战略愿景", 14.0, "Arial", 8.0)
+        assert m6.width_inches > m4.width_inches

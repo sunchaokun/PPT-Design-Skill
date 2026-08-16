@@ -290,3 +290,73 @@ class TestRadialGradient:
         result = compiler.compile(svg, slide, (1, 1, 5, 5))
         assert result.shape_count > 0
         assert "gradient" in result.features
+
+
+class TestCollisionDetection:
+    """Text box overlap warnings from SVGCompiler."""
+
+    def test_overlapping_texts_emit_warning(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+          <text x="50" y="50" font-size="14" fill="#000">First text</text>
+          <text x="60" y="55" font-size="14" fill="#000">Overlapping text</text>
+        </svg>"""
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 6, 4))
+        assert any("overlap" in w for w in result.warnings), (
+            f"expected overlap warning, got: {result.warnings}"
+        )
+
+    def test_adjacent_texts_no_false_positive(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200">
+          <text x="50" y="50" font-size="14" fill="#000">Above</text>
+          <text x="50" y="80" font-size="14" fill="#000">Below</text>
+        </svg>"""
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 6, 4))
+        overlaps = [w for w in result.warnings if "overlap" in w]
+        assert len(overlaps) == 0, f"false positive overlap warning: {overlaps}"
+
+    def test_no_text_no_collision_check(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+          <rect x="0" y="0" width="100" height="100" fill="#FF0000"/>
+        </svg>"""
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count > 0
+        assert not any("overlap" in w for w in result.warnings)
+
+
+class TestLinearGradientPercentCoords:
+    def test_percent_x1_y1_x2_y2(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="gp" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF0000"/>
+              <stop offset="100%" stop-color="#0000FF"/>
+            </linearGradient>
+          </defs>
+          <rect x="10" y="10" width="180" height="180" fill="url(#gp)"/>
+        </svg>"""
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count >= 1
+        assert not any("error" in w.lower() for w in result.warnings)
+
+    def test_mixed_percent_and_float(self):
+        svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#00FF00"/>
+              <stop offset="1" stop-color="#0000FF"/>
+            </linearGradient>
+          </defs>
+          <rect x="10" y="10" width="180" height="180" fill="url(#gm)"/>
+        </svg>"""
+        _prs, slide = _make_slide()
+        compiler = SVGCompiler()
+        result = compiler.compile(svg, slide, (1, 1, 5, 5))
+        assert result.shape_count >= 1
