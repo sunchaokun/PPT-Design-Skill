@@ -71,3 +71,7 @@ component_library/
 # === Build output (generated artifacts, not tracked) ===
 output/
 
+
+# Scratch / probe explorations
+scratch/
+
