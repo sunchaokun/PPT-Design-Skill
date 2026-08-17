@@ -187,9 +187,9 @@ slide = page_header(...)                                          # atom
 
 | Gap | Location | Impact |
 |-----|----------|--------|
-| `_BASELINE_MAP` defined twice | `_text.py:42-51` and `_text.py:94-103` | Maintenance risk — future edits may only change one copy |
-| `tspan` `dx`/`dy` offsets — partial | `_text.py:_render_tspan_text` | `dx` approximated via spacer run with `spc`; `dy` triggers new line when >0.5 units, adjusts `space_before`. Intra-line `dy` not pixel-perfect |
-| `rect` `rx`/`ry` — implemented | `_compiler.py:_rounded_rect_cubics` | Rounded rectangles rendered as freeform with 4 cubic Bezier arcs per corner |
+| ~~`_BASELINE_MAP` defined twice~~ | Fixed — `_text.py:83` is `_BASELINE_MAP`, `_text.py:94` is `_BASELINE_OFFSET` (different dicts) | No longer a maintenance risk |
+| `tspan` `dx`/`dy` offsets — partial | `_text.py:_render_tspan_text` | `dx` approximated via spacer run with `spc`; `dy` triggers new line when `abs(dy) > parent_fs * 0.8` (line-height-aware), adjusts `space_before`. Intra-line `dy` (subscript/superscript) stays inline |
+| `rect` `rx`/`ry` — implemented | `_compiler.py:_rounded_rect_cubics` | Rounded rectangles rendered as freeform with `cubic_bezier_to` (4 cubic Bezier arcs per corner) |
 | Scaling modes — implemented | `_compiler.py:_to_inches`, `svg_chart(scaling=...)` | "contain" (default), "cover", "stretch" all supported |
 
 ### Installer & Skill Source

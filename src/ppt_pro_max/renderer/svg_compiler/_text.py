@@ -252,7 +252,7 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
         has_x = child.get("x") is not None
         has_y = child.get("y") is not None
         dy_val = float(child.get("dy", "0"))
-        is_new_line = has_x or has_y or abs(dy_val) > 0.5
+        is_new_line = has_x or has_y or abs(dy_val) > parent_fs * 0.8
 
         span = _SpanSpec(
             text=(child.text or "").strip(),

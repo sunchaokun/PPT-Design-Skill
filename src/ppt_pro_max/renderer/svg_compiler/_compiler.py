@@ -35,6 +35,22 @@ from ._text import render_svg_text as _render_svg_text
 SVG_NS = "http://www.w3.org/2000/svg"
 SVG = f"{{{SVG_NS}}}"
 
+
+@dataclass
+class _LineCmd:
+    x: float
+    y: float
+
+
+@dataclass
+class _CubicCmd:
+    x1: float; y1: float
+    x2: float; y2: float
+    x3: float; y3: float
+
+
+_PathCmd = _LineCmd | _CubicCmd
+
 # ─────────────────────────── color helpers ───────────────────────────
 
 _NAMED_COLORS: dict[str, str] = {
@@ -295,7 +311,16 @@ class SVGCompiler:
                 tf = Affine()
                 sub = self._svg_polygon(child, tf)
                 if sub:
-                    polys.extend(sub)
+                    for path_cmds in sub:
+                        flat: list[tuple[float, float]] = []
+                        for cmd in path_cmds:
+                            if isinstance(cmd, _LineCmd):
+                                flat.append((cmd.x, cmd.y))
+                            else:
+                                flat.append((cmd.x1, cmd.y1))
+                                flat.append((cmd.x2, cmd.y2))
+                                flat.append((cmd.x3, cmd.y3))
+                        polys.append(flat)
             self._clips[c.get("id")] = polys
 
         for el in root.iter():
@@ -312,7 +337,7 @@ class SVGCompiler:
 
     def _svg_polygon(
         self, el: etree._Element, tf: Affine
-    ) -> list[list[tuple[float, float]]]:
+    ) -> list[list[_PathCmd]]:
         if not isinstance(el.tag, str):
             return []
         tag = el.tag.split("}")[-1]
@@ -324,23 +349,21 @@ class SVGCompiler:
             rx = float(el.get("rx", 0))
             ry = float(el.get("ry", 0))
             if rx > 0 or ry > 0:
-                rx = min(rx, w / 2) if rx > 0 else (ry if ry > 0 else 0)
-                ry = min(ry, h / 2) if ry > 0 else (rx if rx > 0 else 0)
-                pts = self._rounded_rect_cubics(x, y, w, h, rx, ry)
-            else:
-                pts = [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
+                rx = min(rx, w / 2) if rx > 0 else max(0, ry)
+                ry = min(ry, h / 2) if ry > 0 else max(0, rx)
+                return [self._cubics_to_path(tf, self._rounded_rect_cubics(x, y, w, h, rx, ry))]
+            pts = [(x, y), (x + w, y), (x + w, y + h), (x, y + h)]
         elif tag == "circle":
             cx = float(el.get("cx", 0))
             cy = float(el.get("cy", 0))
             r = float(el.get("r", 0))
-            # Use 4 cubic Bezier arcs (each π/2) for circles — edit-point friendly
-            pts = self._circle_cubics(cx, cy, r)
+            return [self._cubics_to_path(tf, self._circle_cubics(cx, cy, r))]
         elif tag == "ellipse":
             cx = float(el.get("cx", 0))
             cy = float(el.get("cy", 0))
             rx = float(el.get("rx", 0))
             ry = float(el.get("ry", 0))
-            pts = self._ellipse_cubics(cx, cy, rx, ry)
+            return [self._cubics_to_path(tf, self._ellipse_cubics(cx, cy, rx, ry))]
         elif tag in ("polygon", "polyline"):
             flat = [float(v) for v in el.get("points", "").replace(",", " ").split()]
             pts = list(zip(flat[0::2], flat[1::2]))
@@ -350,19 +373,57 @@ class SVGCompiler:
                 (float(el.get("x2")), float(el.get("y2"))),
             ]
         elif tag == "path":
-            cmds, _ = parse_path(el.get("d", ""))
-            subs = to_beziers(cmds)
-            out: list[list[tuple[float, float]]] = []
-            for sub in subs:
-                flattened: list[tuple[float, float]] = []
-                for seg in sub:
-                    flattened.extend(self._flatten_cubic(seg, n=6))
-                if flattened:
-                    out.append([tf.apply(px, py) for px, py in flattened])
-            return out
+            return self._path_to_cmds(el, tf)
         else:
             return []
-        return [[tf.apply(px, py) for px, py in pts]]
+        path: list[_PathCmd] = []
+        for px, py in pts:
+            tx, ty = tf.apply(px, py)
+            path.append(_LineCmd(tx, ty))
+        return [path]
+
+    def _cubics_to_path(
+        self, tf: Affine, pts: list[tuple[float, float]]
+    ) -> list[_PathCmd]:
+        """Convert (start, c1, c2, end)×N flat list to _PathCmd list."""
+        path: list[_PathCmd] = []
+        i = 0
+        while i < len(pts):
+            if i % 4 == 0 and i + 3 < len(pts):
+                sx, sy = tf.apply(pts[i][0], pts[i][1])
+                c1x, c1y = tf.apply(pts[i + 1][0], pts[i + 1][1])
+                c2x, c2y = tf.apply(pts[i + 2][0], pts[i + 2][1])
+                ex, ey = tf.apply(pts[i + 3][0], pts[i + 3][1])
+                if not path:
+                    path.append(_LineCmd(sx, sy))
+                path.append(_CubicCmd(c1x, c1y, c2x, c2y, ex, ey))
+                i += 4
+            else:
+                tx, ty = tf.apply(pts[i][0], pts[i][1])
+                path.append(_LineCmd(tx, ty))
+                i += 1
+        return path
+
+    def _path_to_cmds(
+        self, el: etree._Element, tf: Affine
+    ) -> list[list[_PathCmd]]:
+        cmds, _ = parse_path(el.get("d", ""))
+        subs = to_beziers(cmds)
+        out: list[list[_PathCmd]] = []
+        for sub in subs:
+            if not sub:
+                continue
+            start = sub[0][0]
+            sx, sy = tf.apply(start[0], start[1])
+            path: list[_PathCmd] = [_LineCmd(sx, sy)]
+            for seg in sub:
+                (_x0, _y0), (x1, y1), (x2, y2), (x3, y3) = seg
+                c1x, c1y = tf.apply(x1, y1)
+                c2x, c2y = tf.apply(x2, y2)
+                ex, ey = tf.apply(x3, y3)
+                path.append(_CubicCmd(c1x, c1y, c2x, c2y, ex, ey))
+            out.append(path)
+        return out
 
     @staticmethod
     def _rounded_rect_cubics(
@@ -558,10 +619,15 @@ class SVGCompiler:
         if not subpaths:
             return
 
-        # collect all points for bbox
         all_pts: list[tuple[float, float]] = []
         for sub in subpaths:
-            all_pts.extend(sub)
+            for cmd in sub:
+                if isinstance(cmd, _LineCmd):
+                    all_pts.append((cmd.x, cmd.y))
+                else:
+                    all_pts.append((cmd.x1, cmd.y1))
+                    all_pts.append((cmd.x2, cmd.y2))
+                    all_pts.append((cmd.x3, cmd.y3))
         if not all_pts:
             return
 
@@ -578,10 +644,19 @@ class SVGCompiler:
         ih = iy1 - iy0
 
         # rebuild subpaths in slide inches, local coords
-        local: list[list[tuple[float, float]]] = []
+        local: list[list[_PathCmd]] = []
         for sub in subpaths:
-            in_pts = [self._to_inches(px, py) for px, py in sub]
-            local.append([(px - ix0, py - iy0) for px, py in in_pts])
+            local_sub: list[_PathCmd] = []
+            for cmd in sub:
+                if isinstance(cmd, _LineCmd):
+                    px, py = self._to_inches(cmd.x, cmd.y)
+                    local_sub.append(_LineCmd(px - ix0, py - iy0))
+                else:
+                    p1x, p1y = self._to_inches(cmd.x1, cmd.y1)
+                    p2x, p2y = self._to_inches(cmd.x2, cmd.y2)
+                    p3x, p3y = self._to_inches(cmd.x3, cmd.y3)
+                    local_sub.append(_CubicCmd(p1x - ix0, p1y - iy0, p2x - ix0, p2y - iy0, p3x - ix0, p3y - iy0))
+            local.append(local_sub)
 
         # clip polygons in slide inches, local coords (relative to shape bbox)
         clip_local: list[list[tuple[float, float]]] = []
@@ -592,8 +667,19 @@ class SVGCompiler:
         needs_bool = bool(clip_stack) or el.get("fill-rule") == "evenodd"
 
         if needs_bool:
+            flat_local: list[list[tuple[float, float]]] = []
+            for sub in local:
+                flat: list[tuple[float, float]] = []
+                for cmd in sub:
+                    if isinstance(cmd, _LineCmd):
+                        flat.append((cmd.x, cmd.y))
+                    else:
+                        flat.extend(self._flatten_cubic(
+                            ((0, 0), (cmd.x1, cmd.y1), (cmd.x2, cmd.y2), (cmd.x3, cmd.y3)), n=6
+                        )[1:])
+                flat_local.append(flat)
             self._render_bool(
-                local, clip_local, ix0, iy0, iw, ih,
+                flat_local, clip_local, ix0, iy0, iw, ih,
                 fkind, fval, fa, skind, sval,
                 stroke_style,
             )
@@ -704,7 +790,7 @@ class SVGCompiler:
 
     def _add_freeform(
         self,
-        local_subs: list[list[tuple[float, float]]],
+        local_subs: list[list[_PathCmd]],
         ix0: float, iy0: float, iw: float, ih: float,
         fill: str | None,
         alpha: int,
@@ -713,11 +799,19 @@ class SVGCompiler:
     ) -> object:
         fb = FreeformBuilder()
         for sub in local_subs:
-            if sub:
-                fb.move_to(sub[0][0], sub[0][1])
-                for pt in sub[1:]:
-                    fb.line_to(pt[0], pt[1])
-                fb.close()
+            if not sub:
+                continue
+            first = sub[0]
+            if isinstance(first, _LineCmd):
+                fb.move_to(first.x, first.y)
+            else:
+                fb.move_to(first.x1, first.y1)
+            for cmd in sub[1:]:
+                if isinstance(cmd, _LineCmd):
+                    fb.line_to(cmd.x, cmd.y)
+                else:
+                    fb.cubic_bezier_to(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x3, cmd.y3)
+            fb.close()
         elem = fb.build(
             self._slide, ix0, iy0, iw, ih,
             fill_color=fill, line_color=stroke,
@@ -754,7 +848,7 @@ class SVGCompiler:
 
     def _render_text(self, el: etree._Element, tf: Affine) -> None:
         # scale for font-size: svg region size / viewBox size
-        lx, ly, rw, rh = self._rect
+        _lx, _ly, rw, rh = self._rect
         svg_w, svg_h = self._vb[2], self._vb[3]
         _render_svg_text(
             el=el,
@@ -811,6 +905,15 @@ class SVGCompiler:
                 dx = min(ax1, bx1) - max(ax0, bx0)
                 dy = min(ay1, by1) - max(ay0, by0)
                 if dx > tol and dy > tol:
+                    h1 = ay1 - ay0
+                    h2 = by1 - by0
+                    # Same-left stacks (title/subtitle/badge) where one box
+                    # is vertically offset from the other by >= 0.1" — these
+                    # are intentional vertical layouts, not real overlaps.
+                    if abs(ax0 - bx0) < 0.4:
+                        top_offset = abs(ay0 - by0) if h1 <= h2 else abs(by0 - ay0)
+                        if top_offset >= 0.1:
+                            continue
                     result.warnings.append(
                         f"text box overlap detected: "
                         f"rect1=({ax0:.2f},{ay0:.2f},{ax1:.2f},{ay1:.2f}) "
