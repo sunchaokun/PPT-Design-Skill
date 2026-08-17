@@ -194,14 +194,16 @@ class Spacing:
 
 
 TYPOGRAPHY = {
-    'mckinsey': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=8),
-    'cyberpunk': Typography(hero=48, h1=28, h2=18, h3=14, body=11, caption=9, micro=7),
+    'mckinsey': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=9),
+    'cyberpunk': Typography(hero=48, h1=28, h2=18, h3=14, body=11, caption=10, micro=9),
     'creative': Typography(hero=44, h1=28, h2=22, h3=18, body=13, caption=11, micro=9),
-    'professional': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=8),
-    'minimal': Typography(hero=40, h1=24, h2=18, h3=14, body=11, caption=9, micro=7),
+    'professional': Typography(hero=44, h1=28, h2=20, h3=16, body=12, caption=10, micro=9),
+    'minimal': Typography(hero=40, h1=24, h2=18, h3=14, body=11, caption=10, micro=9),
     'cjk_mckinsey': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=11),
     'cjk_professional': Typography(hero=44, h1=30, h2=22, h3=18, body=14, caption=12, micro=11),
     'cjk_creative': Typography(hero=44, h1=30, h2=24, h3=20, body=15, caption=13, micro=11),
+    'cjk_cyberpunk': Typography(hero=48, h1=30, h2=20, h3=16, body=13, caption=12, micro=11),
+    'cjk_minimal': Typography(hero=40, h1=26, h2=20, h3=16, body=13, caption=12, micro=11),
 }
 
 SPACING = {
@@ -717,18 +719,24 @@ def page_header(slide, title, subtitle='', C=None, left=0.65, width=None,
     cw = width or (13.333 - 2 * left)
     t = typo or TYPOGRAPHY.get('mckinsey')
     sp = spacing or SPACING.get('mckinsey')
-    text(slide, left, 0.45, cw, 0.5, title,
+    title_y = sp.page_margin * 0.7
+    text(slide, left, title_y, cw, 0.5, title,
          font_size=t.h1, color=C.get('text_dark', '#000000'), bold=True,
          font_name=C.get('font_heading'), C=C)
     if subtitle:
-        text(slide, left, 0.95, cw, 0.25, subtitle,
+        subtitle_y = title_y + 0.5
+        text(slide, left, subtitle_y, cw, 0.25, subtitle,
              font_size=t.caption, color=C.get('text_muted', '#666666'),
              font_name=C.get('font_body'), C=C)
-    rect(slide, left, 1.25, cw, 0.004, C.get('divider', '#CCCCCC'))
+        divider_y = subtitle_y + 0.3
+    else:
+        divider_y = title_y + 0.5
+    divider_h = 0.015
+    rect(slide, left, divider_y, cw, divider_h, C.get('divider', '#CCCCCC'))
 
 
 def kpi_card(slide, left, top, width, height, number, label,
-             trend='', trend_up=True, C=None, typo=None, grouped=True):
+             trend='', trend_up=True, C=None, typo=None, spacing=None, grouped=True):
     C = C or {}
     t = typo or TYPOGRAPHY.get('mckinsey')
     pad = 0.2
@@ -1415,17 +1423,24 @@ def code_block(slide, left, top, width, height, lines, language='python',
         bg.line.fill.background()
 
         badge_w = len(language) * 0.12 + 0.3
+        badge_color = C.get('accent', '#4CAF50')
         badge = _add_shape(gs, MSO_SHAPE.ROUNDED_RECTANGLE,
                            Inches(left + 0.1), Inches(top - 0.28),
                            Inches(badge_w), Inches(0.25))
         badge.fill.solid()
-        badge.fill.fore_color.rgb = _rgb(C.get('accent', '#4CAF50'))
+        badge.fill.fore_color.rgb = _rgb(badge_color)
         badge.line.fill.background()
 
         badge_txt = gs.add_textbox(Inches(left + 0.15), Inches(top - 0.28),
                                    Inches(badge_w - 0.1), Inches(0.25))
         p = badge_txt.text_frame.paragraphs[0]
-        _set_run(p, language, font_size=t.micro, color=C.get('white', '#FFFFFF'),
+        min_ratio = 3.0 if t.micro >= 18 else 4.5
+        w_ratio = check_contrast(badge_color, '#FFFFFF', min_ratio)[0]
+        if w_ratio >= min_ratio:
+            badge_fg = '#FFFFFF'
+        else:
+            badge_fg = C.get('text_dark', '#1A1A1A')
+        _set_run(p, language, font_size=t.micro, color=badge_fg,
                  bold=True, font_name=C.get('font_body'), C=C)
 
         code_box = gs.add_textbox(Inches(left + 0.2), Inches(top + 0.15),
@@ -1445,10 +1460,16 @@ def code_block(slide, left, top, width, height, lines, language='python',
         return group
     else:
         rect(slide, left, top, width, height, '#1E1E1E')
+        badge_color = C.get('accent', '#4CAF50')
         rrect(slide, left, top - 0.28, len(language) * 0.12 + 0.3, 0.25,
-              C.get('accent', '#4CAF50'), C=C)
+              badge_color, C=C)
+        min_ratio = 3.0 if t.micro >= 18 else 4.5
+        if check_contrast(badge_color, '#FFFFFF', min_ratio)[0] >= min_ratio:
+            badge_fg = '#FFFFFF'
+        else:
+            badge_fg = C.get('text_dark', '#1A1A1A')
         text(slide, left + 0.05, top - 0.28, len(language) * 0.12 + 0.2, 0.25,
-             language, font_size=t.micro, color=C.get('white', '#FFFFFF'),
+             language, font_size=t.micro, color=badge_fg,
              bold=True, font_name='Consolas', C=C)
         multiline(slide, left + 0.2, top + 0.15, width - 0.4, height - 0.3,
                   lines, font_size=t.body, color='#D4D4D4',
@@ -1559,7 +1580,7 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
         title_box = gs.add_textbox(Inches(1.2), Inches(2.5),
                                    Inches(10.0), Inches(1.5))
         p = title_box.text_frame.paragraphs[0]
-        _set_run(p, title, font_size=t.h1 + 12, color=C.get('white', '#FFFFFF'),
+        _set_run(p, title, font_size=t.hero, color=C.get('white', '#FFFFFF'),
                  bold=True, font_name=C.get('font_heading'), C=C)
 
         if subtitle:
@@ -1573,7 +1594,7 @@ def cta_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
     else:
         rect(slide, 0, 0, 13.333, 7.5, C.get('primary'))
         text(slide, 1.2, 2.5, 10.0, 1.5, title,
-             font_size=t.h1 + 12, color=C.get('white', '#FFFFFF'), bold=True,
+             font_size=t.hero, color=C.get('white', '#FFFFFF'), bold=True,
              font_name=C.get('font_heading'), C=C)
         if subtitle:
          text(slide, 1.2, 4.0, 10.0, 0.5, subtitle,

@@ -27,7 +27,7 @@ C = {
     'bg_tint': '#F1F5F9',
     'text_dark': '#1A2B3C',
     'text_body': '#37474F',
-    'text_muted': '#78909C',
+    'text_muted': '#64748B',  # AAA-safe muted on white (WCAG AA 4.5:1 = 4.80)
     'divider': '#E0E8F0',
     'font_heading': 'Georgia',
     'font_body': 'Calibri',
@@ -176,7 +176,7 @@ comparison_bars(s, 2.0, 2.2, [
 
 # 图例
 text(s, 3.2, 5.2, 3.0, 0.3, '■ 改造前', font_size=12, color='primary', C=C)
-text(s, 5.2, 5.2, 3.0, 0.3, '■ 改造后', font_size=12, color='accent', C=C)
+text(s, 5.2, 5.2, 3.0, 0.3, '■ 改造后', font_size=12, color='text_body', C=C)
 
 text(s, 8.9, 2.2, 3.8, 0.5, '客户案例', font_size=t.h3, bold=True,
      color='primary', C=C)

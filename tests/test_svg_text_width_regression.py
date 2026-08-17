@@ -127,7 +127,7 @@ class TestTextWidthConstraint:
 class TestMinFontSizeClamp:
     """Scaled font-size must never go below 6pt."""
 
-    def test_extreme_scale_clamps_to_6pt(self):
+    def test_extreme_scale_clamps_to_6pt(self, tmp_path):
         svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10000 10000">
           <text x="5000" y="5000" text-anchor="middle" font-size="8" fill="#000000">Tiny</text>
         </svg>"""
@@ -136,7 +136,7 @@ class TestMinFontSizeClamp:
         result = compiler.compile(svg, slide, (1, 1, 1, 1))
         assert result.shape_count > 0
 
-        pptx_path = "output/test_min_font.pptx"
+        pptx_path = str(tmp_path / "test_min_font.pptx")
         prs.save(pptx_path)
 
         import zipfile

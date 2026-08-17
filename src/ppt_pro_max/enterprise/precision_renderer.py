@@ -674,7 +674,27 @@ class PrecisionRenderer:
                                         page_index=page_index, total_pages=total_pages,
                                         decoration=deco_cfg)
 
+            sidebar_side = (variant or {}).get("sidebar_side")
+            sidebar_width = (variant or {}).get("sidebar_width", 0)
+            if sidebar_side and sidebar_width:
+                if sidebar_side == "left":
+                    margin_left = max(margin_left, sidebar_width + 0.6)
+
             cx, cy, cw, ch = self._content_rect(margin_left, has_subtitle=bool(subtitle))
+
+            if sidebar_side == "right" and sidebar_width:
+                cw = max(4.0, SLIDE_WIDTH - sidebar_width - margin_left - LAYOUT_GRID["margin_right"] - 0.6)
+
+            has_content_image = bool(image_path and os.path.isfile(image_path))
+            if has_content_image:
+                img_w = min(4.0, cw * 0.34)
+                content_cw = cw - img_w - 0.4
+            else:
+                img_w = 0
+                content_cw = cw
+
+            if has_content_image:
+                self._render_content_image(slide, image_path, cx, cy, cw, ch)
 
             if title:
                 self._render_title_band(slide, title, subtitle, margin_left, title_align, decoration_style)
@@ -683,23 +703,20 @@ class PrecisionRenderer:
             if blocks:
                 self._render_blocks(slide, blocks)
             elif cards:
-                self._render_cards(slide, cards, cx, cy, cw, ch)
+                self._render_cards(slide, cards, cx, cy, content_cw, ch)
             elif diagram_type and diagram_data:
-                self._render_diagram_on_slide(slide, diagram_type, diagram_data, cx, cy, cw, ch)
+                self._render_diagram_on_slide(slide, diagram_type, diagram_data, cx, cy, content_cw, ch)
             elif svg_diagram:
-                self._render_svg_diagram_on_slide(slide, svg_diagram, cx, cy, cw, ch)
+                self._render_svg_diagram_on_slide(slide, svg_diagram, cx, cy, content_cw, ch)
             elif code:
-                self._render_code_on_slide(slide, code, cx, cy, cw, ch)
+                self._render_code_on_slide(slide, code, cx, cy, content_cw, ch)
             elif exercise:
-                self._render_exercise_on_slide(slide, exercise, cx, cy, cw, ch)
+                self._render_exercise_on_slide(slide, exercise, cx, cy, content_cw, ch)
             elif bullets:
-                self._render_bullets_on_slide(slide, bullets, cx, cy, cw, ch, links=links)
-
-            if image_path and os.path.isfile(image_path):
-                self._render_content_image(slide, image_path, cx, cy, cw, ch)
+                self._render_bullets_on_slide(slide, bullets, cx, cy, content_cw, ch, links=links)
 
             if chart:
-                self._render_chart_on_slide(slide, chart, cx, cy, cw, ch)
+                self._render_chart_on_slide(slide, chart, cx, cy, content_cw if has_content_image else cw, ch)
 
             self._render_footer(slide, page_index, total_pages)
 
@@ -767,16 +784,79 @@ class PrecisionRenderer:
                 self.add_text(slide, subtitle, 0.75, 1.5, SLIDE_WIDTH - 1.5, 0.5,
                               font=self._font_b(), size=14, color_role=main_role, align="left")
             return
+
+        # ── Tier 4 — Hero/CTA 自适应垂直布局 ──
+        # Canvas: 13.333×7.5". Use 3-zone vertical distribution:
+        #   top padding (10%), title block (28-32%), subtitle (8-12%),
+        #   bullets (16-22%), bottom padding (15-25%)
+        accent = self._c("accent", self._c("primary", "#2563EB"))
+        SLIDE_TOP_Y    = 0.55              # top safe margin (above title)
+        SLIDE_BOTTOM_Y = SLIDE_HEIGHT - 0.55   # bottom safe margin
+        USABLE_H       = SLIDE_BOTTOM_Y - SLIDE_TOP_Y   # ≈ 6.4
+
+        # Component heights — adapt to presence/absence
+        components = []
         if title:
-            self.add_text(slide, title, 1.5, 2.35, SLIDE_WIDTH - 3.0, 1.6,
-                          size=44, color_role=main_role, bold=True, align="center")
+            components.append(("title", 1.75))     # baseline 1.75" tall
         if subtitle:
-            self.add_text(slide, subtitle, 2.0, 3.85, SLIDE_WIDTH - 4.0, 0.9,
-                          font=self._font_b(), size=18, color_role=main_role, align="center")
+            components.append(("subtitle", 0.85))
         if bullets:
-            bullet_text = "  \u2022  ".join(bullets[:4])
-            self.add_text(slide, bullet_text, 2.0, 4.75, SLIDE_WIDTH - 4.0, 0.5,
-                          font=self._font_b(), size=13, color_role="muted-foreground", align="center")
+            n = min(4, len(bullets))
+            components.append(("bullets", 0.42 * n))
+
+        if not components:
+            return
+
+        # Reserve ratiometric heights, then compute y positions
+        total_req = sum(h for _, h in components)
+        if total_req < USABLE_H:
+            extra = USABLE_H - total_req
+            # Distribute 60% of extra as padding between components
+            pad_between = (extra * 0.6) / max(1, len(components) - 1) if len(components) > 1 else 0
+            bottom_pad = (extra * 0.4) / 2  # split 20% to top, 20% to bottom
+            top_pad = bottom_pad
+        else:
+            # Doesn't fit — compress
+            scale = USABLE_H / total_req
+            components = [(name, h * scale) for name, h in components]
+            pad_between = 0.15
+            top_pad = 0.05
+            bottom_pad = 0.0
+
+        # Compute absolute y for each component
+        y = SLIDE_TOP_Y + top_pad
+        positions = []
+        for name, h in components:
+            positions.append((name, y, h))
+            y += h + pad_between
+
+        # Render
+        for name, py, ph in positions:
+            if name == "title":
+                tx = 1.5
+                tw = SLIDE_WIDTH - 3.0
+                self.add_text(slide, title, tx, py, tw, ph,
+                              size=44, color_role=main_role, bold=True, align="center")
+            elif name == "subtitle":
+                sx = 2.0
+                sw = SLIDE_WIDTH - 4.0
+                self.add_text(slide, subtitle, sx, py, sw, ph,
+                              font=self._font_b(), size=18, color_role=main_role, align="center")
+            elif name == "bullets":
+                n = min(4, len(bullets))
+                bullet_lines = [b for b in bullets[:n]]
+                bx = 2.5
+                bw = SLIDE_WIDTH - 5.0
+                size = 14
+                # If only 1-2 bullets, make them feel weighty by adding divider
+                if n <= 2 and ph > 1.0:
+                    # Add accent divider above bullets (≤2 bullets case)
+                    self.add_rect(slide, (SLIDE_WIDTH - 1.2) / 2, py,
+                                  1.2, 0.04, fill_hex=accent)
+                    py += 0.18
+                self.add_multiline(slide, bullet_lines, bx, py, bw,
+                                   ph, size=size, color_role="muted-foreground",
+                                   spacing=8, align="center")
 
     def _render_standalone_links(self, slide, links: list | None) -> None:
         """Render standalone link buttons (text + url + position) for hero/cta pages.
@@ -967,6 +1047,27 @@ class PrecisionRenderer:
                                  links: list | None = None) -> None:
         accent = self._c("accent", self._c("primary", "#2563EB"))
         links = links or []
+
+        # ── Tier 4 — Auto-stack: split content area into zones ──
+        # If bullets are few (≤4), use a single column with generous sizing
+        # and decorative fill below the last bullet to occupy the vertical space.
+        if len(bullets) <= 4:
+            # Use full width, single column
+            size = self._fit_bullet_size(bullets, cw, ch, base=16, target_fill=0.75, lo=14, hi=24)
+            tb = self._render_bullet_column(slide, bullets[:8], cx, cy, cw, ch, accent,
+                                            links=links, link_base_index=0,
+                                            override_size=size)
+            # After rendering, check if bottom of content area is near-empty
+            # and fill with a subtle decorative element
+            total_h = self._estimate_bullet_height(bullets, cw, size, max(11, int(size * 0.9)))
+            bottom_gap = ch - total_h
+            if bottom_gap > 0.6:
+                # Place a subtle accent separator at ~70% of the content area
+                sep_y = cy + total_h + 0.2
+                self.add_rect(slide, cx + 1.0, sep_y, cw - 2.0, 0.03,
+                              fill_hex=accent)
+            return
+
         if len(bullets) >= 6:
             mid = (len(bullets) + 1) // 2
             col_gap = 0.6
@@ -1008,12 +1109,20 @@ class PrecisionRenderer:
     def _render_bullet_column(self, slide, bullets: list, x: float, y: float,
                               w: float, h: float, accent: str,
                               links: list | None = None,
-                              link_base_index: int = 0) -> None:
+                              link_base_index: int = 0,
+                              override_size: int | None = None) -> object:
         from ppt_pro_max.renderer.theme_mapper import get_cjk_companion
-        size = self._fit_bullet_size(bullets, w, h)
+        size = override_size if override_size else self._fit_bullet_size(bullets, w, h)
         spacing = max(11, int(size * 0.9))
         total_h = self._estimate_bullet_height(bullets, w, size, spacing)
+        # ── Tier 4 — clamp textbox to available height (never overflow slide) ──
+        # Older code sized the textbox to full `h` and centered it, which pushed
+        # the bottom edge past SLIDE_HEIGHT when total_h was small.
         top = y + max(0.0, (h - total_h) / 2)
+        box_h = max(total_h, 0.4)
+        max_top = SLIDE_HEIGHT - 0.4 - box_h
+        if top > max_top:
+            top = max_top
 
         # map bullet_index (global) → url
         link_map: dict[int, str] = {}
@@ -1021,7 +1130,7 @@ class PrecisionRenderer:
             if lnk.get("bullet_index") is not None and lnk.get("url"):
                 link_map[int(lnk["bullet_index"])] = lnk["url"]
 
-        tb = slide.shapes.add_textbox(Inches(x), Inches(top), Inches(w), Inches(h))
+        tb = slide.shapes.add_textbox(Inches(x), Inches(top), Inches(w), Inches(box_h))
         tf = tb.text_frame
         tf.word_wrap = True
         body_font = self._font_b()
@@ -1164,12 +1273,13 @@ class PrecisionRenderer:
         if language:
             badge_text = language.upper()
             badge_w = len(badge_text) * 0.1 + 0.3
-            self.add_rounded_rect(slide, cx + 0.15, cy - 0.18, badge_w, 0.3,
+            badge_y = cy + 0.15
+            self.add_rounded_rect(slide, cx + 0.15, badge_y, badge_w, 0.3,
                                   fill_role="primary", corner_radius="sm")
-            self.add_text(slide, badge_text, cx + 0.25, cy - 0.16, badge_w - 0.2, 0.26,
+            self.add_text(slide, badge_text, cx + 0.25, badge_y + 0.02, badge_w - 0.2, 0.26,
                           size=11, color_role="on-primary", bold=True)
             code_lines = [f"  {line}" for line in lines[:30]]
-            self.add_multiline(slide, code_lines, cx + 0.35, cy + 0.35, cw - 0.7, ch - 0.6,
+            self.add_multiline(slide, code_lines, cx + 0.35, cy + 0.6, cw - 0.7, ch - 0.7,
                                font="Consolas", size=12, color_role="muted-foreground", spacing=5)
         else:
             code_lines = [f"  {line}" for line in lines[:30]]
@@ -1185,15 +1295,16 @@ class PrecisionRenderer:
         duration = exercise_data.get("duration", "") if isinstance(exercise_data, dict) else ""
         steps = exercise_data.get("steps", []) if isinstance(exercise_data, dict) else []
         badge_text = f"Exercise {duration}" if duration else "Exercise"
-        self.add_badge(slide, badge_text, cx, cy - 0.15, variant="solid")
-        y = cy + 0.35
+        self.add_badge(slide, badge_text, cx, cy + 0.15, variant="solid")
+        y = cy + 0.55
         if instructions:
             self.add_text(slide, instructions, cx, y, cw, 0.7,
                           font=self._font_b(), size=15, color_role="muted-foreground")
             y += 0.9
         if steps:
             step_lines = [f"{i + 1}.  {s}" for i, s in enumerate(steps)]
-            self.add_multiline(slide, step_lines, cx, y, cw, ch - (y - cy),
+            steps_h = max(0.5, ch - (y - cy))
+            self.add_multiline(slide, step_lines, cx, y, cw, steps_h,
                                size=16, color_role="foreground", spacing=10)
 
     def _render_chart_on_slide(self, slide, chart_config: dict,
@@ -1209,7 +1320,7 @@ class PrecisionRenderer:
                 brand_colors = self._brand.colors
             if self._brand.fonts:
                 brand_fonts = self._brand.fonts
-        position = {"x": cx, "y": cy, "width": cw, "height": ch - 0.15}
+        position = {"x": cx, "y": cy, "width": cw, "height": ch}
         builder = ChartBuilder()
         try:
             builder.build(slide, chart_config, position=position,
