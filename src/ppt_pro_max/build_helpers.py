@@ -2034,7 +2034,6 @@ def bool_clipped_card(slide, x, y, w, h, clip_corners, clip_size=0.3,
         clips.append(Polygon([(x + w, y + h - clip_size), (x + w, y + h), (x + w - clip_size, y + h)]))
     if not clips:
         return rrect(slide, x, y, w, h, fill or '#1D78FA', line, C)
-    from ppt_pro_max.renderer.boolean_shapes import Polygon as _Poly, bool_union
     all_clips = bool_union(*clips)
     geom = bool_subtract(base, all_clips)
     return bool_shape(geom, slide, x, y, w, h, fill=fill or '#1D78FA',

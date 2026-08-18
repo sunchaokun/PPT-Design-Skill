@@ -44,9 +44,12 @@ class _LineCmd:
 
 @dataclass
 class _CubicCmd:
-    x1: float; y1: float
-    x2: float; y2: float
-    x3: float; y3: float
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    x3: float
+    y3: float
 
 
 _PathCmd = _LineCmd | _CubicCmd

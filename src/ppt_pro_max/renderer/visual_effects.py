@@ -334,12 +334,18 @@ def apply_gradient(shape, color1: str, color2: str, gradient_type: str = "linear
     grad.apply(shape)
 
 
-def apply_shadow(shape, blur_pt: float = 6.0, distance_pt: float = 3.0, direction_deg: float = 90.0, color: str = "#000000", alpha_pct: int = 25) -> None:
-    shadow = Shadow(blur_pt=blur_pt, distance_pt=distance_pt, direction_deg=direction_deg, color=color, alpha_pct=alpha_pct)
+def apply_shadow(shape, blur_pt: float = 6.0, distance_pt: float = 3.0,
+                 direction_deg: float = 90.0, color: str = "#000000",
+                 alpha_pct: int = 25) -> None:
+    shadow = Shadow(blur_pt=blur_pt, distance_pt=distance_pt,
+                    direction_deg=direction_deg, color=color, alpha_pct=alpha_pct)
     shadow.apply(shape)
 
 
-def apply_scheme_shadow(shape, scheme_color: str = "accent1", blur_pt: float = 47.0, distance_pt: float = 21.0, direction_deg: float = 90.0, alpha_pct: int = 26, sx_pct: int | None = None, sy_pct: int | None = None) -> None:
+def apply_scheme_shadow(shape, scheme_color: str = "accent1",
+                        blur_pt: float = 47.0, distance_pt: float = 21.0,
+                        direction_deg: float = 90.0, alpha_pct: int = 26,
+                        sx_pct: int | None = None, sy_pct: int | None = None) -> None:
     shadow = Shadow(
         blur_pt=blur_pt, distance_pt=distance_pt, direction_deg=direction_deg,
         alpha_pct=alpha_pct, scheme_color=scheme_color, sx_pct=sx_pct, sy_pct=sy_pct,
