@@ -82,6 +82,7 @@ def _infer_viewbox(root: etree._Element) -> None:
 
 
 def _strip_unwanted(root: etree._Element) -> None:
+    """Remove <script> and <style> elements."""
     for tag in _STRIP_ELEMENTS:
         for el in root.findall(f".//{SVG}{tag}"):
             if el.getparent() is not None:

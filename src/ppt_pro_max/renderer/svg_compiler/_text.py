@@ -218,8 +218,13 @@ def _parse_font_weight(raw: str | None) -> bool:
 
 
 def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
-                   C: dict, resolve_color_fn) -> list[_SpanSpec]:
+                    C: dict, resolve_color_fn,
+                    parent_bold: bool = False, parent_italic: bool = False) -> list[_SpanSpec]:
     spans: list[_SpanSpec] = []
+
+    # Check parent element's own font-weight/font-style for direct text content
+    parent_bold = parent_bold or _parse_font_weight(el.get("font-weight"))
+    parent_italic = parent_italic or el.get("font-style") == "italic"
 
     direct_text = el.text
     if direct_text and direct_text.strip():
@@ -228,6 +233,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
             font_size=parent_fs,
             font_family=parent_ff,
             fill=parent_fill,
+            bold=parent_bold,
+            italic=parent_italic,
         ))
 
     for child in el:
@@ -240,14 +247,19 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
                     font_size=parent_fs,
                     font_family=parent_ff,
                     fill=parent_fill,
+                    bold=parent_bold,
+                    italic=parent_italic,
                 ))
             continue
 
         fs = _parse_font_size(child.get("font-size"), parent_fs)
         ff = _resolve_font_family(child.get("font-family")) if child.get("font-family") else parent_ff
         fill = _resolve_fill(child.get("fill", parent_fill), C, resolve_color_fn)
-        bold = _parse_font_weight(child.get("font-weight"))
-        italic = child.get("font-style") == "italic"
+        child_bold = _parse_font_weight(child.get("font-weight"))
+        child_italic = child.get("font-style") == "italic"
+        # Inherit from parent if child doesn't specify
+        bold = child_bold or parent_bold
+        italic = child_italic or parent_italic
 
         has_x = child.get("x") is not None
         has_y = child.get("y") is not None
@@ -276,6 +288,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
                 font_size=parent_fs,
                 font_family=parent_ff,
                 fill=parent_fill,
+                bold=parent_bold,
+                italic=parent_italic,
             ))
 
     return spans

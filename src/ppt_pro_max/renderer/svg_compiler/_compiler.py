@@ -215,6 +215,9 @@ class SVGCompiler:
         result = SVGResult()
         t0 = time.perf_counter()
 
+        # Check for <style> elements before sanitization
+        has_style_elements = "<style" in svg_text.lower()
+
         root = sanitize(svg_text)
 
         if vb is None:
@@ -237,6 +240,12 @@ class SVGCompiler:
         self._features: set[str] = set()
         self._warnings: list[str] = []
         self._text_rects: list[tuple[float, float, float, float]] = []
+
+        # Warn if <style> elements were stripped
+        if has_style_elements:
+            self._warnings.append(
+                "stripped <style> element (CSS class-based styling lost)"
+            )
 
         pre_shape_count = len(slide.shapes)
 
