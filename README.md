@@ -67,9 +67,10 @@
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 一键安装 — 自动检测平台 + 安装 skill + pip 注册 Python 包 + 依赖
-python install.py                     # 自动检测
+# 一键安装（自动覆盖旧版本）
+python install.py                     # 自动检测平台
 python install.py --platform opencode # 指定平台
+python install.py --force             # 强制覆盖已有安装
 ```
 
 安装后 `ppt_pro_max` 注册为全局 Python 包，任何项目下可直接 `from ppt_pro_max.build_helpers import *`。
@@ -79,7 +80,7 @@ python install.py --platform opencode # 指定平台
 ### 作为 Python 包使用
 
 ```bash
-pip install git+https://github.com/sunchaokun/PPT-Design-Skill.git
+pip install --upgrade git+https://github.com/sunchaokun/PPT-Design-Skill.git
 ```
 
 安装后即可在任何项目直接 import：
@@ -96,7 +97,7 @@ from ppt_pro_max import generate_ppt
 cd PPT-Design-Skill && git pull && python install.py --force
 
 # pip 安装方式
-pip install --force-reinstall git+https://github.com/sunchaokun/PPT-Design-Skill.git
+pip install --force-reinstall --upgrade git+https://github.com/sunchaokun/PPT-Design-Skill.git
 ```
 
 ### 在 AI 编码工具中使用
@@ -202,6 +203,8 @@ python build.py
 | 特性 | 说明 |
 |------|------|
 | **三模式引擎** | FreeStyle 快速生成 + Build Script 逐页精确控制 + VI Build 企业模板合规 |
+| **SVG→PPTX 编译器** | SVG 矢量图直接编译为原生可编辑 PPTX 形状（自由曲线/渐变/clipPath/use） |
+| **Designer Mindset** | 内置专业设计师思维框架 — 受众优先、克制装饰、系统化思考 |
 | **content.json 直通渲染** | Agent 写真实内容 + 每页 goal → `generate_ppt(content_file=...)` 直接渲染，跳过 StoryPlanner |
 | **统一版式系统** | 11 种 goal 版式共享同一设计框架（标题带/内容区/页脚/页码），渐变背景 + 风格装饰 |
 | **自适应排版** | 字号随内容量自动缩放 + 垂直居中，稀疏内容不再大段留白 |
