@@ -2110,25 +2110,56 @@ def emphasis_animation(slide, shape_id, effect='pulse', delay_ms=0,
 def text_outline(slide, left, top, width, height, txt,
                  color='#FFFFFF', width_pt=1.5,
                  font_size=44, bold=False, font_name=None, C=None,
-                 align='left'):
-    txBox = slide.shapes.add_textbox(Inches(left), Inches(top),
-                                      Inches(width), Inches(height))
-    tf = txBox.text_frame
-    tf.word_wrap = True
-    p = tf.paragraphs[0]
-    p.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
-                   'right': PP_ALIGN.RIGHT}[align]
-    run = p.add_run()
-    run.text = txt
-    run.font.size = Pt(font_size)
-    run.font.bold = bold
+                 align='left', fill_color=None):
+    """Text outline via overlay layers (PowerPoint doesn't support a:ln in rPr).
+
+    Creates two text layers: bottom layer = outline color (slightly offset),
+    top layer = fill color (default white or fill_color).
+    """
+    offset = width_pt * 0.015  # tiny offset for outline effect
+
+    # Bottom layer (outline color)
+    txBox_bg = slide.shapes.add_textbox(
+        Inches(left - offset), Inches(top - offset),
+        Inches(width + offset * 2), Inches(height + offset * 2))
+    tf_bg = txBox_bg.text_frame
+    tf_bg.word_wrap = True
+    p_bg = tf_bg.paragraphs[0]
+    p_bg.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                      'right': PP_ALIGN.RIGHT}[align]
+    run_bg = p_bg.add_run()
+    run_bg.text = txt
+    run_bg.font.size = Pt(font_size)
+    run_bg.font.bold = bold
     if font_name:
-        run.font.name = font_name
+        run_bg.font.name = font_name
+    run_bg.font.color.rgb = _rgb(_resolve_color(color, C)) if color else RGBColor(0xFF, 0xFF, 0xFF)
     cjk_font = (C or {}).get('font_cjk') or (C or {}).get('font_body')
     if cjk_font:
-        _set_cjk_font(run, cjk_font)
-    apply_text_outline(run, color=color, width_pt=width_pt)
-    return txBox
+        _set_cjk_font(run_bg, cjk_font)
+
+    # Top layer (fill color)
+    txBox_fg = slide.shapes.add_textbox(Inches(left), Inches(top),
+                                         Inches(width), Inches(height))
+    tf_fg = txBox_fg.text_frame
+    tf_fg.word_wrap = True
+    p_fg = tf_fg.paragraphs[0]
+    p_fg.alignment = {'left': PP_ALIGN.LEFT, 'center': PP_ALIGN.CENTER,
+                      'right': PP_ALIGN.RIGHT}[align]
+    run_fg = p_fg.add_run()
+    run_fg.text = txt
+    run_fg.font.size = Pt(font_size)
+    run_fg.font.bold = bold
+    if font_name:
+        run_fg.font.name = font_name
+    if fill_color:
+        run_fg.font.color.rgb = _rgb(_resolve_color(fill_color, C))
+    else:
+        run_fg.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
+    if cjk_font:
+        _set_cjk_font(run_fg, cjk_font)
+
+    return txBox_fg
 
 
 def text_shadow(slide, left, top, width, height, txt,
