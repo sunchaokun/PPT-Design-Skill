@@ -2602,6 +2602,151 @@ def apply_edge_fade(image_path, margin_pct=0.1, bg_color=None):
     return _apply(image_path, margin_pct, bg_color)
 
 
+def compose_images(layers, width=1920, height=1080, bg_color='#000000'):
+    """Composite multiple image layers into a single image.
+
+    Args:
+        layers: List of dicts with keys:
+            - 'image': str (path) or PILImage.Image (required)
+            - 'opacity': float 0.0-1.0 (default 1.0)
+            - 'position': tuple (x, y) in pixels (default (0, 0))
+        width: Output width in pixels
+        height: Output height in pixels
+        bg_color: Background color hex
+
+    Returns:
+        PILImage.Image (RGBA)
+    """
+    from ppt_pro_max.renderer.image_processor import compose_images as _compose
+    return _compose(layers, width, height, bg_color)
+
+
+def apply_gradient_mask(image_path, direction='bottom', color='#000000',
+                        start_opacity=0.0, end_opacity=0.8):
+    """Apply directional gradient mask to an image.
+
+    Args:
+        image_path: Path to source image
+        direction: 'top'|'bottom'|'left'|'right'|'diagonal_tl'|'diagonal_br'
+        color: Mask color hex
+        start_opacity: Starting opacity (0.0-1.0)
+        end_opacity: Ending opacity (0.0-1.0)
+
+    Returns:
+        Path to processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_gradient_mask as _apply
+    return _apply(image_path, direction, color, start_opacity, end_opacity)
+
+
+def apply_scatter(image_path, count=50, color='#FFFFFF',
+                  min_size=2, max_size=15, min_alpha=20, max_alpha=120,
+                  distribution='random', seed=None):
+    """Add scattered particles to an image.
+
+    Args:
+        image_path: Path to source image
+        count: Number of particles
+        color: Particle color hex
+        min_size: Minimum particle size in pixels
+        max_size: Maximum particle size in pixels
+        min_alpha: Minimum alpha (0-255)
+        max_alpha: Maximum alpha (0-255)
+        distribution: 'random'|'center'|'edge'|'top'|'bottom'
+        seed: Random seed for reproducibility
+
+    Returns:
+        Path to processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_scatter as _apply
+    return _apply(image_path, count, color, min_size, max_size,
+                  min_alpha, max_alpha, distribution, seed)
+
+
+def set_slide_bg_image(slide, image_path):
+    """Set slide background to an image via OOXML.
+
+    Args:
+        slide: Slide object
+        image_path: Path to background image
+
+    Returns:
+        True if successful, False otherwise
+    """
+    import os
+    from pptx.oxml.ns import qn
+
+    if not os.path.isfile(image_path):
+        return False
+
+    # Add image to presentation and get relationship ID
+    slide_part = slide.part
+    image_part = slide_part.partPackage.get_or_add_image_part(image_path)
+    rId = slide_part.relate_to(image_part, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image')
+
+    # Build background XML
+    bg = slide.background._element
+    # Clear existing background
+    for child in list(bg):
+        bg.remove(child)
+
+    # Create bgPr with blipFill
+    bgPr = etree.SubElement(bg, qn('p:bgPr'))
+    blipFill = etree.SubElement(bgPr, qn('a:blipFill'))
+    blipFill.set('dpi', '96')
+    blipFill.set('rotWithShape', '1')
+
+    blip = etree.SubElement(blipFill, qn('a:blip'))
+    blip.set(qn('r:embed'), rId)
+
+    # Add stretch
+    stretch = etree.SubElement(blipFill, qn('a:stretch'))
+    etree.SubElement(stretch, qn('a:fillRect'))
+
+    # Add effectLst (required by OOXML)
+    etree.SubElement(bgPr, qn('a:effectLst'))
+
+    return True
+
+
+def add_inner_shadow(shape, blur_pt=4, distance_pt=2, direction_deg=90,
+                     color='#000000', alpha_pct=40):
+    """Add inner shadow effect to a shape.
+
+    Args:
+        shape: Shape object
+        blur_pt: Blur radius in points
+        distance_pt: Shadow distance in points
+        direction_deg: Light direction in degrees (0=right, 90=down, etc.)
+        color: Shadow color hex
+        alpha_pct: Opacity percentage (0-100)
+
+    Returns:
+        None
+    """
+    from pptx.oxml.ns import qn
+
+    spPr = shape._element.find(qn('p:spPr'))
+    if spPr is None:
+        spPr = shape._element.find(qn('a:spPr'))
+    if spPr is None:
+        return
+
+    effectLst = spPr.find(qn('a:effectLst'))
+    if effectLst is None:
+        effectLst = etree.SubElement(spPr, qn('a:effectLst'))
+
+    innerShdw = etree.SubElement(effectLst, qn('a:innerShdw'))
+    innerShdw.set('blurRad', str(int(blur_pt * 12700)))
+    innerShdw.set('dist', str(int(distance_pt * 12700)))
+    innerShdw.set('dir', str(int(direction_deg * 60000)))
+
+    srgbClr = etree.SubElement(innerShdw, qn('a:srgbClr'))
+    srgbClr.set('val', color.lstrip('#'))
+    alpha = etree.SubElement(srgbClr, qn('a:alpha'))
+    alpha.set('val', str(alpha_pct * 1000))
+
+
 def analyze_pptx(pptx_path):
     from ppt_pro_max import extract_design_dna
     return extract_design_dna(pptx_path)
