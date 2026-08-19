@@ -64,6 +64,8 @@ class _SpanSpec:
     font_size: float | None = None
     font_family: str | None = None
     fill: str | None = None
+    stroke: str | None = None
+    stroke_width: float = 0.0
     bold: bool = False
     italic: bool = False
     is_new_line: bool = False
@@ -219,12 +221,17 @@ def _parse_font_weight(raw: str | None) -> bool:
 
 def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
                     C: dict, resolve_color_fn,
-                    parent_bold: bool = False, parent_italic: bool = False) -> list[_SpanSpec]:
+                    parent_bold: bool = False, parent_italic: bool = False,
+                    parent_stroke: str | None = None, parent_stroke_width: float = 0.0) -> list[_SpanSpec]:
     spans: list[_SpanSpec] = []
 
     # Check parent element's own font-weight/font-style for direct text content
     parent_bold = parent_bold or _parse_font_weight(el.get("font-weight"))
     parent_italic = parent_italic or el.get("font-style") == "italic"
+    stroke_raw = el.get("stroke")
+    if stroke_raw and not parent_stroke:
+        parent_stroke = _resolve_fill(stroke_raw, C, resolve_color_fn)
+    parent_stroke_width = float(el.get("stroke-width", parent_stroke_width))
 
     direct_text = el.text
     if direct_text and direct_text.strip():
@@ -233,6 +240,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
             font_size=parent_fs,
             font_family=parent_ff,
             fill=parent_fill,
+            stroke=parent_stroke,
+            stroke_width=parent_stroke_width,
             bold=parent_bold,
             italic=parent_italic,
         ))
@@ -247,6 +256,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
                     font_size=parent_fs,
                     font_family=parent_ff,
                     fill=parent_fill,
+                    stroke=parent_stroke,
+                    stroke_width=parent_stroke_width,
                     bold=parent_bold,
                     italic=parent_italic,
                 ))
@@ -260,6 +271,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
         # Inherit from parent if child doesn't specify
         bold = child_bold or parent_bold
         italic = child_italic or parent_italic
+        stroke = _resolve_fill(child.get("stroke"), C, resolve_color_fn) if child.get("stroke") else parent_stroke
+        stroke_width = float(child.get("stroke-width", parent_stroke_width))
 
         has_x = child.get("x") is not None
         has_y = child.get("y") is not None
@@ -275,6 +288,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
             font_size=fs,
             font_family=ff,
             fill=fill,
+            stroke=stroke,
+            stroke_width=stroke_width,
             bold=bold,
             italic=italic,
             is_new_line=is_new_line,
@@ -288,6 +303,8 @@ def _collect_spans(el, parent_fs: float, parent_ff: str, parent_fill: str,
                 font_size=parent_fs,
                 font_family=parent_ff,
                 fill=parent_fill,
+                stroke=parent_stroke,
+                stroke_width=parent_stroke_width,
                 bold=parent_bold,
                 italic=parent_italic,
             ))
@@ -330,6 +347,8 @@ def render_svg_text(
     parent_fs = _parse_font_size(el.get("font-size"), 14.0)
     parent_ff = _resolve_font_family(el.get("font-family"))
     parent_fill = _resolve_fill(el.get("fill"), C, resolve_color_fn)
+    parent_stroke = _resolve_fill(el.get("stroke"), C, resolve_color_fn) if el.get("stroke") else None
+    parent_stroke_width = float(el.get("stroke-width", "0"))
     anchor = el.get("text-anchor", "start")
     v_anchor = _resolve_baseline(el)
     baseline_mode = _resolve_baseline_mode(el)
@@ -337,7 +356,8 @@ def render_svg_text(
     scale = slide_w / svg_w if svg_w > 0 and slide_w > 0 else 1.0
     scaled_fs = max(parent_fs * scale * 72.0, 6.0)
 
-    spans = _collect_spans(el, parent_fs, parent_ff, parent_fill, C, resolve_color_fn)
+    spans = _collect_spans(el, parent_fs, parent_ff, parent_fill, C, resolve_color_fn,
+                           parent_stroke=parent_stroke, parent_stroke_width=parent_stroke_width)
 
     has_tspan_children = any(
         isinstance(c.tag, str) and c.tag.split("}")[-1] == "tspan" for c in el
@@ -350,6 +370,7 @@ def render_svg_text(
         _render_simple_text(
             content, ix, iy, scaled_fs, parent_ff, parent_fill,
             anchor, v_anchor, baseline_mode, el, slide, C, resolve_color_fn,
+            stroke=parent_stroke, stroke_width=parent_stroke_width,
         )
         return
 
@@ -368,6 +389,7 @@ def _render_simple_text(
     fs: float, ff: str, fill: str,
     anchor: str, v_anchor, baseline_mode: str, el, slide,
     C: dict, resolve_color_fn,
+    stroke: str | None = None, stroke_width: float = 0.0,
 ) -> None:
     metrics = _measure_text(content, fs, ff, 8.0)
 
@@ -385,6 +407,34 @@ def _render_simple_text(
 
     height = metrics.height_inches * 1.5
 
+    # Render outline layer first (will be behind fill layer)
+    if stroke and stroke_width > 0:
+        # The outline layer is larger and bolder so it peeks out from behind the fill
+        outline_fs = fs + stroke_width * 2  # Larger font size for visible outline
+        outline_bold = True  # Bold for thicker outline effect
+        tb_outline = slide.shapes.add_textbox(
+            Inches(left - 0.05), Inches(top - 0.05),
+            Inches(width + 0.1), Inches(height + 0.1)
+        )
+        tf_outline = tb_outline.text_frame
+        tf_outline.word_wrap = False
+        tf_outline.vertical_anchor = v_anchor
+        p_outline = tf_outline.paragraphs[0]
+        p_outline.alignment = _ANCHOR_MAP.get(anchor, PP_ALIGN.LEFT)
+        run_outline = p_outline.add_run()
+        run_outline.text = content
+        run_outline.font.size = Pt(outline_fs)
+        run_outline.font.color.rgb = RGBColor.from_string(stroke.lstrip("#"))
+        run_outline.font.name = ff
+        run_outline.font.bold = outline_bold
+        bold = el.get("font-weight")
+        if bold and bold not in ("normal", "100", "200", "300"):
+            run_outline.font.bold = True
+        italic = el.get("font-style")
+        if italic == "italic":
+            run_outline.font.italic = True
+
+    # Render fill layer on top (will cover most of outline, but edges peek out)
     tb = slide.shapes.add_textbox(
         Inches(left), Inches(top), Inches(width), Inches(height)
     )
@@ -435,6 +485,47 @@ def _render_tspan_text(
         top = top - line_h * (len(lines) - 1)
 
     height = line_h * len(lines) + 0.2
+
+    # Check if any span has stroke
+    has_stroke = any(sp.stroke and sp.stroke_width > 0 for sp in spans)
+
+    # Render outline layer first (if stroke is set)
+    if has_stroke:
+        max_sw = max((sp.stroke_width for sp in spans if sp.stroke and sp.stroke_width > 0), default=0)
+        max_stroke = next((sp.stroke for sp in spans if sp.stroke and sp.stroke_width > 0), None)
+        if max_stroke and max_sw > 0:
+            offset = max_sw * 0.015
+            tb_outline = slide.shapes.add_textbox(
+                Inches(left - offset), Inches(top - offset),
+                Inches(width + offset * 2), Inches(height + offset * 2)
+            )
+            tf_outline = tb_outline.text_frame
+            tf_outline.word_wrap = True
+            tf_outline.vertical_anchor = v_anchor
+
+            first_para_outline = True
+            for line in lines:
+                if first_para_outline:
+                    p_o = tf_outline.paragraphs[0]
+                    first_para_outline = False
+                else:
+                    p_o = tf_outline.add_paragraph()
+
+                p_o.alignment = _ANCHOR_MAP.get(anchor, PP_ALIGN.LEFT)
+                p_o.space_after = Pt(0)
+
+                for sp in line:
+                    if not sp.text:
+                        continue
+                    run_o = p_o.add_run()
+                    run_o.text = sp.text
+                    run_o.font.size = Pt(sp.font_size or parent_fs)
+                    run_o.font.color.rgb = RGBColor.from_string((sp.stroke or max_stroke).lstrip("#"))
+                    run_o.font.name = sp.font_family or parent_ff
+                    if sp.bold:
+                        run_o.font.bold = True
+                    if sp.italic:
+                        run_o.font.italic = True
 
     tb = slide.shapes.add_textbox(
         Inches(left), Inches(top), Inches(width), Inches(height)
