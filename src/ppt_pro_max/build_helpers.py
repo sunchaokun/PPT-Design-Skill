@@ -361,6 +361,53 @@ def rect(slide, left, top, width, height, fill, line=None, C=None):
     return shape
 
 
+def dashed_rect(slide, left, top, width, height, fill=None,
+                line_color='#000000', line_width=1, dash='dash', C=None):
+    """Create a rectangle with dashed border.
+
+    Args:
+        slide: Slide object
+        left, top, width, height: Position and size in inches
+        fill: Fill color (None for transparent)
+        line_color: Border color
+        line_width: Border width in points
+        dash: Dash style - 'dash', 'lgDash', 'dot', 'dashDot', 'lgDashDot'
+        C: Color dictionary for role-based colors
+
+    Returns:
+        Shape object
+    """
+    from pptx.enum.dml import MSO_LINE_DASH_STYLE
+
+    shape = _add_shape(slide.shapes, MSO_SHAPE.RECTANGLE,
+                       Inches(left), Inches(top),
+                       Inches(width), Inches(height))
+
+    # Fill
+    if fill:
+        shape.fill.solid()
+        shape.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
+    else:
+        shape.line.fill.background()
+
+    # Line with dash style
+    shape.line.color.rgb = _rgb(_resolve_color(line_color, C))
+    shape.line.width = Pt(line_width)
+
+    # Map dash style name to MSO enum
+    dash_map = {
+        'dash': MSO_LINE_DASH_STYLE.DASH,
+        'lgDash': MSO_LINE_DASH_STYLE.LONG_DASH,
+        'dot': MSO_LINE_DASH_STYLE.ROUND_DOT,
+        'dashDot': MSO_LINE_DASH_STYLE.DASH_DOT,
+        'lgDashDot': MSO_LINE_DASH_STYLE.LONG_DASH_DOT,
+    }
+    if dash in dash_map:
+        shape.line.dash_style = dash_map[dash]
+
+    return shape
+
+
 def rrect(slide, left, top, width, height, fill, line=None, C=None):
     shape = _add_shape(slide.shapes, MSO_SHAPE.ROUNDED_RECTANGLE,
                        Inches(left), Inches(top),
@@ -1731,6 +1778,59 @@ def cover_image(slide, left, top, width, height, image_path):
         cropped_path, Inches(left), Inches(top),
         Inches(width), Inches(height),
     )
+
+
+def gradient_mask_image(slide, left, top, width, height, bg_color='#FFFFFF',
+                        direction='bottom', alpha_start=100, alpha_end=0):
+    """Add a gradient mask overlay for seamless image-background fusion.
+
+    Creates a rectangle with gradient fill that fades from opaque to transparent,
+    useful for blending images into backgrounds (e.g., cityscape fading into sky).
+
+    Args:
+        slide: Slide object
+        left, top, width, height: Position and size in inches
+        bg_color: Background color for the gradient (should match slide background)
+        direction: 'bottom' (fade from bottom), 'top' (fade from top),
+                   'left' (fade from left), 'right' (fade from right)
+        alpha_start: Starting opacity (0-100, where 100 = fully opaque)
+        alpha_end: Ending opacity (0-100, where 0 = fully transparent)
+
+    Returns:
+        Shape object (the gradient mask rectangle)
+    """
+    from ppt_pro_max.renderer.visual_effects import GradientFill, GradientStop
+
+    # Create rectangle
+    shape = _add_shape(slide.shapes, MSO_SHAPE.RECTANGLE,
+                       Inches(left), Inches(top),
+                       Inches(width), Inches(height))
+
+    # Map direction to angle (in 60000ths of a degree)
+    # 0 = right, 5400000 = down (90°), 10800000 = left, 16200000 = up
+    angle_map = {
+        'bottom': 5400000,   # 90° - fade from bottom to top
+        'top': 16200000,     # 270° - fade from top to bottom
+        'left': 10800000,    # 180° - fade from left to right
+        'right': 0,          # 0° - fade from right to left
+    }
+    angle = angle_map.get(direction, 5400000)
+
+    # Create gradient with alpha stops
+    # Start (opaque) -> End (transparent)
+    gf = GradientFill(
+        angle=angle,
+        stops=[
+            GradientStop(color=bg_color, position=0, alpha=alpha_start * 1000),
+            GradientStop(color=bg_color, position=100000, alpha=alpha_end * 1000),
+        ]
+    )
+    gf.apply(shape)
+
+    # Remove line/border
+    shape.line.fill.background()
+
+    return shape
 
 
 def ai_image(slide, left, top, width, height, keywords, *,
