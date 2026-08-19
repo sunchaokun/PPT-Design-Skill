@@ -484,6 +484,7 @@ class SVGCompiler:
     def _circle_cubics(cx: float, cy: float, r: float) -> list[tuple[float, float]]:
         """Return 4 cubic Bezier control points for a circle (16 points total)."""
         pts: list[tuple[float, float]] = []
+        k = (4 / 3) * math.tan(math.pi / 8)  # Constant for circle approximation
         for i in range(4):
             a0 = i * math.pi / 2
             a1 = (i + 1) * math.pi / 2
@@ -491,14 +492,10 @@ class SVGCompiler:
             p0y = cy + r * math.sin(a0)
             p3x = cx + r * math.cos(a1)
             p3y = cy + r * math.sin(a1)
-            alpha = (4 / 3) * math.tan((a1 - a0) / 4) * r
-            # handle sign
-            if (a1 - a0) > math.pi:
-                alpha = -alpha
-            c1x = cx + r * (math.cos(a0) - alpha * math.sin(a0))
-            c1y = cy + r * (math.sin(a0) + alpha * math.cos(a0))
-            c2x = cx + r * (math.cos(a1) + alpha * math.sin(a1))
-            c2y = cy + r * (math.sin(a1) - alpha * math.cos(a1))
+            c1x = p0x + k * r * math.sin(a0) * (-1 if i in (1, 2) else 1)
+            c1y = p0y - k * r * math.cos(a0) * (-1 if i in (0, 1) else 1)
+            c2x = p3x - k * r * math.sin(a1) * (-1 if i in (1, 2) else 1)
+            c2y = p3y + k * r * math.cos(a1) * (-1 if i in (0, 1) else 1)
             pts.extend([(p0x, p0y), (c1x, c1y), (c2x, c2y), (p3x, p3y)])
         return pts
 
