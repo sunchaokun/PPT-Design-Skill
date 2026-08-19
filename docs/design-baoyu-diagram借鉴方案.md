@@ -184,51 +184,23 @@ def _check_spacing(self, slide, slide_idx: int) -> list[CheckItem]:
 
 ---
 
-### 方案 3：语义化颜色角色查询
+### 方案 3：语义化颜色角色查询（已取消）
 
-**优先级：** P3
+**优先级：** ~~P3~~ → 取消
 
-**范围：** SKILL.md + ui-ux 模块
+**原因：** PPT设计与UI设计的颜色系统不同
 
-**问题：** 当生成架构图、数据流等技术图表时，颜色分配没有按角色（frontend/backend/database）分类。
+| UI设计 | PPT设计 |
+|--------|---------|
+| 按技术角色分配（frontend=cyan, backend=emerald） | 按内容风格分配（调色板系统） |
+| 颜色有技术含义 | 颜色有视觉含义 |
 
-**当前能力：**
-- `ui-ux` 模块已提供 `search_color(query)` 函数，可按查询词搜索颜色
-- `get_design_system(query)` 可获取完整的设计系统建议（含颜色）
-- **但缺少**：技术图表颜色角色的明确指导（如 frontend=cyan, backend=emerald）
+PPT的技术图表应该使用PPT的25个调色板系统，而不是UI的颜色角色。颜色选择应该基于：
+- 内容风格（专业、科技、温暖等）
+- 视觉效果（对比度、可读性）
+- 品牌一致性
 
-**方案：** 在 SKILL.md 中添加技术图表颜色角色说明，供 LLM 生成 build.py 时参考。
-
-**实现要点：**
-
-在 `skill/SKILL.md` 的 SVG Compiler 章节中添加：
-
-```markdown
-#### 技术图表颜色角色
-
-当生成架构图、数据流等技术图表时，建议按角色分配颜色：
-
-| 角色 | 颜色 | 说明 |
-|------|------|------|
-| Frontend / 用户面 | cyan (#22d3ee) | 前端、UI、用户交互 |
-| Backend / 服务 | emerald (#34d399) | 后端、API、微服务 |
-| Database / 存储 | violet (#a78bfa) | 数据库、缓存、存储 |
-| Infrastructure | amber (#fbbf24) | 云、基础设施、区域 |
-| Security / Alert | rose (#fb7185) | 安全、错误、警告 |
-| Connector | orange (#fb923c) | 总线、队列、中间件 |
-
-**查询方式：**
-```python
-from ppt_pro_max.adapters.ui_ux_adapter import search_color
-
-# 按角色查询颜色
-frontend_colors = search_color("frontend user interface")
-backend_colors = search_color("backend service")
-database_colors = search_color("database storage")
-```
-```
-
-**工作量：** 约 20-30 行（SKILL.md 修改）
+**结论：** 此方案不适用于PPT设计，已取消。
 
 ---
 
@@ -300,7 +272,6 @@ database_colors = search_color("database storage")
 | P1 | 半透明叠层 atom | 15-25行 | 低 | 已有 frosted_panel() |
 | P1 | 页码装饰组件 | 30-50行 | 低 | ✅ 完成 |
 | P1 | 间距检查规则 | 60-80行 | 中 | ✅ 完成 |
-| P2 | 技术图表颜色角色说明 | 20-30行 | 低 | 待实现（SKILL.md） |
 
 ---
 
