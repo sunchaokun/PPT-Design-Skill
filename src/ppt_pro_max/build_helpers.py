@@ -2502,45 +2502,104 @@ def noise_texture(size=200, opacity=0.02, deck_title=""):
     return generate_noise_tile(size, opacity, deck_title)
 
 
-def apply_image_effect(image_path, effect='grayscale', **kwargs):
-    """Apply PIL-based effect to an image file.
-
-    Effects:
-        - 'grayscale': Convert to grayscale
-        - 'sepia': Apply sepia tone (intensity: 0.0-1.0)
-        - 'duotone': Two-color toning (color1, color2)
-        - 'ink_wash': Ink wash painting style (contrast, brightness)
-        - 'blur': Gaussian blur (radius: pixels)
-        - 'vignette': Dark edges (intensity: 0.0-1.0)
-        - 'edge_fade': Fade edges to transparent (margin_pct, bg_color)
+def apply_grayscale(image_path):
+    """Convert image to grayscale.
 
     Args:
         image_path: Path to the source image
-        effect: Effect name
-        **kwargs: Effect-specific parameters
 
     Returns:
         Path to the processed image
     """
-    from ppt_pro_max.renderer.image_processor import (
-        apply_grayscale, apply_sepia, apply_duotone,
-        apply_ink_wash, apply_blur, apply_vignette, apply_edge_fade,
-    )
+    from ppt_pro_max.renderer.image_processor import apply_grayscale as _apply
+    return _apply(image_path)
 
-    _EFFECTS = {
-        'grayscale': lambda p, **kw: apply_grayscale(p),
-        'sepia': apply_sepia,
-        'duotone': apply_duotone,
-        'ink_wash': apply_ink_wash,
-        'blur': apply_blur,
-        'vignette': apply_vignette,
-        'edge_fade': apply_edge_fade,
-    }
 
-    if effect not in _EFFECTS:
-        raise ValueError(f"Unknown effect: {effect}. Available: {list(_EFFECTS.keys())}")
+def apply_sepia(image_path, intensity=0.5):
+    """Apply sepia tone to image.
 
-    return _EFFECTS[effect](image_path, **kwargs)
+    Args:
+        image_path: Path to the source image
+        intensity: Sepia strength (0.0-1.0, default 0.5)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_sepia as _apply
+    return _apply(image_path, intensity)
+
+
+def apply_duotone(image_path, color1, color2):
+    """Apply two-color toning to image.
+
+    Args:
+        image_path: Path to the source image
+        color1: Highlight color (e.g., '#FF6B35')
+        color2: Shadow color (e.g., '#004E89')
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_duotone as _apply
+    return _apply(image_path, color1, color2)
+
+
+def apply_ink_wash(image_path, contrast=1.5, brightness=0.0):
+    """Apply ink wash painting effect.
+
+    Args:
+        image_path: Path to the source image
+        contrast: Contrast multiplier (default 1.5)
+        brightness: Brightness adjustment (-1.0 to 1.0, default 0.0)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_ink_wash as _apply
+    return _apply(image_path, contrast, brightness)
+
+
+def apply_blur(image_path, radius=5):
+    """Apply Gaussian blur to image.
+
+    Args:
+        image_path: Path to the source image
+        radius: Blur radius in pixels (default 5)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_blur as _apply
+    return _apply(image_path, radius)
+
+
+def apply_vignette(image_path, intensity=0.5):
+    """Apply dark vignette effect to image edges.
+
+    Args:
+        image_path: Path to the source image
+        intensity: Vignette strength (0.0-1.0, default 0.5)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_vignette as _apply
+    return _apply(image_path, intensity)
+
+
+def apply_edge_fade(image_path, margin_pct=0.1, bg_color=None):
+    """Fade image edges to transparent.
+
+    Args:
+        image_path: Path to the source image
+        margin_pct: Fade margin as percentage of width (default 0.1 = 10%)
+        bg_color: Optional background color for compositing (hex)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import apply_edge_fade as _apply
+    return _apply(image_path, margin_pct, bg_color)
 
 
 def analyze_pptx(pptx_path):
