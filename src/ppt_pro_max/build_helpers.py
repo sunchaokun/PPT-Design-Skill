@@ -2470,6 +2470,79 @@ def adjust_image(shape, brightness=0, contrast=0, saturation=100):
         apply_blip_saturation(shape, saturation_pct=saturation)
 
 
+# ── Image Processor (PIL-based) ──
+
+def grade_image(image_path, palette_hex, alpha=0.10):
+    """Blend image with a color palette for tonal consistency.
+
+    Args:
+        image_path: Path to the source image
+        palette_hex: Hex color to blend (e.g., '#2E6504')
+        alpha: Blend strength (0.0=original, 1.0=solid color)
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import grade_image_to_palette
+    return grade_image_to_palette(image_path, palette_hex, alpha)
+
+
+def noise_texture(size=200, opacity=0.02, deck_title=""):
+    """Generate a noise texture tile for backgrounds.
+
+    Args:
+        size: Tile size in pixels (square)
+        opacity: Noise opacity (0.0-1.0)
+        deck_title: Seed for consistent noise pattern
+
+    Returns:
+        Path to the noise tile PNG
+    """
+    from ppt_pro_max.renderer.image_processor import generate_noise_tile
+    return generate_noise_tile(size, opacity, deck_title)
+
+
+def apply_image_effect(image_path, effect='grayscale', **kwargs):
+    """Apply PIL-based effect to an image file.
+
+    Effects:
+        - 'grayscale': Convert to grayscale
+        - 'sepia': Apply sepia tone (intensity: 0.0-1.0)
+        - 'duotone': Two-color toning (color1, color2)
+        - 'ink_wash': Ink wash painting style (contrast, brightness)
+        - 'blur': Gaussian blur (radius: pixels)
+        - 'vignette': Dark edges (intensity: 0.0-1.0)
+        - 'edge_fade': Fade edges to transparent (margin_pct, bg_color)
+
+    Args:
+        image_path: Path to the source image
+        effect: Effect name
+        **kwargs: Effect-specific parameters
+
+    Returns:
+        Path to the processed image
+    """
+    from ppt_pro_max.renderer.image_processor import (
+        apply_grayscale, apply_sepia, apply_duotone,
+        apply_ink_wash, apply_blur, apply_vignette, apply_edge_fade,
+    )
+
+    _EFFECTS = {
+        'grayscale': lambda p, **kw: apply_grayscale(p),
+        'sepia': apply_sepia,
+        'duotone': apply_duotone,
+        'ink_wash': apply_ink_wash,
+        'blur': apply_blur,
+        'vignette': apply_vignette,
+        'edge_fade': apply_edge_fade,
+    }
+
+    if effect not in _EFFECTS:
+        raise ValueError(f"Unknown effect: {effect}. Available: {list(_EFFECTS.keys())}")
+
+    return _EFFECTS[effect](image_path, **kwargs)
+
+
 def analyze_pptx(pptx_path):
     from ppt_pro_max import extract_design_dna
     return extract_design_dna(pptx_path)
