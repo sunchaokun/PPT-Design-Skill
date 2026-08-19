@@ -726,6 +726,69 @@ def multiline(slide, left, top, width, height, lines, font_size=12,
     return txBox
 
 
+def dramatic_text(slide, left, top, width, height, big_text, small_text,
+                  big_size=80, small_size=10, big_color='text_dark',
+                  small_color='text_muted', big_bold=True, small_bold=False,
+                  align='left', font_name=None, C=None, vertical=False):
+    """Create dramatic text with extreme size contrast (big/small).
+
+    Common in modern PPT designs for impactful typography.
+    Example: Large "Portfolio" title with small "ABOUT MY WORK" subtitle.
+
+    Args:
+        slide: Slide object
+        left, top, width, height: Bounding box in inches
+        big_text: Large headline text
+        small_text: Small subtitle/description text
+        big_size: Font size for big text (default 80pt)
+        small_size: Font size for small text (default 10pt)
+        big_color: Color for big text
+        small_color: Color for small text
+        big_bold: Bold for big text
+        small_bold: Bold for small text
+        align: 'left', 'center', or 'right'
+        font_name: Font family name
+        C: Color dictionary
+        vertical: If True, stack vertically; if False, side by side
+
+    Returns:
+        List of shape objects [big_shape, small_shape]
+    """
+    C = C or {}
+    shapes = []
+
+    if vertical:
+        # Vertical layout: big text on top, small text below
+        big_h = height * 0.7
+        small_h = height * 0.3
+
+        big_shape = text(slide, left, top, width, big_h, big_text,
+                         font_size=big_size, color=big_color, bold=big_bold,
+                         align=align, font_name=font_name, C=C)
+        shapes.append(big_shape)
+
+        small_shape = text(slide, left, top + big_h, width, small_h, small_text,
+                          font_size=small_size, color=small_color, bold=small_bold,
+                          align=align, font_name=font_name, C=C)
+        shapes.append(small_shape)
+    else:
+        # Horizontal layout: big text left, small text right
+        big_w = width * 0.7
+        small_w = width * 0.3
+
+        big_shape = text(slide, left, top, big_w, height, big_text,
+                         font_size=big_size, color=big_color, bold=big_bold,
+                         align=align, font_name=font_name, C=C)
+        shapes.append(big_shape)
+
+        small_shape = text(slide, left + big_w, top, small_w, height, small_text,
+                          font_size=small_size, color=small_color, bold=small_bold,
+                          align=align, font_name=font_name, C=C)
+        shapes.append(small_shape)
+
+    return shapes
+
+
 def copy_decorations(slide, template_slide, skip_long_text=True, skip_image=True):
     for shape in template_slide.shapes:
         if skip_image and shape.shape_type == 13:
@@ -1567,6 +1630,76 @@ def section_divider(slide, number, title, C=None, typo=None, grouped=True):
         text(slide, 1.2, 3.9, 10.0, 1.5, title,
              font_size=t.hero, color=C.get('white', '#FFFFFF'), bold=True,
              font_name=C.get('font_heading'), C=C)
+
+
+def page_number(slide, current, total, style='simple', C=None, typo=None):
+    """Add page number decoration to slide.
+
+    Args:
+        slide: Slide object
+        current: Current page number
+        total: Total number of pages
+        style: 'simple' (just number), 'gold' (gold decoration),
+               'progress' (with progress bar)
+        C: Color dictionary
+        typo: Typography settings
+
+    Returns:
+        List of shape objects
+    """
+    C = C or {}
+    t = typo or TYPOGRAPHY.get('mckinsey')
+    shapes = []
+
+    if style == 'simple':
+        # Simple page number at bottom right
+        page_text = f"{current} / {total}"
+        s = text(slide, 11.5, 7.0, 1.5, 0.3, page_text,
+                font_size=t.caption, color=C.get('text_muted', '#666666'),
+                align='right', C=C)
+        shapes.append(s)
+
+    elif style == 'gold':
+        # Gold decorative page number
+        num_str = str(current).zfill(2)
+
+        # Large number
+        num_box = text(slide, 10.5, 6.0, 2.0, 1.0, num_str,
+                      font_size=48, color=C.get('accent', '#C99A4E'),
+                      bold=True, align='right', C=C)
+        shapes.append(num_box)
+
+        # Decorative line
+        line = rect(slide, 10.5, 7.0, 2.0, 0.02, C.get('accent', '#C99A4E'))
+        shapes.append(line)
+
+        # Total pages
+        total_box = text(slide, 10.5, 7.1, 2.0, 0.3, f"/ {total}",
+                        font_size=t.caption, color=C.get('text_muted', '#666666'),
+                        align='right', C=C)
+        shapes.append(total_box)
+
+    elif style == 'progress':
+        # Progress bar style
+        num_str = str(current).zfill(2)
+
+        # Page number
+        num_box = text(slide, 0.5, 7.0, 1.5, 0.3, f"{num_str} / {total}",
+                      font_size=t.caption, color=C.get('text_dark', '#1A1A1A'),
+                      bold=True, C=C)
+        shapes.append(num_box)
+
+        # Progress bar background
+        bar_bg = rect(slide, 2.5, 7.1, 8.0, 0.08, C.get('divider', '#E0E0E0'))
+        shapes.append(bar_bg)
+
+        # Progress bar fill
+        progress = current / total if total > 0 else 0
+        bar_fill = rect(slide, 2.5, 7.1, 8.0 * progress, 0.08,
+                       C.get('accent', '#2E6504'))
+        shapes.append(bar_fill)
+
+    return shapes
 
 
 def hero_slide(slide, title, subtitle='', C=None, typo=None, grouped=True):
