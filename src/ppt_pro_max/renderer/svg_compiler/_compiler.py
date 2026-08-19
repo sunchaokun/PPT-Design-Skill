@@ -482,21 +482,33 @@ class SVGCompiler:
 
     @staticmethod
     def _circle_cubics(cx: float, cy: float, r: float) -> list[tuple[float, float]]:
-        """Return 4 cubic Bezier control points for a circle (16 points total)."""
+        """Return 4 cubic Bezier control points for a circle (16 points total).
+        
+        Uses standard circle approximation with k = 4/3 * tan(pi/8).
+        Each quadrant is approximated by one cubic Bezier curve.
+        """
         pts: list[tuple[float, float]] = []
-        k = (4 / 3) * math.tan(math.pi / 8)  # Constant for circle approximation
+        k = (4 / 3) * math.tan(math.pi / 8)  # ≈ 0.5523
+        
+        # Start at angle 0 (rightmost point) and go counter-clockwise
         for i in range(4):
             a0 = i * math.pi / 2
             a1 = (i + 1) * math.pi / 2
+            
+            # Start and end points
             p0x = cx + r * math.cos(a0)
-            p0y = cy + r * math.sin(a0)
+            p0y = cy - r * math.sin(a0)  # Note: SVG y-axis is inverted
             p3x = cx + r * math.cos(a1)
-            p3y = cy + r * math.sin(a1)
-            c1x = p0x + k * r * math.sin(a0) * (-1 if i in (1, 2) else 1)
-            c1y = p0y - k * r * math.cos(a0) * (-1 if i in (0, 1) else 1)
-            c2x = p3x - k * r * math.sin(a1) * (-1 if i in (1, 2) else 1)
-            c2y = p3y + k * r * math.cos(a1) * (-1 if i in (0, 1) else 1)
+            p3y = cy - r * math.sin(a1)
+            
+            # Control points (tangent to circle at start/end)
+            c1x = p0x - k * r * math.sin(a0)
+            c1y = p0y - k * r * math.cos(a0)
+            c2x = p3x + k * r * math.sin(a1)
+            c2y = p3y + k * r * math.cos(a1)
+            
             pts.extend([(p0x, p0y), (c1x, c1y), (c2x, c2y), (p3x, p3y)])
+        
         return pts
 
     @staticmethod
