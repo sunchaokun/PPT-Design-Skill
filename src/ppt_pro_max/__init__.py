@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-__version__ = "0.17.1"
+__version__ = "0.18.0"
 
 from ppt_pro_max.planner.story_planner import StoryPlanner
 from ppt_pro_max.decider.design_decider import DesignDecider
