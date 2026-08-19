@@ -2,9 +2,9 @@
 
 # PPT Design Skill
 
-> 给 OpenCode / Claude Code / Codex / Cursor 的 PPT 生成技能
+> 基于 build 模式的精细化 PPT 设计系统
 
-**一句话 → 专业 .pptx · 40,000+ 风格 · AI 配图 · 完全可编辑**
+**比肩高级设计师的 PPT 作品 · 40,000+ 风格 · 像素级控制 · 完全可编辑**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -15,7 +15,7 @@
 | Build 设计师模式 ⭐ | FreeStyle 自由模式 | VI Build 企业模式 |
 |:---:|:---:|:---:|
 | **像素级控制 + 方案对比** | 一句话出PPT | **基于企业模板 VI 精确生成** |
-| **python-pptx 精确构建** | 30秒快速生成 | **保留框架页 + build_helpers** |
+| **比肩高级设计师水平** | 30秒快速生成 | **保留框架页 + build_helpers** |
 
 [English](docs/README_EN.md) | [使用手册](docs/usage-guide.md) | 中文
 

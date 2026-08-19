@@ -2,9 +2,9 @@
 
 # PPT Design Skill
 
-> PPT generation skill for OpenCode / Claude Code / Codex / Cursor
+> Precision PPT design system with build-mode control
 
-**One prompt → professional .pptx · 40,000+ styles · AI images · Fully editable**
+**Professional designer-quality presentations · 40,000+ styles · Pixel-perfect control · Fully editable**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
@@ -12,10 +12,10 @@
 
 Type in your AI coding tool: `Generate a dark cyberpunk investor pitch PPT` → skill auto-loads → outputs .pptx
 
-| FreeStyle | Build Script | VI Build |
+| Build Mode ⭐ | FreeStyle | VI Build |
 |:---:|:---:|:---:|
-| One-liner generation | **Pixel-perfect + proposals** | **Enterprise template compliance** |
-| 30-second quick draft | **python-pptx precise control** | **Preserve framework pages + build_helpers** |
+| **Pixel-perfect + proposals** | One-liner generation | **Enterprise template compliance** |
+| **Professional designer quality** | 30-second quick draft | **Preserve framework pages + build_helpers** |
 
 [中文](../README.md) | [Usage Guide](usage-guide.md) | English
 
