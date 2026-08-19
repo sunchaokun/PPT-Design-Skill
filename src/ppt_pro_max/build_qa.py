@@ -139,6 +139,7 @@ class BuildQA:
         "element_out_of_bounds",
         "image_stretched",
         "low_contrast_text",
+        "spacing_tight",
     }
 
     def check(
@@ -184,6 +185,7 @@ class BuildQA:
             all_items.extend(self._check_element_out_of_bounds(idx, slide, slide_width, slide_height))
             all_items.extend(self._check_image_stretched(idx, slide))
             all_items.extend(self._check_low_contrast_text(idx, slide_elem, prs=prs))
+            all_items.extend(self._check_spacing(idx, slide))
 
         planned_count = len(plans) if plans else 0
         all_items.extend(self._check_page_count(total_slides, planned_count))
@@ -805,6 +807,72 @@ class BuildQA:
                 auto_fixable=False,
             ))
         return items
+
+    def _check_spacing(self, slide_idx: int, slide) -> list[CheckItem]:
+        """Check minimum spacing between shapes on a slide."""
+        items = []
+        shapes = list(slide.shapes)
+
+        if len(shapes) < 2:
+            return items
+
+        # Minimum gap: 30px = 30/96 inches = 0.3125 inches
+        min_gap_inches = 0.3125
+
+        for i, s1 in enumerate(shapes):
+            for s2 in shapes[i + 1:]:
+                gap = self._calc_gap(s1, s2)
+                if 0 < gap < min_gap_inches:
+                    items.append(CheckItem(
+                        "layout", "spacing_tight", "review", slide_idx,
+                        f"Shapes too close: {gap:.2f}in gap (min: {min_gap_inches:.2f}in)",
+                        auto_fixable=False,
+                    ))
+                    break  # Only report once per shape pair
+        return items
+
+    def _calc_gap(self, s1, s2) -> float:
+        """Calculate the minimum gap between two shapes in inches.
+
+        Returns positive value if shapes are separated, 0 if overlapping,
+        negative if they overlap.
+        """
+        try:
+            # Get bounding boxes in EMU
+            x1, y1 = s1.left, s1.top
+            w1, h1 = s1.width, s1.height
+            x2, y2 = s2.left, s2.top
+            w2, h2 = s2.width, s2.height
+
+            # Calculate gap
+            # Horizontal gap
+            if x1 + w1 < x2:  # s1 is left of s2
+                h_gap = x2 - (x1 + w1)
+            elif x2 + w2 < x1:  # s2 is left of s1
+                h_gap = x1 - (x2 + w2)
+            else:  # Overlapping horizontally
+                h_gap = 0
+
+            # Vertical gap
+            if y1 + h1 < y2:  # s1 is above s2
+                v_gap = y2 - (y1 + h1)
+            elif y2 + h2 < y1:  # s2 is above s1
+                v_gap = y1 - (y2 + h2)
+            else:  # Overlapping vertically
+                v_gap = 0
+
+            # Return the minimum gap
+            if h_gap > 0 and v_gap > 0:
+                return min(h_gap, v_gap) / 914400  # EMU to inches
+            elif h_gap > 0:
+                return h_gap / 914400
+            elif v_gap > 0:
+                return v_gap / 914400
+            else:
+                return 0  # Overlapping
+
+        except Exception:
+            return 0  # Skip if calculation fails
 
     # ── Auto-fix implementations ──
 
