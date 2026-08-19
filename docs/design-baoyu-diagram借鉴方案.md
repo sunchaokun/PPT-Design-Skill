@@ -188,39 +188,47 @@ def _check_spacing(self, slide, slide_idx: int) -> list[CheckItem]:
 
 **优先级：** P3
 
-**范围：** LLM 生成 build.py 时的查询逻辑
+**范围：** SKILL.md + ui-ux 模块
 
 **问题：** 当生成架构图、数据流等技术图表时，颜色分配没有按角色（frontend/backend/database）分类。
 
 **当前能力：**
 - `ui-ux` 模块已提供 `search_color(query)` 函数，可按查询词搜索颜色
 - `get_design_system(query)` 可获取完整的设计系统建议（含颜色）
+- **但缺少**：技术图表颜色角色的明确指导（如 frontend=cyan, backend=emerald）
 
-**方案：** 在 LLM 生成 build.py 时，调用 `ui-ux` 模块查询技术图表的颜色建议，而非硬编码颜色。
+**方案：** 在 SKILL.md 中添加技术图表颜色角色说明，供 LLM 生成 build.py 时参考。
 
 **实现要点：**
 
-LLM 在生成架构图 build.py 时，可调用：
+在 `skill/SKILL.md` 的 SVG Compiler 章节中添加：
 
+```markdown
+#### 技术图表颜色角色
+
+当生成架构图、数据流等技术图表时，建议按角色分配颜色：
+
+| 角色 | 颜色 | 说明 |
+|------|------|------|
+| Frontend / 用户面 | cyan (#22d3ee) | 前端、UI、用户交互 |
+| Backend / 服务 | emerald (#34d399) | 后端、API、微服务 |
+| Database / 存储 | violet (#a78bfa) | 数据库、缓存、存储 |
+| Infrastructure | amber (#fbbf24) | 云、基础设施、区域 |
+| Security / Alert | rose (#fb7185) | 安全、错误、警告 |
+| Connector | orange (#fb923c) | 总线、队列、中间件 |
+
+**查询方式：**
 ```python
-from ppt_pro_max.adapters.ui_ux_adapter import search_color, get_design_system
+from ppt_pro_max.adapters.ui_ux_adapter import search_color
 
-# 方式1：按角色查询颜色
-frontend_colors = search_color("frontend user interface")  # 返回 cyan 系
-backend_colors = search_color("backend service")           # 返回 emerald 系
-database_colors = search_color("database storage")         # 返回 violet 系
-
-# 方式2：获取完整设计系统
-ds = get_design_system("architecture diagram", category="technical")
-ux_colors = ds.get('colors', {})
+# 按角色查询颜色
+frontend_colors = search_color("frontend user interface")
+backend_colors = search_color("backend service")
+database_colors = search_color("database storage")
+```
 ```
 
-**优势：**
-- 复用现有 `ui-ux` 模块能力
-- 颜色建议基于设计数据库，更专业
-- 无需在 SKILL.md 中硬编码颜色
-
-**工作量：** 无需代码修改，仅需在 SKILL.md 中说明查询方式
+**工作量：** 约 20-30 行（SKILL.md 修改）
 
 ---
 
@@ -292,7 +300,7 @@ ux_colors = ds.get('colors', {})
 | P1 | 半透明叠层 atom | 15-25行 | 低 | 已有 frosted_panel() |
 | P1 | 页码装饰组件 | 30-50行 | 低 | ✅ 完成 |
 | P1 | 间距检查规则 | 60-80行 | 中 | ✅ 完成 |
-| P2 | 语义化颜色角色查询 | 无需代码 | 低 | 仅在SKILL.md中说明ui-ux查询方式 |
+| P2 | 技术图表颜色角色说明 | 20-30行 | 低 | 待实现（SKILL.md） |
 
 ---
 
