@@ -513,20 +513,32 @@ class SVGCompiler:
 
     @staticmethod
     def _ellipse_cubics(cx: float, cy: float, rx: float, ry: float) -> list[tuple[float, float]]:
+        """Return 4 cubic Bezier control points for an ellipse (16 points total).
+        
+        Uses standard ellipse approximation.
+        Note: SVG y-axis is inverted (down is positive), so we use cy - ry*sin(a).
+        """
         pts: list[tuple[float, float]] = []
+        k = (4 / 3) * (math.sqrt(2) - 1)  # ≈ 0.5523
+        
         for i in range(4):
             a0 = i * math.pi / 2
             a1 = (i + 1) * math.pi / 2
+            
+            # Start and end points (SVG y-axis inverted)
             p0x = cx + rx * math.cos(a0)
-            p0y = cy + ry * math.sin(a0)
+            p0y = cy - ry * math.sin(a0)
             p3x = cx + rx * math.cos(a1)
-            p3y = cy + ry * math.sin(a1)
-            k = (4 / 3) * (math.sqrt(2) - 1)
-            c1x = p0x + k * rx * math.sin(a0)
+            p3y = cy - ry * math.sin(a1)
+            
+            # Control points (tangent to ellipse at start/end)
+            c1x = p0x - k * rx * math.sin(a0)
             c1y = p0y - k * ry * math.cos(a0)
-            c2x = p3x - k * rx * math.sin(a1)
+            c2x = p3x + k * rx * math.sin(a1)
             c2y = p3y + k * ry * math.cos(a1)
+            
             pts.extend([(p0x, p0y), (c1x, c1y), (c2x, c2y), (p3x, p3y)])
+        
         return pts
 
     @staticmethod
