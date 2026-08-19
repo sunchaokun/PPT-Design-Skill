@@ -26,7 +26,7 @@ class StrokeStyle:
 
 _LINECAP_MAP = {
     "butt": "flat",
-    "round": "round",
+    "round": "flat",  # PowerPoint doesn't support round cap, use flat instead
     "square": "square",
 }
 
