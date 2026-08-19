@@ -388,7 +388,7 @@ def dashed_rect(slide, left, top, width, height, fill=None,
         shape.fill.solid()
         shape.fill.fore_color.rgb = _rgb(_resolve_color(fill, C))
     else:
-        shape.line.fill.background()
+        shape.fill.background()  # No fill (transparent)
 
     # Line with dash style
     shape.line.color.rgb = _rgb(_resolve_color(line_color, C))
