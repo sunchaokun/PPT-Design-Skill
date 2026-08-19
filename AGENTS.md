@@ -121,6 +121,32 @@ python -m ruff check src/
 - `src/ppt_pro_max/renderer/svg_compiler/` — SVG→native editable PPTX shapes compiler
 - `src/ppt_pro_max/build_helpers.py:svg_chart()` — Tier 3 component-level brush: `svg_chart(slide, svg_text, x, y, w, h, C=C)`
 
+#### SVG Compiler Capabilities (What It Can Do)
+
+| Category | Supported Features |
+|----------|-------------------|
+| **Shapes** | `<rect>` (with rx/ry), `<circle>`, `<ellipse>`, `<polygon>`, `<polyline>`, `<line>`, `<path>` (full SVG 1.1 commands: M/L/H/V/C/S/Q/T/A/Z) |
+| **Text** | `<text>`, `<tspan>` (multi-line, dx/dy offsets, inheritance), font-size/family/weight/style, text-anchor, dominant-baseline |
+| **Text Effects** | `stroke` + `stroke-width` on text (dual-layer overlay), bold for thicker outline |
+| **Fill** | solid color, `<linearGradient>`, `<radialGradient>`, `none`, `fill-opacity`, `fill-rule` (evenodd) |
+| **Stroke** | color, width, dasharray (dash/dot/lgDash/dashDot/lgDashDot), linecap, linejoin, miterlimit |
+| **Colors** | #hex (3/6位), rgb()/rgba(), hsl()/hsla(), 148 named colors, var(--name), currentColor |
+| **Transforms** | translate, scale, rotate, matrix, skewX, skewY, nested combinations |
+| **Clipping** | `<clipPath>` with rect/circle/ellipse/polygon/polyline/line/path (Shapely boolean intersection) |
+| **References** | `<use>` (href/xlink:href), `<defs>` collection |
+| **Scaling** | contain (default), cover, stretch |
+
+#### SVG Compiler Limitations (What It Cannot Do)
+
+| Limitation | Workaround |
+|------------|-----------|
+| `<image>` / `<filter>` / `<mask>` | Skipped with warning |
+| `<style>` CSS classes | Stripped; use inline attributes |
+| `<textPath>` (text on path) | Not supported |
+| `<animate>` / `<set>` (SVG animations) | Not supported |
+| `spreadMethod="reflect"/"repeat"` | Raises SVGCompileError |
+| Text gradient fill (`url(#gradient)`) | Falls back to solid #000000 |
+
 #### When to use `svg_chart()` vs build_helpers atoms
 
 **Decision tree (3 layers):**
@@ -152,6 +178,9 @@ python -m ruff check src/
 | Gauge/dashboard (arc + pointer + tick marks) | Arc paths + rotation | `<path>` (A command), `transform` |
 | Org chart / tree (multi-level + polyline connectors) | Rectangles + bent connectors | `<rect>`, `<polyline>`, `<text>` |
 | Sankey diagram (flows + curved connections) | Bezier paths | `<path>` (C/Q commands) |
+| Complex gradient fills on shapes | Multiple gradient stops + transforms | `<linearGradient>`, `<radialGradient>` |
+| Clip-path masking | Shape clipping with boolean operations | `<clipPath>`, Shapely |
+| Freeform curves | Bezier curves, arcs, complex paths | `<path>` with C/Q/A commands |
 
 **Layer 3 — Mixed (recommended default):**
 ```python
@@ -161,15 +190,24 @@ slide = page_header(...)                                          # atom
        + text(slide, 0.5, 7, ...)                                 # atom
 ```
 
-**Quick decision signals:**
+**Quick decision signals — USE `svg_chart()` WHEN:**
 
-| Signal | Choose |
-|--------|--------|
-| ≥ 3 shapes needing **coordinate interdependence** (pyramid tiers aligned, radar vertices radiating) | `svg_chart()` |
-| `defs`/`linearGradient`/`radialGradient`/`clipPath` needed | `svg_chart()` |
-| Freeform curves (`path` with Q/C Bezier commands) | `svg_chart()` |
-| Single responsibility (one shape, one text, one card) | atom |
-| Atom function fully covers the need | atom |
+| Signal | Why |
+|--------|-----|
+| ≥ 3 shapes needing **coordinate interdependence** (pyramid tiers aligned, radar vertices radiating) | Atoms can't coordinate positions |
+| `defs`/`linearGradient`/`radialGradient`/`clipPath` needed | Atoms don't support gradients/clipping |
+| Freeform curves (`path` with Q/C/A Bezier commands) | Atoms only support basic shapes |
+| Complex multi-shape diagram (Venn, Sankey, org chart) | Too many atoms to compose cleanly |
+| Need SVG `transform` (rotate, skew, matrix) on shapes | Atoms don't support transforms |
+
+**Quick decision signals — USE atoms WHEN:**
+
+| Signal | Why |
+|--------|-----|
+| Single responsibility (one shape, one text, one card) | Atom is simpler |
+| Atom function fully covers the need | No need for SVG complexity |
+| Simple layout with no coordinate dependencies | Atoms are faster |
+| Need editable data in charts | `native_chart()` has editable data |
 
 #### SVG Compiler internals
 
@@ -177,17 +215,17 @@ slide = page_header(...)                                          # atom
 - **Text overflow**: SVG `<text>` may overflow the viewBox — the compiler preserves SVG-specified font sizes and does not shrink text to fit the region. Textbox width uses natural measurement (`metrics.width_inches + 0.2`).
 - **CJK measurement**: When PIL `truetype` fails and content has CJK characters, falls back to `estimate_text_size()` (character-based width table). See `_text.py:_has_cjk()`.
 - **Overlap warnings**: `_detect_text_overlaps()` uses O(n²) pairwise check on text boxes — emits warnings for overlaps > 0.05". Adjacent text boxes within a card (badge + title) trigger cosmetic warnings; these are expected and do not affect rendered output.
-- **Scaling mode**: Currently "contain" only (`min(w/vw, h/vh)`). No "cover" or "stretch" option yet.
+- **Scaling modes**: "contain" (default), "cover", "stretch" all supported via `svg_chart(scaling=...)`.
 - **`<use>` element**: Supported — `_render_use()` resolves `href`/`xlink:href` against `_defs`, applies x/y offset via Affine, and recursively walks the referenced element.
 - **`gradientTransform`**: Supported — `apply_gradient()` transforms gradient coordinates via `tf.apply()` for both radial and linear gradients.
 - **Stroke dash/cap/join**: Supported — `parse_stroke_style()` and `apply_stroke_style()` are called in `_render_shape()`.
+- **Text stroke**: Implemented via dual-layer TextBox overlay (bottom layer = stroke color, top layer = fill color).
 - **Sanitizer**: Uses `_fix_self_closing_lxml()` (not regex) — preserves child elements like `<rect><title>...</title></rect>`.
 
 #### SVG Compiler known gaps
 
 | Gap | Location | Impact |
 |-----|----------|--------|
-| ~~`_BASELINE_MAP` defined twice~~ | Fixed — `_text.py:83` is `_BASELINE_MAP`, `_text.py:94` is `_BASELINE_OFFSET` (different dicts) | No longer a maintenance risk |
 | `tspan` `dx`/`dy` offsets — partial | `_text.py:_render_tspan_text` | `dx` approximated via spacer run with `spc`; `dy` triggers new line when `abs(dy) > parent_fs * 0.8` (line-height-aware), adjusts `space_before`. Intra-line `dy` (subscript/superscript) stays inline |
 | `rect` `rx`/`ry` — implemented | `_compiler.py:_rounded_rect_cubics` | Rounded rectangles rendered as freeform with `cubic_bezier_to` (4 cubic Bezier arcs per corner) |
 | Scaling modes — implemented | `_compiler.py:_to_inches`, `svg_chart(scaling=...)` | "contain" (default), "cover", "stretch" all supported |
