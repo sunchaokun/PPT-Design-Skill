@@ -4,7 +4,7 @@
 
 > 基于 build 模式的精细化 PPT 设计系统
 
-**比肩高级设计师的 PPT 作品 · 40,000+ 风格 · 像素级控制 · 完全可编辑**
+**Precision PPT design system with 40,000+ styles, pixel-perfect build-mode control, and AI image generation**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)

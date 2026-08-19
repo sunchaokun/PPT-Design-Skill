@@ -4,7 +4,7 @@
 
 > Precision PPT design system with build-mode control
 
-**Professional designer-quality presentations · 40,000+ styles · Pixel-perfect control · Fully editable**
+**Precision PPT design system with 40,000+ styles, pixel-perfect build-mode control, and AI image generation**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
