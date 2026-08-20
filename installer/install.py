@@ -243,7 +243,7 @@ def install_python_package(skill_dir: Path, project_root: Path | None = None) ->
 
 
 def install_ui_ux_pro_max(target_dir: Path, force: bool = False) -> bool:
-    print("\n  Checking ui-ux-pro-max skill (required dependency)...")
+    print("\n  Checking bundled design knowledge database...")
     # Since v2, the design knowledge database is BUNDLED inside ppt_pro_max
     # (adapters/design_search.py + data/*.csv). No external ui-ux-pro-max
     # skill / uipro CLI is required — is_available() reflects the bundled DB.
@@ -536,7 +536,7 @@ def main() -> None:
             else:
                 install_python_package(project_root, project_root=project_root)
 
-    # --- ui-ux-pro-max skill (required) ---
+    # --- bundled design knowledge database ---
     install_ui_ux_pro_max(target_dir, force=args.force)
 
     # --- render dependencies (LibreOffice + poppler) auto-install ---
