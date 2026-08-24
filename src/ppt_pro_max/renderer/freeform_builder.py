@@ -1,6 +1,6 @@
 """Freeform Builder — custom geometric paths and decorative connectors.
 
-Creates Freeform shapes (任意多边形) via OOXML custGeom XML, enabling:
+Creates Freeform shapes via OOXML custGeom XML, enabling:
   - Curved/straight connector lines between nodes
   - Arrow shapes and decorative pointers
   - Custom geometric backgrounds (chevrons, ribbons, etc.)
@@ -174,8 +174,6 @@ def make_curved_connector(
     my = (y1 + y2) / 2
     dx = x2 - x1
     dy = y2 - y1
-    cx1 = mx -dy * curvature
-    dx * curvature
     cx1 = mx - dy * curvature
     cy1 = my + dx * curvature
 
