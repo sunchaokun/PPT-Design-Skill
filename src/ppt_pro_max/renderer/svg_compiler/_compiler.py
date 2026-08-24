@@ -718,16 +718,21 @@ class SVGCompiler:
             )
             return
 
-        # Fast path: rect with solid fill and no stroke → native shape
+        # Fast path: rect with solid or gradient fill and no stroke → native shape
         if (
             tag == "rect"
             and not el.get("rx")
             and not el.get("ry")
-            and fkind == "solid"
+            and fkind in ("solid", "grad")
             and skind == "none"
             and not clip_stack
         ):
-            self._add_native(ix0, iy0, iw, ih, fval, fa)
+            if fkind == "solid":
+                self._add_native(ix0, iy0, iw, ih, fval, fa)
+            else:
+                # Gradient on native shape
+                elem = self._add_native(ix0, iy0, iw, ih, None, fa)
+                self._apply_gradient_to_elem(elem, fval)
             return
 
         # Freeform path
@@ -809,7 +814,7 @@ class SVGCompiler:
 
     def _add_native(
         self, x: float, y: float, w: float, h: float, fill: str | None, alpha: int
-    ) -> None:
+    ) -> object:
         sh = self._slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
         if fill:
             sh.fill.solid()
@@ -820,6 +825,7 @@ class SVGCompiler:
             sh.fill.background()
         sh.line.fill.background()
         self._shape_count += 1
+        return sh
 
     def _add_freeform(
         self,

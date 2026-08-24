@@ -24,6 +24,8 @@ _STYLE_PROPS = {
     "stroke-dasharray": re.compile(r"(?:^|;)\s*stroke-dasharray\s*:\s*([^;]+?)(?:;|$)"),
     "fill-opacity": re.compile(r"(?:^|;)\s*fill-opacity\s*:\s*([^;]+?)(?:;|$)"),
     "stroke-opacity": re.compile(r"(?:^|;)\s*stroke-opacity\s*:\s*([^;]+?)(?:;|$)"),
+    "stop-color": re.compile(r"(?:^|;)\s*stop-color\s*:\s*([^;]+?)(?:;|$)"),
+    "stop-opacity": re.compile(r"(?:^|;)\s*stop-opacity\s*:\s*([^;]+?)(?:;|$)"),
     "font-size": re.compile(r"(?:^|;)\s*font-size\s*:\s*([^;]+?)(?:;|$)"),
     "font-family": re.compile(r"(?:^|;)\s*font-family\s*:\s*([^;]+?)(?:;|$)"),
     "font-weight": re.compile(r"(?:^|;)\s*font-weight\s*:\s*([^;]+?)(?:;|$)"),

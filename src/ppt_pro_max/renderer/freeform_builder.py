@@ -93,19 +93,26 @@ class FreeformBuilder:
                 if cmd["cmd"] == "moveTo":
                     moveTo = etree.SubElement(path_el, qn("a:moveTo"))
                     pt = etree.SubElement(moveTo, qn("a:pt"))
-                    pt.set("x", str(int(cmd["x"] * EMU_PER_INCH)))
-                    pt.set("y", str(int(cmd["y"] * EMU_PER_INCH)))
+                    # Convert inches to local coordinates (0 to path_w/path_h)
+                    px = int(cmd["x"] / w * path_w) if w > 0 else 0
+                    py = int(cmd["y"] / h * path_h) if h > 0 else 0
+                    pt.set("x", str(px))
+                    pt.set("y", str(py))
                 elif cmd["cmd"] == "lnTo":
                     lnTo = etree.SubElement(path_el, qn("a:lnTo"))
                     pt = etree.SubElement(lnTo, qn("a:pt"))
-                    pt.set("x", str(int(cmd["x"] * EMU_PER_INCH)))
-                    pt.set("y", str(int(cmd["y"] * EMU_PER_INCH)))
+                    px = int(cmd["x"] / w * path_w) if w > 0 else 0
+                    py = int(cmd["y"] / h * path_h) if h > 0 else 0
+                    pt.set("x", str(px))
+                    pt.set("y", str(py))
                 elif cmd["cmd"] == "cubicBezTo":
                     bez = etree.SubElement(path_el, qn("a:cubicBezTo"))
                     for prefix in ["1", "2", "3"]:
                         pt = etree.SubElement(bez, qn("a:pt"))
-                        pt.set("x", str(int(cmd[f"x{prefix}"] * EMU_PER_INCH)))
-                        pt.set("y", str(int(cmd[f"y{prefix}"] * EMU_PER_INCH)))
+                        px = int(cmd[f"x{prefix}"] / w * path_w) if w > 0 else 0
+                        py = int(cmd[f"y{prefix}"] / h * path_h) if h > 0 else 0
+                        pt.set("x", str(px))
+                        pt.set("y", str(py))
                 elif cmd["cmd"] == "close":
                     etree.SubElement(path_el, qn("a:close"))
 
