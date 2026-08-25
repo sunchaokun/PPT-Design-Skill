@@ -159,6 +159,27 @@ On Windows, users who explicitly want the installer to use `winget` may run:
 python install.py --render-deps
 ```
 
+### Optional: AI image generation
+
+AI image generation needs a provider API key. Copy the example into the
+presentation project that runs `build.py`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then configure one provider in `.env`, for example:
+
+```dotenv
+PPT_IMAGE_LLM_PROVIDER=gpt-image
+OPENAI_API_KEY=your-api-key
+```
+
+The `.env` belongs to the user's project, not the installed Skill directory,
+and must never be committed. See [image/runtime configuration](skill/references/install-and-runtime.md)
+for Seedream, Gemini, Wanx, Kimi, OpenAI-compatible endpoints, stock-image
+search, and host-provided image generation.
+
 ## 检查真实案例
 
 ```powershell
