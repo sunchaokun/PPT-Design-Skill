@@ -1,0 +1,4 @@
+interface:
+  display_name: "PPT Design Skill"
+  short_description: "Design and visually review editable PowerPoint decks"
+  default_prompt: "Create an editable PowerPoint deck using the appropriate Build, FreeStyle, or VI Build mode; follow a brief-first workflow, render it to PDF and PNG, inspect every PNG, and revise until the visual result meets the user's requirements."

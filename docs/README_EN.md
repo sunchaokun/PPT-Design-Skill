@@ -1,257 +1,215 @@
-<div align="center">
-
 # PPT Design Skill
 
-> Precision PPT design system with build-mode control
+PPT Design Skill is a brief-first presentation design workflow powered
+by the published [`pptx-designer`](https://pypi.org/project/pptx-designer/)
+Python library.
 
-**Precision PPT design system with 40,000+ styles, pixel-perfect build-mode control, and AI image generation**
+Current release: `1.0`
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
-[![pptx](https://img.shields.io/badge/python--pptx-1.0.2-green.svg)](https://pypi.org/project/python-pptx/)
+The library generates the editable PPTX. The skill is responsible for the
+design process and quality gate:
 
-Type in your AI coding tool: `Generate a dark cyberpunk investor pitch PPT` → skill auto-loads → outputs .pptx
-
-| Build Mode ⭐ | FreeStyle | VI Build |
-|:---:|:---:|:---:|
-| **Pixel-perfect + proposals** | One-liner generation | **Enterprise template compliance** |
-| **Professional designer quality** | 30-second quick draft | **Preserve framework pages + build_helpers** |
-
-[中文](../README.md) | [Usage Guide](usage-guide.md) | English
-
-</div>
-
----
-
-## ✨ Showcase
-
-> 5 styles, 5 scenarios — each with cover + content page, AI images by Seedream
-
-### 🏢 Professional Modern — Enterprise Investor Pitch
-
-<img src="showcase/showcase-professional-slide1.jpg" width="45%"/> <img src="showcase/showcase-professional-slide2.jpg" width="45%"/>
-
-*Navy blue corporate · Gold accents · Left sidebar navigation · 2×2 metric cards*
-
-### 🌌 Dark Tech — AI Product Launch
-
-<img src="showcase/showcase-dark-tech-slide1.jpg" width="45%"/> <img src="showcase/showcase-dark-tech-slide2.jpg" width="45%"/>
-
-*Cyberpunk dark · Neon blue/purple/pink · Consolas monospace · 3-column feature cards*
-
-### 🏛️ Warm Elegant — Luxury Brand Strategy
-
-<img src="showcase/showcase-warm-elegant-slide1.jpg" width="45%"/> <img src="showcase/showcase-warm-elegant-slide2.jpg" width="45%"/>
-
-*Golden marble · Georgia serif · Centered editorial layout · Diamond bullet points*
-
-### 🚀 Vibrant Startup — Fundraising Pitch Deck
-
-<img src="showcase/showcase-vibrant-startup-slide1.jpg" width="45%"/> <img src="showcase/showcase-vibrant-startup-slide2.jpg" width="45%"/>
-
-*Purple-pink gradient · Segoe UI · Progress bar metrics · Semi-transparent stat pills*
-
-### 🌿 Nature Calm — Sustainability Impact Report
-
-<img src="showcase/showcase-nature-calm-slide1.jpg" width="45%"/> <img src="showcase/showcase-nature-calm-slide2.jpg" width="45%"/>
-
-*Forest green · Circle accents · 4-column impact cards · Narrow left sidebar*
-
----
-
-## 🚀 Quick Start
-
-### Install as Skill (Recommended)
-
-```bash
-git clone https://github.com/sunchaokun/PPT-Design-Skill.git
-cd PPT-Design-Skill
-
-# One-click install — auto-detect platform + install skill + deps
-python install.py                     # Auto-detect
-python install.py --platform opencode # Specify platform
+```text
+brief -> page structure -> visual direction -> build -> PPTX -> PDF -> PNG ->
+LLM visual review -> revision -> user confirmation -> delivery
 ```
 
-Supports 13 platforms: OpenCode · Claude Code · Codex · Cursor · Windsurf · Roo Code · Gemini · Trae · Continue · Droid · KiloCode · Augment · Copilot
+## Install
 
-### Use as Python Package
-
-```bash
-pip install .
-ppt-design "AI startup investor pitch" --style "dark cyberpunk"
+```powershell
+python install.py
+python skill/scripts/check_runtime.py
 ```
 
-### Use in AI Coding Tools
+Install the skill for supported coding assistants:
 
-After installation, type in OpenCode / Claude Code / Codex:
-
-```
-Generate a dark cyberpunk investor pitch PPT
-```
-
-The AI will auto-load the skill and generate a .pptx file.
-
-### FreeStyle — Generate from a Sentence
-
-```bash
-ppt-design "AI startup investor pitch"
-ppt-design "fintech pitch" --style "warm fintech"
-ppt-design "product launch" --style "dark cyberpunk tech"
-ppt-design "ESG report" --style "calm nature"
-
-# AI images + animation
-ppt-design "investor pitch" --style "dark cyberpunk" \
-  --fetch-images --llm-provider seedream --llm-api-key $ARK_API_KEY \
-  --motion 7 --density 6
+```powershell
+python installer/install.py --platform all --force
+python installer/install.py --platform deepseek-harness --project --force
 ```
 
-### VI Build — Enterprise Template Compliance
+The installer supports Claude Code, Codex, DeepSeek Harness, OpenCode, Cursor,
+Windsurf, Roo Code, Gemini CLI, Trae, Continue, Droid, KiloCode, Augment, and
+GitHub Copilot. See [installer/README.md](../installer/README.md).
 
-```bash
-python -m ppt_pro_max analyze template.pptx > analysis.txt
-# Feed analysis.txt to LLM to generate build.py, then:
-python build.py
-```
+## Three modes
 
-### Build Script — Per-Page Precision
+| Mode | Use case | Implementation |
+|---|---|---|
+| Build Mode | Delivery-grade blank-canvas composition | Python + public `pptx_designer.tools.*` |
+| FreeStyle Mode | Fast exploration or goal-driven generation | `generate_ppt(query=...)` or `generate_ppt(content=...)` |
+| VI Build Mode | Existing template and enterprise brand compliance | Template + `extract_design_dna()` + controlled new pages |
+
+### Build Mode
+
+Use Build Mode when exact coordinates, custom composition, advanced diagrams,
+or a stable design-token system are required.
+
+### FreeStyle: `generate_ppt()`
+
+FreeStyle is the library's goal-based generation path. A query is convenient
+for a fast topic-driven draft; a structured `content` dictionary gives the LLM
+more control over page goals and copy. Both use `generate_ppt()` and neither
+provides pixel-level element placement.
+
+### VI Build Mode
+
+Use VI Build when the user supplies a corporate template or requires brand
+compliance. Analyze the template, extract design DNA, preserve framework pages,
+add content pages using the template's visual system, and review the complete
+deck through PPTX -> PDF -> PNG. Read
+[template-brand.md](../skill/references/template-brand.md).
+
+Complex PowerPoint masters, SmartArt, animations, and private OOXML behavior
+may require a controlled approximation and must not be promised as pixel-perfect.
+
+### Build Mode implementation
+
+Build Mode writes ordinary, reviewable Python using public
+`pptx_designer` helpers. Use it for delivery-grade work, custom composition,
+complex diagrams, brand systems, and exact placement. See the real design
+cases in [examples/README.md](../examples/README.md).
+
+## Quality gate
+
+Do not claim completion because the Python script ran or a PPTX file exists.
+Always export the confirmed PPTX -> PDF -> PNG path, inspect every rendered
+slide, revise material visual issues, and obtain user confirmation.
+
+The visual review is performed by the LLM reading the PNGs. The skill does not add a
+separate visual scoring service.
+
+Before generation, convert the user's brief into a small acceptance contract.
+After rendering, compare every `MUST` condition with visible evidence in the
+PNG and record `PASS`, `NEEDS_REVISION`, or `BLOCKED`. A general statement that
+the deck “looks good” is not sufficient.
+
+## Documentation
+
+- [Chinese usage guide](usage-guide.md)
+- [Skill workflow](../skill/SKILL.md)
+- [Public API contract](../skill/references/public-api.md)
+- [QA and delivery](../skill/references/qa-and-delivery.md)
+- [Examples](../examples/README.md)
+
+## Real design cases
+
+The repository includes three complete editorial PPTX artifacts from the maintained
+`pptx-designer` examples:
+
+- [Luxury Fragrance Lookbook](../examples/output/luxury_fragrance_lookbook.pptx)
+- [Couture Editorial Deck](../examples/output/couture_editorial_deck.pptx)
+- [Architecture Vision Book](../examples/output/architecture_vision_book.pptx)
+
+These are visual reference cases, not disposable smoke-test decks. They show
+how the skill should use distinct page structures, atmosphere imagery, native
+editable text and shapes, and a coherent editorial narrative.
+
+### Visual preview
+
+[![Three PPT Design Skill case studies](assets/cases/contact-sheet.png)](../examples/README.md)
+
+The preview is rendered from the actual case PPTX files through the confirmed
+PPTX -> PDF -> PNG path. Open the [Luxury Fragrance](assets/cases/luxury-fragrance-slide01.png),
+[Couture Editorial](assets/cases/couture-editorial-slide01.png), or
+[Architecture Vision](assets/cases/architecture-vision-slide01.png) representative page.
+
+## What the skill does
+
+The skill uses a mature presentation-design framework with `pptx-designer` as
+its implementation engine.
+It covers:
+
+- audience and scenario analysis;
+- page-level narrative planning;
+- domain-specific visual paradigms;
+- palette, typography, spacing, density, and image direction;
+- FreeStyle, Build Mode, and VI Build Mode routing;
+- reproducible Python generation;
+- basic PPTX structural inspection;
+- confirmed PPTX -> PDF -> PNG rendering;
+- direct LLM review of every rendered PNG;
+- targeted revision and user confirmation.
+
+The skill is not a prompt-to-image service or a replacement for PowerPoint's
+rendering engine. The Python library produces the editable file;
+the skill is the design and quality-control layer around it.
+
+## Design principles
+
+The following principles remain mandatory:
+
+1. Design for the audience and the communication goal.
+2. Build a coherent visual system across the deck.
+3. Prefer restraint, hierarchy, and meaningful variation over decoration.
+4. Detect the domain before choosing a business-slide pattern.
+5. Use real data and label assumptions.
+6. Keep important information as native editable objects.
+7. Do not call a deck complete until the rendered PNGs have been reviewed.
+
+The skill explicitly rejects repeated default card grids, tiny unreadable text,
+stretched images, random theme changes, fake precision, and full-page screenshots
+used as a substitute for editable content.
+
+## Mode selection in practice
+
+FreeStyle has two input forms, but they use the same `generate_ppt()` library
+pipeline:
 
 ```python
-from ppt_pro_max.build_helpers import *
+from pptx_designer import generate_ppt
 
-prs = Presentation()
-s = add_slide(prs)
-hero_slide(s, 'Title', 'Subtitle', C=C, typo=TYPOGRAPHY['mckinsey'])
-# ... precise control over every element: x, y, w, h, font, size, color
-prs.save("output/presentation.pptx")
+# Topic-driven draft
+generate_ppt("AI startup pitch", style="professional", output="output/pitch.pptx")
+
+# Content-driven draft
+generate_ppt(
+    content={
+        "title": "Business review",
+        "pages": [
+            {"goal": "hook", "title": "The signal is clear"},
+            {"goal": "data", "title": "Key metrics", "bullets": ["Revenue: $12M"]},
+        ],
+    },
+    style="professional",
+    output="output/review.pptx",
+)
 ```
 
----
+Use Build Mode when exact coordinates, custom diagrams, a stable design-token
+system, or delivery-grade composition is required. Build Mode scripts are
+ordinary Python and should be reviewed and versioned like application code.
 
-## 🔥 Features
+Use VI Build when a template or enterprise brand system must be preserved. The
+template is analyzed, framework pages are protected, new pages inherit the
+brand token system, and the complete result is checked through PNG rendering.
 
-| Feature | Description |
-|---------|-------------|
-| **Triple-Mode Engine** | FreeStyle rapid generation + Build Script per-page precision + VI Build enterprise compliance |
-| **40,000+ Style Combos** | 30 palettes × 25 fonts × 15 decorations × 12 layouts, natural language `--style` |
-| **AI Image Engines** | Seedream / GPT Image / DALL-E / Gemini / Wanx — 5 engines + Kimi enhancement |
-| **python-pptx Direct** | Fully editable .pptx, 356x faster than HTML→screenshot |
-| **10 Diagram Types** | Flowchart / Funnel / Timeline / SWOT / Matrix / Cycle / Table / Hierarchy / Pyramid / Venn |
-| **Animation System** | 12 transitions + 10 entrance + 8 exit + 8 emphasis + Morph, motion 1-10 mapping |
-| **CJK Fonts** | 12 CJK font pairings with auto-fallback |
-| **Built-in Design DB** | 192 palettes · 84 styles · 74 font pairs · 161 anti-patterns, BM25 search, out-of-the-box |
+## Mandatory visual gate
 
----
+After generation, run:
 
-## 🏗️ Triple-Mode Architecture
-
-| | **FreeStyle** | **Build Script** | **VI Build** |
-|---|---|---|---|
-| **Use case** | Quick exploration, prototyping | Delivery-grade precision | Enterprise VI compliance |
-| **Trigger** | Default | `"build mode"` / `"pixel-perfect"` | Provide template.pptx |
-| **Content** | AI auto-generates | Hand-written build.py | LLM reads template → build.py |
-| **Quality** | ★★★ | ★★★★★ | ★★★★★ |
-| **Proposals** | 3 style previews | 3 structurally-different proposals | 3 layout proposals (same VI Token) |
-
-> **Recommended workflow**: FreeStyle prototype → Build / VI Build for precision delivery
-
----
-
-## 🎨 Design System
-
-**Natural language style** — describe and generate. Natural-language styles go through **mood detection + bundled design database** and, without a seed, select palette/fonts/decoration **randomly per run** (not a fixed mapping). For deterministic output use preset names (`dark-tech`/`professional`/`warm-elegant`) or explicit `--style-seed`:
-
-```bash
-ppt-design "investor pitch" --style "warm fintech"       # mood=[warm,fintech]; palette/fonts via ux database
-ppt-design "product launch" --style "dark cyberpunk"      # mood=[dark,neon] → neon-lines decoration, dark neon colors
-ppt-design "brand strategy" --style "elegant luxury"      # mood=[elegant,luxury] → rose-toned ux colors (not gold)
-ppt-design "山水诗" --style "水墨"                        # mood=[ink-wash] → paper-toned + seal-stamp decoration
-
-# Deterministic: preset / explicit atoms / fixed seed
-ppt-design "product launch" --style "dark-tech"           # fixed → cyber-neon palette + tech-mono + neon-lines
-ppt-design "investor pitch" --palette ocean-blue --fonts clean-corporate --decoration accent-bar
-ppt-design "investor pitch" --style "warm fintech" --style-seed 42
+```powershell
+powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
+  -InFile output/deck.pptx `
+  -OutDir output/deck-rendered
 ```
 
-**41 mood keywords**: professional, tech, dark, warm, elegant, luxury, vibrant, startup, nature, calm, minimal, bold, fresh, industrial, fintech, health, education, sustainability, creative, mckinsey, consulting, pastel, retro, government, legal, pharma, realestate, automotive, aviation, energy, telecom, logistics, ink-wash, zen, sci, neon ...
+Then inspect every PNG for hierarchy, readability, spacing, overflow, crop,
+chart legibility, page rhythm, domain fit, and consistency. If the result is
+not acceptable, revise the source and rerun the complete loop. A successful
+Python process or valid PPTX package is not a visual acceptance criterion.
 
-<details>
-<summary><strong>📐 Design Atoms Detail</strong></summary>
+## Installation matrix
 
-| Atom | Count | Examples |
-|------|-------|----------|
-| 🎨 Color Palettes | 30 | ocean-blue, cyber-neon, golden-luxury, ink-wash, zen-minimal, sci-paper... |
-| ✏️ Font Pairs | 25 | modern-sans, serif-editorial, tech-mono, ink-wash-serif, sci-serif, tech-display... |
-| 🖌️ Decorations | 15 | accent-bar, neon-lines, gold-trim, brush-stroke, seal-stamp, neon-glow, sci-grid, glass-panel... |
-| 📐 Layout Variants | 12 | standard, centered, sidebar-left, grid-2x2, scroll, ink-wash, sci-dense, hero-image... |
+| Assistant | Global skill root | Project skill root |
+|---|---|---|
+| Claude Code | `~/.claude/skills` | `.claude/skills` |
+| Codex | `~/.agents/skills` | `.codex/skills` |
+| OpenCode | `~/.config/opencode/skills` | `.opencode/skills` |
+| DeepSeek Harness | `~/.dsh/skills` | `.dsh/skills` |
 
-**30 × 25 × 15 × 12 = 135,000 combinations**
-
-With bundled design DB (192 palettes · 84 styles · 74 font pairs · 161 anti-patterns): 200,000+
-
-</details>
-
-<details>
-<summary><strong>🖼️ Image Engines</strong></summary>
-
-| Engine | Type | CLI | Default Model |
-|--------|------|-----|---------------|
-| `placeholder` | Gradient placeholder | Default | — |
-| `search` | Unsplash / Pexels | `--image-mode search` | — |
-| `seedream` | AI generate | `--llm-provider seedream` | `doubao-seedream-4-5-251128` |
-| `gpt-image` | AI generate | `--llm-provider gpt-image` | `gpt-image-1` |
-| `dalle` | AI generate | `--llm-provider dalle` | `dall-e-3` |
-| `gemini` | AI generate | `--llm-provider gemini` | `gemini-2.5-flash-image` |
-| `wanx` | AI generate | `--llm-provider wanx` | `wanx-v1` |
-| `kimi` | Enhanced search | `--llm-provider kimi` | `kimi-k2-0711-preview` |
-
-All AI engines include **cache-first** — same image never generated twice.
-
-</details>
-
-<details>
-<summary><strong>🏆 28 Design Quality Upgrades</strong></summary>
-
-**Tier 1 — Visual Foundations (10)**: Layout Engine · Typography Scale · OKLCH Color Depth · Gradient Overlay · 5-Level Shadow Elevation · Smart Brand Strip · Image Color Grading · Card Upgrade · Dark Mode Fix · Code Block Redesign
-
-**Tier 2 — Typography Enhancements (6)**: CJK Font Pairing · Adaptive Margins · Badge System · Section Dividers · Decoration Renderer · Layout Variant Consumption
-
-**Tier 3 — Advanced Visual (7)**: Noise Texture · Progress Bar · Corner Radius System · Gradient Lines · Image Masking · Two-Column Bullets · 4 Hero Patterns
-
-</details>
-
-<details>
-<summary><strong>🌟 Advanced Design Effects (7 Modules)</strong></summary>
-
-| Module | Capabilities | API |
-|--------|-------------|-----|
-| **AD-P1 Text Effects** | Gradient (10 presets) · outline · shadow · glow · 3D · alpha · vertical · rotation · letter spacing | `gradient_text()` / `vertical_text()` / `seal_stamp()` |
-| **AD-P2 Image Effects** | Shape crop (circle/hexagon/diamond) · duotone · grayscale · 22 artistic effects · 7 Pillow filters | `circle_image()` / `duotone_image()` / `artistic_image()` |
-| **AD-P3 Style Expansion** | +5 palettes · +5 fonts (KaiTi/FangSong/Orbitron) · +5 decorations · +4 layouts · +5 moods | `--style "水墨"` / `--style "霓虹"` |
-| **AD-P4 3D & Patterns** | 3D shapes (extrusion+bevel+material) · 31 pattern fills · semi-transparent panel | `shape_3d()` / `pattern_fill()` / `frosted_panel()` |
-| **AD-P5 Animation** | Morph transition · 8 exit animations · 8 emphasis animations | `exit_animation()` / `emphasis_animation()` |
-| **AD-P6 Decorations** | Brush divider · seal stamp · scroll frame · neon border · grid background · glass panel · ink splash | `brush_divider()` / `neon_border()` / `ink_splash()` |
-| **AD-P7 Mode Integration** | mood → text/image effect auto-mapping · `compose()` returns effect fields | `--style "水墨"` auto-triggers |
-
-**Code example**:
-
-```python
-from ppt_pro_max.build_helpers import *
-
-prs = Presentation()
-s = add_slide(prs)
-gradient_text(s, 1.0, 1.0, 8.0, 1.5, "Title", preset='gold-shine', font_size=44)
-circle_image(s, 6.5, 3.0, 1.0, "photo.jpg")
-shape_3d(s, 1.0, 3.5, 3.0, 2.0, depth=15.0, material='metal')
-frosted_panel(s, 5.0, 3.0, 6.0, 3.0, tint='#1A1A3A', alpha=20)
-brush_divider(s, 1.0, 5.0, 6.0, color='#2C2C2C')
-seal_stamp(s, 11.0, 5.5, 0.8, "印", rotation=-15)
-prs.save("output.pptx")
-```
-
-</details>
-
----
-
-## License
-
-MIT
+Install with `installer/install.py`. The installer also supports Cursor,
+Windsurf, Roo Code, Gemini CLI, Trae, Continue, Droid, KiloCode, Augment, and
+GitHub Copilot. Python dependencies are installed separately through
+`pptx-designer`; LibreOffice and Poppler are optional system dependencies for
+the headless renderer.

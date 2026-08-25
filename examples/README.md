@@ -1,0 +1,71 @@
+# PPT Design Skill 真实案例
+
+这里的三个案例不是为了测试 API 而临时拼出的示例，而是完整的、可打开
+的 PowerPoint 设计案例，用于说明 skill 应该追求的视觉完成度和页面叙事
+能力。三个案例来自 `pptx-designer` 的正式 examples，并已将生成后的
+PPTX 产物放入本目录。
+
+## 视觉总览
+
+[![三个真实案例的代表页](../docs/assets/cases/contact-sheet.png)](output/luxury_fragrance_lookbook.pptx)
+
+代表页：[Luxury Fragrance](../docs/assets/cases/luxury-fragrance-slide01.png) ·
+[Couture Editorial](../docs/assets/cases/couture-editorial-slide01.png) ·
+[Architecture Vision](../docs/assets/cases/architecture-vision-slide01.png)
+
+## 案例一：Luxury Fragrance Lookbook
+
+[luxury_fragrance_lookbook.pptx](output/luxury_fragrance_lookbook.pptx)
+
+香水编辑型 lookbook，采用暗色、克制、具有杂志感的视觉方向。四页分别
+承担封面叙事、原料 atlas、肌肤仪式和产品收束功能。
+
+重点观察：
+
+- 图片只承担氛围和材质表达；文字、色块和版式保持原生可编辑。
+- 页面不是重复的卡片模板，而是围绕 editorial narrative 改变结构。
+- 产品信息、材质来源和情绪文案被组织为视觉叙事，而不是堆砌卖点。
+
+## 案例二：Couture Editorial Deck
+
+[couture_editorial_deck.pptx](output/couture_editorial_deck.pptx)
+
+高级定制时装 editorial deck，采用解构式版面、留白、图片与文字的错位
+关系，页面依次呈现 manifesto、silhouette study、material index 和 final
+fitting。
+
+重点观察：
+
+- 使用非对称关系表达“运动、体积和手工感”。
+- 图片和文字不是简单的左右分栏，而是共同构成版面节奏。
+- 细节标签、编号和材料索引承担信息结构，装饰不替代内容。
+
+## 案例三：Architecture Vision Book
+
+[architecture_vision_book.pptx](output/architecture_vision_book.pptx)
+
+建筑愿景书 / 竞赛型视觉叙事案例，强调概念、空间、材质和最终邀请之间
+的递进关系。
+
+重点观察：
+
+- 使用建筑摄影作为空间情绪和尺度感来源。
+- 页面从概念表达逐步过渡到空间原则和最终邀请。
+- 图像是 atmosphere layer，重要的文字和结构信息仍然可编辑。
+
+## 运行与检查
+
+这三个案例已经包含生成后的 `.pptx`，不应把它们当成只验证代码能否运行的
+smoke test。交付前应重新执行：
+
+```powershell
+python skill/scripts/inspect_pptx.py examples/output/luxury_fragrance_lookbook.pptx --pretty
+python skill/scripts/inspect_pptx.py examples/output/couture_editorial_deck.pptx --pretty
+python skill/scripts/inspect_pptx.py examples/output/architecture_vision_book.pptx --pretty
+```
+
+然后分别执行 `skill/scripts/render_pptx.ps1`，生成 PDF 和 PNG，并由 LLM
+逐页检查：构图、文字可读性、图片裁切、视觉节奏、页间一致性和可编辑性。
+
+案例源代码和图片资产维护在 `pptx-designer` 仓库的 examples 目录中；本仓库
+保留这里的 PPTX 产物作为 skill 视觉基准，不重新复制一份引擎源码。

@@ -1,26 +1,16 @@
-# CLAUDE.md
+# PPT Design Skill
 
-## PPT Design Skill
+Use the `ppt-design-skill` workflow for presentation design tasks. The
+published `pptx-designer` Python library creates the editable PPTX; this
+repository owns the design process, installation, rendering, and PNG review.
 
-AI-powered PPT generation with 40,000+ style combinations.
+Before changing the skill, read:
 
-## Quick Reference
+- `skill/SKILL.md`
+- `skill/references/design-principles.md`
+- `skill/references/qa-and-delivery.md`
+- `docs/README.md`
 
-```bash
-# Generate PPT
-python -m ppt_pro_max "topic" --style "warm fintech"
-
-# Test
-python -m pytest tests/ -q
-```
-
-## Architecture
-
-4-phase: StoryPlanner → DesignDecider → ContentGenerator → PPTRenderer
-
-## Key Rules
-
-- Use `_add_picture_cover()` for images (Pillow pre-crop, no distortion)
-- Cache-first for all image API calls
-- Design database is bundled in `src/ppt_pro_max/data/` (no external dependency)
-- Windows: use `python` not `python3`
+The final acceptance gate is PPTX -> PDF -> PNG followed by direct LLM review
+of the rendered PNGs. Keep the skill name `ppt-design-skill` in all metadata
+and installer paths.

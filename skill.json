@@ -1,48 +1,28 @@
 {
   "name": "ppt-design-skill",
-  "displayName": "PPT Design Skill",
-  "description": "AI-powered PPT generation — 40,000+ style combos, 3 modes, fully editable .pptx",
-  "version": "0.18.0",
-  "author": "sunchaokun",
+  "version": "1.0",
+  "description": "Brief-first, visually reviewed PowerPoint design workflow powered by the published pptx-designer Python library.",
   "license": "MIT",
-  "homepage": "https://github.com/sunchaokun/PPT-Design-Skill",
-  "repository": "https://github.com/sunchaokun/PPT-Design-Skill",
-  "keywords": [
-    "ppt",
-    "pptx",
-    "presentation",
-    "powerpoint",
-    "design",
-    "ai",
-    "skill",
-    "python-pptx",
-    "opencode-skill",
-    "claude-code-skill",
-    "ai-coding",
-    "presentation-design",
-    "generative-ai",
-    "automation",
-    "productivity",
-    "slides",
-    "deck",
-    "pitch-deck",
-    "infographic",
-    "template"
+  "entrypoint": "skill/SKILL.md",
+  "runtime": {
+    "python": ">=3.10",
+    "pythonPackage": "pptx-designer",
+    "renderPath": "PPTX -> PDF -> PNG",
+    "preferredRenderer": "Microsoft PowerPoint COM",
+    "fallbackRenderer": "LibreOffice + Poppler"
+  },
+  "modes": [
+    "Build Mode",
+    "FreeStyle Mode",
+    "VI Build Mode"
   ],
-  "platforms": [
-    "claude",
-    "opencode",
-    "codex",
-    "cursor",
-    "windsurf",
-    "roocode",
-    "gemini",
-    "trae",
-    "continue",
-    "droid",
-    "kilocode",
-    "augment",
-    "copilot"
-  ],
-  "install": "python installer/install.py --platform {{platform}}"
+  "features": [
+    "requirements confirmation",
+    "page structure design",
+    "visual direction design",
+    "editable PPTX generation",
+    "template and brand-compliant generation",
+    "PNG visual review",
+    "iterative revision"
+  ]
 }
