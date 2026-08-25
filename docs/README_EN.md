@@ -14,6 +14,28 @@ brief -> page structure -> visual direction -> build -> PPTX -> PDF -> PNG ->
 LLM visual review -> revision -> user confirmation -> delivery
 ```
 
+## Choose the right mode
+
+### For delivery-grade work, choose **Build Mode**
+
+Build Mode is the recommended default when the deck will be used with clients,
+executives, investors, or in a formal presentation. It provides the highest
+control over page structure, visual direction, layout, and revision quality.
+
+| Mode | Best for | Layout control | Speed | Recommendation |
+|---|---|---:|---:|---:|
+| **Build Mode** ⭐ | Client delivery, strategy, proposals, editorial, formal decks | Highest | Medium | **Default** |
+| **FreeStyle Mode** | Fast exploration, quick drafts, known page goals | Medium: library-driven | Fastest | Explore first |
+| **VI Build Mode** | Existing templates, masters, and brand systems | Template-controlled | Medium | Template first |
+
+If visual quality and delivery confidence matter most, use **Build Mode**. Use
+FreeStyle when speed matters more than exact composition; use VI Build when an
+existing enterprise template must remain the visual source of truth.
+
+`generate_ppt(query=...)` and `generate_ppt(content=...)` are two input forms of
+the same FreeStyle mode, not separate rendering engines. Every mode still goes
+through the PPTX -> PDF -> PNG visual review gate for delivery work.
+
 ## Install
 
 Clone the repository first and run the following commands from its root:
