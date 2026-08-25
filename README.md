@@ -1,13 +1,23 @@
+<div align="center">
+
 # PPT Design Skill
 
-这是一个以设计流程为核心的 PowerPoint skill。PPTX 的实际生成由已发布的
-[`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库
-负责；skill 负责把用户需求转化为经过确认、渲染和视觉审查的演示文稿。
+### Brief-first · Visual-direction-led · PNG-reviewed
 
-当前版本：`1.0`
+一个以设计流程为核心的 PowerPoint skill。PPTX 的实际生成由已发布的
+[`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库
+负责；skill 负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
+
+![Version](https://img.shields.io/badge/version-1.0-111827?style=flat-square)
+![Engine](https://img.shields.io/badge/engine-pptx--designer-2563EB?style=flat-square)
+![Output](https://img.shields.io/badge/output-PPTX%20%7C%20PDF%20%7C%20PNG-C2414C?style=flat-square)
 
 [English README](docs/README_EN.md) · [中文使用手册](docs/usage-guide.md) ·
-[真实案例](examples/README.md) · [使用手册](docs/usage-guide.md)
+[真实案例](examples/README.md) · [安装说明](installer/README.md)
+
+</div>
+
+---
 
 ## 核心理念
 
@@ -52,7 +62,11 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 三组案例的代表性封面如下。它们来自实际的 PPTX → PDF → PNG 导出结果，
 用于快速判断页面层级、留白、图片处理和整体视觉方向。
 
-[![Three PPT Design Skill case studies](docs/assets/cases/contact-sheet.png)](examples/README.md)
+<p align="center">
+  <a href="examples/README.md">
+    <img src="docs/assets/cases/contact-sheet.png" alt="Three PPT Design Skill case studies" width="900">
+  </a>
+</p>
 
 分别查看：[Luxury Fragrance](docs/assets/cases/luxury-fragrance-slide01.png) ·
 [Couture Editorial](docs/assets/cases/couture-editorial-slide01.png) ·
