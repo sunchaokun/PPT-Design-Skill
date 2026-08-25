@@ -1,16 +1,18 @@
 <div align="center">
 
-# PPT Design Skill
+<h1 align="center">PPT Design Skill</h1>
 
-### Brief-first · Visual-direction-led · PNG-reviewed
+<p align="center"><strong>Brief-first · Visual-direction-led · PNG-reviewed</strong></p>
 
 一个以设计流程为核心的 PowerPoint skill。PPTX 的实际生成由已发布的
 [`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库
 负责；skill 负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
 
-![Version](https://img.shields.io/badge/version-1.0-111827?style=flat-square)
-![Engine](https://img.shields.io/badge/engine-pptx--designer-2563EB?style=flat-square)
-![Output](https://img.shields.io/badge/output-PPTX%20%7C%20PDF%20%7C%20PNG-C2414C?style=flat-square)
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.0-111827?style=flat-square" alt="Version 1.0">
+  <img src="https://img.shields.io/badge/engine-pptx--designer-2563EB?style=flat-square" alt="pptx-designer engine">
+  <img src="https://img.shields.io/badge/output-PPTX%20%7C%20PDF%20%7C%20PNG-C2414C?style=flat-square" alt="PPTX PDF PNG output">
+</p>
 
 [English README](docs/README_EN.md) · [中文使用手册](docs/usage-guide.md) ·
 [真实案例](examples/README.md) · [安装说明](installer/README.md)
