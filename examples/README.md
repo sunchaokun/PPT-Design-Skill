@@ -7,6 +7,17 @@ PPTX 产物放入本目录。
 
 ## 视觉总览
 
+### 首选视觉案例：Couture Editorial / The White Study
+
+<p align="center">
+  <img src="../docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
+</p>
+
+这组案例体现了本 Skill 对高完成度视觉设计的要求：视觉方向先行，页面
+结构服务于叙事，图片、标题、编号和材质标签共同建立版面节奏。
+
+### 其他案例
+
 [![三个真实案例的代表页](../docs/assets/cases/contact-sheet.png)](output/luxury_fragrance_lookbook.pptx)
 
 代表页：[Luxury Fragrance](../docs/assets/cases/luxury-fragrance-slide01.png) ·

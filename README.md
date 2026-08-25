@@ -112,18 +112,17 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 这些案例是视觉基准，不是简单的 API smoke test。详见
 [examples/README.md](examples/README.md)。
 
-### 视觉预览
+### Featured case — Couture Editorial / The White Study
 
-三组案例的代表性封面如下。它们来自实际的 PPTX → PDF → PNG 导出结果，
-用于快速判断页面层级、留白、图片处理和整体视觉方向。
+这组高定 editorial 案例是本 Skill 当前的视觉基准：通过非对称构图、衬线
+标题、材质摄影、编号系统和黑白反差，展示从 silhouette study 到 final
+fitting 的完整视觉叙事。图片来自真实的 PPTX → PDF → PNG 导出结果。
 
 <p align="center">
-  <a href="examples/README.md">
-    <img src="docs/assets/cases/contact-sheet.png" alt="Three PPT Design Skill case studies" width="900">
-  </a>
+  <img src="docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
 </p>
 
-分别查看：[Luxury Fragrance](docs/assets/cases/luxury-fragrance-slide01.png) ·
+其他案例代表页：[Luxury Fragrance](docs/assets/cases/luxury-fragrance-slide01.png) ·
 [Couture Editorial](docs/assets/cases/couture-editorial-slide01.png) ·
 [Architecture Vision](docs/assets/cases/architecture-vision-slide01.png)
 
