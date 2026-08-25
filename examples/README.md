@@ -7,7 +7,7 @@ PPTX 产物放入本目录。
 
 ## 视觉总览
 
-### 首选视觉案例：Couture Editorial / The White Study
+### 首选视觉案例：高级定制编辑 / The White Study
 
 <p align="center">
   <img src="../docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
@@ -24,26 +24,25 @@ PPTX 产物放入本目录。
 [Couture Editorial](../docs/assets/cases/couture-editorial-slide01.png) ·
 [Architecture Vision](../docs/assets/cases/architecture-vision-slide01.png)
 
-## 案例一：Luxury Fragrance Lookbook
+## 案例一：奢华香水画册
 
 [luxury_fragrance_lookbook.pptx](output/luxury_fragrance_lookbook.pptx)
 
-香水编辑型 lookbook，采用暗色、克制、具有杂志感的视觉方向。四页分别
-承担封面叙事、原料 atlas、肌肤仪式和产品收束功能。
+香水编辑型画册，采用暗色、克制、具有杂志感的视觉方向。四页分别承担
+封面叙事、原料图谱、肌肤仪式和产品收束功能。
 
 重点观察：
 
 - 图片只承担氛围和材质表达；文字、色块和版式保持原生可编辑。
-- 页面不是重复的卡片模板，而是围绕 editorial narrative 改变结构。
+- 页面不是重复的卡片模板，而是围绕编辑型叙事改变结构。
 - 产品信息、材质来源和情绪文案被组织为视觉叙事，而不是堆砌卖点。
 
-## 案例二：Couture Editorial Deck
+## 案例二：高级定制编辑型演示
 
 [couture_editorial_deck.pptx](output/couture_editorial_deck.pptx)
 
-高级定制时装 editorial deck，采用解构式版面、留白、图片与文字的错位
-关系，页面依次呈现 manifesto、silhouette study、material index 和 final
-fitting。
+高级定制时装编辑型演示，采用解构式版面、留白、图片与文字的错位关系，
+页面依次呈现宣言、轮廓研究、材料索引和最终试装。
 
 重点观察：
 
@@ -51,7 +50,7 @@ fitting。
 - 图片和文字不是简单的左右分栏，而是共同构成版面节奏。
 - 细节标签、编号和材料索引承担信息结构，装饰不替代内容。
 
-## 案例三：Architecture Vision Book
+## 案例三：建筑愿景书
 
 [architecture_vision_book.pptx](output/architecture_vision_book.pptx)
 
@@ -62,12 +61,12 @@ fitting。
 
 - 使用建筑摄影作为空间情绪和尺度感来源。
 - 页面从概念表达逐步过渡到空间原则和最终邀请。
-- 图像是 atmosphere layer，重要的文字和结构信息仍然可编辑。
+- 图像承担氛围层作用，重要的文字和结构信息仍然可编辑。
 
 ## 运行与检查
 
 这三个案例已经包含生成后的 `.pptx`，不应把它们当成只验证代码能否运行的
-smoke test。交付前应重新执行：
+简单测试。交付前应重新执行：
 
 ```powershell
 python skill/scripts/inspect_pptx.py examples/output/luxury_fragrance_lookbook.pptx --pretty

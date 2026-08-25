@@ -1,14 +1,12 @@
-# PPT Design Skill evaluation set
+# PPT Design Skill 评估集
 
-Each evaluation stores the original brief, acceptance contract, page plan,
-visual direction, reproducible source, rendered artifacts, and review record.
-The first task is a Chinese enterprise strategy deck used to exercise Build
-Mode and the full PPTX -> PDF -> PNG -> LLM review loop.
+每个评估项目都保存原始需求、验收合同、页面规划、视觉方向、可重复构建的
+源代码、渲染产物和检查记录。第一个项目是中文企业战略演示，用于验证
+Build Mode 以及完整的 PPTX → PDF → PNG → LLM 检查流程。
 
-The second task is a couture editorial deck used to exercise the novice-facing
-design-direction coach and the `Visual Direction Lock` workflow.
+第二个项目是高级定制时装编辑型演示，用于验证面向新手的视觉方向引导和
+`Visual Direction Lock` 工作流。
 
-The third task is a scientific research results deck used to exercise domain
-switching: figure/caption/source-note conventions, methods-to-results narrative,
-semantic colors, and explicit discussion of uncertainty without business
-presentation patterns.
+第三个项目是科研结果汇报，用于验证领域切换：图表、图注、来源说明的规范，
+从研究方法到结果的叙事，语义化配色，以及在不套用商业演示模式的前提下，
+明确表达不确定性。

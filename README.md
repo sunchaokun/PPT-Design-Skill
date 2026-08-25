@@ -2,11 +2,11 @@
 
 <h1 align="center">PPT Design Skill</h1>
 
-<p align="center"><strong>Brief-first · Visual-direction-led · PNG-reviewed</strong></p>
+<p align="center"><strong>需求优先 · 视觉方向驱动 · PNG 视觉验收</strong></p>
 
-一个以设计流程为核心的 PowerPoint skill。PPTX 的实际生成由已发布的
+一个以设计流程为核心的 PowerPoint 技能。PPTX 的实际生成由已发布的
 [`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库
-负责；skill 负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
+负责；本技能负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0-111827?style=flat-square" alt="Version 1.0">
@@ -32,9 +32,9 @@
 
 | 模式 | 最适合 | 布局控制 | 速度 | 推荐度 |
 |---|---|---:|---:|---:|
-| **Build Mode** ⭐ | 客户交付、提案、战略、路演、 editorial、正式汇报 | 最高：逐页、逐元素控制 | 中等 | **首选** |
+| **Build Mode** ⭐ | 客户交付、提案、战略、路演、编辑型演示、正式汇报 | 最高：逐页、逐元素控制 | 中等 | **首选** |
 | **FreeStyle Mode** | 快速探索、方向草稿、内容已经明确的轻量 PPT | 中等：由 `generate_ppt()` 自动编排 | 最快 | 探索优先 |
-| **VI Build Mode** | 已有企业模板、母版或品牌规范的 PPT | 受模板约束：提取并保持品牌 DNA | 中等 | 模板优先 |
+| **VI Build Mode** | 已有企业模板、母版或品牌规范的 PPT | 受模板约束：提取并保持品牌视觉基因 | 中等 | 模板优先 |
 
 ### 如何判断
 
@@ -51,9 +51,9 @@ FreeStyle 的 `generate_ppt(query=...)` 和
   必须服从现有模板时，才选择 FreeStyle 或 VI Build Mode。
 </div>
 
-## Skill 的核心价值
+## 本技能的核心价值
 
-`pptx-designer` 负责把设计决策生成成可编辑 PPTX；本 Skill 负责保证设计
+`pptx-designer` 负责把设计决策生成成可编辑 PPTX；本技能负责保证设计
 决策和交付过程的质量：
 
 ```text
@@ -69,7 +69,7 @@ FreeStyle 的 `generate_ppt(query=...)` 和
   → 用户确认与交付
 ```
 
-技术上“运行成功”不等于设计完成。Skill 会直接检查导出的 PNG，判断页面
+技术上“运行成功”不等于设计完成。本技能会直接检查导出的 PNG，判断页面
 是否有视觉重心、合理密度、清晰层级、完整构图和符合用户需求的设计效果。
 
 ---
@@ -101,22 +101,22 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 
 ## 真实案例
 
-当前包含三个来自 `pptx-designer` 正式 examples 的完整设计案例：
+当前包含三个来自 `pptx-designer` 正式示例的完整设计案例：
 
 | 案例 | 设计方向 | 观察重点 |
 |---|---|---|
-| [Luxury Fragrance Lookbook](examples/output/luxury_fragrance_lookbook.pptx) | 暗色香水 editorial | 材质 atlas、氛围图片、可编辑文字和产品叙事 |
-| [Couture Editorial Deck](examples/output/couture_editorial_deck.pptx) | 解构式高级定制 | 非对称构图、silhouette study、材料索引 |
+| [Luxury Fragrance Lookbook](examples/output/luxury_fragrance_lookbook.pptx) | 暗色香水编辑型演示 | 材质图谱、氛围图片、可编辑文字和产品叙事 |
+| [Couture Editorial Deck](examples/output/couture_editorial_deck.pptx) | 解构式高级定制 | 非对称构图、轮廓研究、材料索引 |
 | [Architecture Vision Book](examples/output/architecture_vision_book.pptx) | 建筑竞赛 / 愿景书 | 空间叙事、建筑摄影、概念到邀请的递进 |
 
-这些案例是视觉基准，不是简单的 API smoke test。详见
+这些案例是视觉基准，不是简单的 API 冒烟测试。详见
 [examples/README.md](examples/README.md)。
 
-### Featured case — Couture Editorial / The White Study
+### 重点案例：Couture Editorial / The White Study
 
-这组高定 editorial 案例是本 Skill 当前的视觉基准：通过非对称构图、衬线
-标题、材质摄影、编号系统和黑白反差，展示从 silhouette study 到 final
-fitting 的完整视觉叙事。图片来自真实的 PPTX → PDF → PNG 导出结果。
+这组高定编辑型案例是本技能当前的视觉基准：通过非对称构图、衬线
+标题、材质摄影、编号系统和黑白反差，展示从轮廓研究到最终试装的完整视觉
+叙事。图片来自真实的 PPTX → PDF → PNG 导出结果。
 
 <p align="center">
   <img src="docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
@@ -126,59 +126,57 @@ fitting 的完整视觉叙事。图片来自真实的 PPTX → PDF → PNG 导�
 [Couture Editorial](docs/assets/cases/couture-editorial-slide01.png) ·
 [Architecture Vision](docs/assets/cases/architecture-vision-slide01.png)
 
-## Install
+## 安装
 
-Clone the repository first, then run the installer from the repository root:
+请先克隆仓库，再从仓库根目录执行安装：
 
 ```powershell
-# Clone the skill repository
+# 克隆 Skill 仓库
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# Install the published pptx-designer runtime
+# 安装已发布的 pptx-designer 运行环境
 python install.py
 python skill/scripts/check_runtime.py
 ```
 
-Install the skill bundle into your coding assistant:
+将 Skill 安装到你的 AI 编码工具：
 
 ```powershell
 python installer/install.py --platform opencode --force
 ```
 
-Replace `opencode` with `claude`, `codex`, `deepseek-harness`, or `all` as
-needed. Restart the coding assistant after installation.
+可以将 `opencode` 替换为 `claude`、`codex`、`deepseek-harness` 或 `all`。
+安装完成后请重启对应的 AI 编码工具。
 
-The preferred renderer is PowerPoint COM. The fallback requires LibreOffice
-and Poppler (`pdftoppm`). The skill does not silently install desktop
-applications.
+首选渲染器是 Windows PowerPoint COM。备用方案需要 LibreOffice 和 Poppler
+（`pdftoppm`）。本技能不会静默安装桌面应用程序。
 
-On Windows, users who explicitly want the installer to use `winget` may run:
+如果你希望在 Windows 上使用 `winget` 安装渲染依赖，可以显式执行：
 
 ```powershell
 python install.py --render-deps
 ```
 
-### Optional: AI image generation
+### 可选：使用 AI 生成配图
 
-AI image generation needs a provider API key. Copy the example into the
-presentation project that runs `build.py`:
+使用 AI 生成配图需要配置对应服务商的 API 密钥。将示例文件复制到运行
+`build.py` 的 PPT 项目目录：
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Then configure one provider in `.env`, for example:
+然后在 `.env` 中配置一个服务商，例如：
 
 ```dotenv
 PPT_IMAGE_LLM_PROVIDER=gpt-image
 OPENAI_API_KEY=your-api-key
 ```
 
-The `.env` belongs to the user's project, not the installed Skill directory,
-and must never be committed. See [image/runtime configuration](skill/references/install-and-runtime.md)
-for Seedream, Gemini, Wanx, Kimi, OpenAI-compatible endpoints, stock-image
-search, and host-provided image generation.
+`.env` 属于用户自己的项目，不应放入已安装的 Skill 目录，也不能提交到 Git。
+关于 Seedream、Gemini、Wanx、Kimi、OpenAI 兼容接口、素材搜索和宿主工具生成
+图片的配置，请参阅[图片与运行环境配置](skill/references/install-and-runtime.md)。
 
 ## 检查真实案例
 
@@ -195,7 +193,7 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 
 ## 文档入口
 
-- [Skill 主流程](skill/SKILL.md)
+- [技能主流程](skill/SKILL.md)
 - [设计原则](skill/references/design-principles.md)
 - [公共 API](skill/references/public-api.md)
 - [质量与交付](skill/references/qa-and-delivery.md)
@@ -210,7 +208,7 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 仍可能存在标题层级弱、页面拥挤、图片裁切错误、图表不可读、页面重复和风格
 不统一等问题。
 
-本 skill 将视觉结果作为交付对象的一部分：
+本技能将视觉结果作为交付对象的一部分：
 
 1. 用户先确认需求和受众；
 2. LLM 先设计页面结构和视觉方向；
@@ -222,19 +220,19 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 
 ## 设计能力
 
-本 skill 采用成熟的 Designer Mindset，而不是把设计退化成选择一个
+本技能采用成熟的设计思维，而不是把设计退化成选择一个
 `style` 参数：
 
 | 能力 | 作用 |
 |---|---|
-| Audience-first | 根据受众、场景和行动目标决定页面表达方式 |
-| Narrative planning | 先设计页面级叙事，再生成代码 |
-| Domain paradigms | 科研、论文、技术、医疗、政府和商业使用不同范式 |
-| Design system | 锁定颜色、字体、间距、网格、图片和组件语言 |
-| Density control | 控制页面信息量，避免用小字号塞满页面 |
-| Structural variation | 页面结构随沟通目标变化，而不是重复同一种卡片 |
-| Native editability | 文本、形状、图表和支持的 SVG 保持可编辑 |
-| PNG visual review | 直接检查真实导出图像，而不是只检查源码 |
+| 受众优先 | 根据受众、场景和行动目标决定页面表达方式 |
+| 叙事规划 | 先设计页面级叙事，再生成代码 |
+| 领域范式 | 科研、论文、技术、医疗、政府和商业使用不同范式 |
+| 设计系统 | 锁定颜色、字体、间距、网格、图片和组件语言 |
+| 密度控制 | 控制页面信息量，避免用小字号塞满页面 |
+| 结构变化 | 页面结构随沟通目标变化，而不是重复同一种卡片 |
+| 原生可编辑 | 文本、形状、图表和支持的 SVG 保持可编辑 |
+| PNG 视觉检查 | 直接检查真实导出图像，而不是只检查源码 |
 
 ## 模式详细说明
 
@@ -367,7 +365,7 @@ python install.py
 python skill/scripts/check_runtime.py
 ```
 
-安装 skill 到编码工具：
+安装技能到编码工具：
 
 ```powershell
 python installer/install.py --platform claude --force
