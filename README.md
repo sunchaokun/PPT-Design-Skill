@@ -76,19 +76,26 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 
 ## Install
 
+Clone the repository first, then run the installer from the repository root:
+
 ```powershell
+# Clone the skill repository
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+
+# Install the published pptx-designer runtime
 python install.py
 python skill/scripts/check_runtime.py
 ```
 
-Install the skill bundle for coding assistants:
+Install the skill bundle into your coding assistant:
 
 ```powershell
-python installer/install.py --platform claude --force
-python installer/install.py --platform codex --force
 python installer/install.py --platform opencode --force
-python installer/install.py --platform deepseek-harness --force
 ```
+
+Replace `opencode` with `claude`, `codex`, `deepseek-harness`, or `all` as
+needed. Restart the coding assistant after installation.
 
 The preferred renderer is PowerPoint COM. The fallback requires LibreOffice
 and Poppler (`pdftoppm`). The skill does not silently install desktop

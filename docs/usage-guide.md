@@ -32,14 +32,19 @@ Python 运行成功不是完成条件。PNG 视觉检查通过后才可以进入
 
 ## 2. 安装
 
-安装 Python 运行时：
+先获取仓库，并在仓库根目录执行安装：
 
 ```powershell
+# 克隆 Skill 仓库
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+
+# 安装已发布的 pptx-designer Python 运行时
 python install.py
 python skill/scripts/check_runtime.py
 ```
 
-安装到 AI 编码工具：
+再安装到 AI 编码工具：
 
 ```powershell
 python installer/install.py --platform claude --force

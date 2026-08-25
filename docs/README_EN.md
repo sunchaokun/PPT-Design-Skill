@@ -16,17 +16,27 @@ LLM visual review -> revision -> user confirmation -> delivery
 
 ## Install
 
+Clone the repository first and run the following commands from its root:
+
 ```powershell
+# Clone the skill repository
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+
+# Install the published pptx-designer runtime
 python install.py
 python skill/scripts/check_runtime.py
 ```
 
-Install the skill for supported coding assistants:
+Install the skill bundle for supported coding assistants:
 
 ```powershell
 python installer/install.py --platform all --force
 python installer/install.py --platform deepseek-harness --project --force
 ```
+
+For a single assistant, replace `all` with `opencode`, `codex`, `claude`, or
+another supported platform key. Restart the assistant after installation.
 
 The installer supports Claude Code, Codex, DeepSeek Harness, OpenCode, Cursor,
 Windsurf, Roo Code, Gemini CLI, Trae, Continue, Droid, KiloCode, Augment, and

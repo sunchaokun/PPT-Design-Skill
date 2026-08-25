@@ -6,6 +6,15 @@ coding assistant.
 It also installs the published `pptx-designer` Python package unless
 `--no-pip` is provided.
 
+## Start here
+
+Clone the repository before running any installer command:
+
+```powershell
+git clone https://github.com/sunchaokun/PPT-Design-Skill.git
+cd PPT-Design-Skill
+```
+
 ## Automatic installation
 
 ```powershell
