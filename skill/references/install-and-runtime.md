@@ -67,7 +67,7 @@ headless fallback requires:
 These are operating-system dependencies, not Python dependencies. Install
 them through the user's approved system package mechanism and then rerun the
 runtime check. The repository installer offers an explicit Windows-only
-`python install.py --render-deps` option using `winget`; it is never enabled
+`python installer/install.py --platform all --force --render-deps` option using `winget`; it is never enabled
 implicitly.
 
 ## Fonts

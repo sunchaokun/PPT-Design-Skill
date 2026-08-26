@@ -40,23 +40,17 @@ through the PPTX -> PDF -> PNG visual review gate for delivery work.
 
 ## Install
 
-Clone the repository first and run the following commands from its root:
+Clone the repository first and run the installer from its root. The installer
+automatically installs the published `pptx-designer` Python package and copies
+the skill bundle to the selected coding assistant:
 
 ```powershell
 # Clone the skill repository
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# Install the published pptx-designer runtime
-python install.py
-python skill/scripts/check_runtime.py
-```
-
-Install the skill bundle for supported coding assistants:
-
-```powershell
 python installer/install.py --platform all --force
-python installer/install.py --platform deepseek-harness --project --force
+python skill/scripts/check_runtime.py
 ```
 
 For a single assistant, replace `all` with `opencode`, `codex`, `claude`, or

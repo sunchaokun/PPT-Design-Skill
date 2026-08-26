@@ -138,22 +138,16 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 
 ## 安装
 
-请先克隆仓库，再从仓库根目录执行安装：
+请先克隆仓库，再从仓库根目录执行安装。安装器会自动安装已发布的
+`pptx-designer` Python 库，并把 Skill 安装到指定的 AI 编码工具：
 
 ```powershell
 # 克隆 Skill 仓库
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 安装已发布的 pptx-designer 运行环境
-python install.py
-python skill/scripts/check_runtime.py
-```
-
-将 Skill 安装到你的 AI 编码工具：
-
-```powershell
 python installer/install.py --platform opencode --force
+python skill/scripts/check_runtime.py
 ```
 
 可以将 `opencode` 替换为 `claude`、`codex`、`deepseek-harness` 或 `all`。
@@ -162,10 +156,11 @@ python installer/install.py --platform opencode --force
 首选渲染器是 Windows PowerPoint COM。备用方案需要 LibreOffice 和 Poppler
 （`pdftoppm`）。本技能不会静默安装桌面应用程序。
 
-如果你希望在 Windows 上使用 `winget` 安装渲染依赖，可以显式执行：
+如果你希望在 Windows 上使用 `winget` 安装备用渲染依赖，可以在安装 Skill
+时显式追加参数：
 
 ```powershell
-python install.py --render-deps
+python installer/install.py --platform opencode --force --render-deps
 ```
 
 ### 可选：使用 AI 生成配图
@@ -368,10 +363,11 @@ Build Mode 规则：
 
 ## 运行和渲染
 
-安装 Python 运行时：
+如需重新安装或升级 Python 运行时，可以直接运行安装器；它会自动处理
+`pptx-designer`：
 
 ```powershell
-python install.py
+python installer/install.py --platform opencode --force
 python skill/scripts/check_runtime.py
 ```
 

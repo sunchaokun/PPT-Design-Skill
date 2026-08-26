@@ -32,25 +32,19 @@ Python 运行成功不是完成条件。PNG 视觉检查通过后才可以进入
 
 ## 2. 安装
 
-先获取仓库，并在仓库根目录执行安装：
+先获取仓库，并在仓库根目录执行安装。安装器会自动安装已发布的
+`pptx-designer` Python 库，同时安装 Skill 文件包：
 
 ```powershell
 # 克隆 Skill 仓库
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
-# 安装已发布的 pptx-designer Python 运行时
-python install.py
-python skill/scripts/check_runtime.py
-```
-
-再安装到 AI 编码工具：
-
-```powershell
 python installer/install.py --platform claude --force
 python installer/install.py --platform codex --force
 python installer/install.py --platform opencode --force
 python installer/install.py --platform deepseek-harness --force
+python skill/scripts/check_runtime.py
 ```
 
 也可以使用 `--platform all` 安装到所有已支持平台。DeepSeek Harness 的
@@ -184,7 +178,7 @@ LLM 必须查看导出的 PNG，检查：
 ## 8. 运行时依赖
 
 ```powershell
-python install.py
+python installer/install.py --platform all --force
 python skill/scripts/check_runtime.py
 ```
 
