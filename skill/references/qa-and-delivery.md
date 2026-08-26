@@ -49,6 +49,9 @@ Look at the contact sheet and then each PNG at presentation scale. Ask first:
 - Are density, rhythm, composition, and whitespace intentional?
 - Does the result feel designed for this audience and domain rather than like a
   generic generated template?
+- If a reference was supplied, are the agreed observable qualities visible in
+  the result without copying the reference's content or relying on superficial
+  colour, font, or decoration changes?
 
 If the answer is no, mark the relevant slide `NEEDS_REVISION` even when the file
 is technically valid and no object overlaps. Record the visual cause and revise
@@ -69,6 +72,10 @@ Evidence: slide 3 contains the three stages, but stage 2 is not readable at
 presentation scale.
 Action: enlarge the stage labels and rerender.
 ```
+
+For a reference-transfer row, the evidence must name the slide and visible
+design decision. “Similar style” is not evidence; record the transferred
+quality or mark it `NEEDS_REVISION`.
 
 Then inspect every slide and record:
 

@@ -56,7 +56,12 @@ rectangle helper in the current package.
 
 Use diagram classes from `pptx_designer.diagrams` and call `.render(slide)`.
 Use `svg_chart()` for supported editable SVG and inspect its `warnings`.
-Catch `SVGCompileError` for invalid or unsafe SVG input.
+Catch invalid or unsafe SVG input with the documented compiler error type:
+
+```python
+from pptx_designer import svg_chart
+from pptx_designer.compiler import SVGCompileError
+```
 
 ## Reliable authoring rules
 

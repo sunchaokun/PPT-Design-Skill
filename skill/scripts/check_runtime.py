@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import importlib
-import shutil
 import sys
+
+from runtime_deps import resolve_executable
 
 
 def main() -> int:
@@ -26,11 +27,16 @@ def main() -> int:
             ok = False
             print(f"  MISSING {label}: {exc}")
 
+    fallback_ready = True
     for command, label in (("soffice", "LibreOffice"), ("pdftoppm", "Poppler pdftoppm")):
-        found = shutil.which(command)
+        found = resolve_executable(command)
+        fallback_ready = fallback_ready and bool(found)
         print(f"  {'OK' if found else 'MISSING'} {label}{f' ({found})' if found else ''}")
 
-    print("  INFO PowerPoint COM is checked by render_pptx.ps1 on Windows.")
+    if fallback_ready:
+        print("  OK LibreOffice + Poppler fallback renderer is available.")
+    else:
+        print("  INFO Fallback renderer is unavailable; PowerPoint COM is checked only by render_pptx.ps1.")
     return 0 if ok else 1
 
 

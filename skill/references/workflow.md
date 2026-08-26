@@ -4,7 +4,8 @@
 
 Capture the topic, audience, scenario, decision or action required, language,
 duration, target page count, source materials, data provenance, brand rules,
-template path, image policy, and editability expectations.
+template path, image policy and permitted-use scope, and editability
+expectations.
 
 If a decision materially changes the deck, ask before building: audience,
 structure, visual direction, or whether the request is a quick draft versus a
@@ -23,6 +24,16 @@ Before generation, convert the brief into a compact traceability table:
 Use the user's actual requirements, not the example wording above. Every
 `MUST` item needs observable evidence in the rendered pages. If a requirement
 is ambiguous, clarify it before building or mark the interpretation explicitly.
+
+When the user supplies a reference, add only the material rows below; this is
+not a request to copy its content or make a full design audit:
+
+| Observable reference quality | Transfer decision | PNG evidence target |
+|---|---|---|
+| image scale and restrained type hierarchy | preserve the hierarchy; use project-appropriate imagery | cover first read |
+
+Describe qualities concretely (for example composition, image treatment,
+density, type hierarchy, or graphic role), not as labels such as “premium”.
 
 ## 2. Visual-first preflight
 
@@ -45,6 +56,11 @@ it fails the preflight before any code is written.
 Do not let technical feasibility, library presets, or a low density setting
 lower the visual target. They are implementation constraints, not the quality
 bar.
+
+For supplied references, record whether each quality is preserved, abstracted,
+or deliberately not used because of content, brand, or licensing constraints.
+This makes the visual direction testable while preserving the freedom to design
+an original deck.
 
 ## 3. Page plan
 
@@ -117,6 +133,11 @@ material revision:
 5. record `PASS`, `NEEDS_REVISION`, or `BLOCKED`, plus evidence and the next
    revision;
 6. repeat until all `MUST` rows pass.
+
+When a review failure is directional (reference transfer, image strategy,
+composition, hierarchy, or page architecture), return to that decision before
+making local formatting edits. Use local edits for local defects such as
+overflow, alignment, or contrast.
 
 Do not patch only the exported PPTX when the change should be reproducible.
 

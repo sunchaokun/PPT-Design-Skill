@@ -44,7 +44,8 @@ are explicit:
 - domain paradigm;
 - page count and page-by-page goals;
 - visual direction and design tokens;
-- the recommended visual direction and the user's confirmation of it;
+- when supplied, reference qualities stated as observable features, their
+  intended transfer, and the final PNG evidence that will demonstrate them;
 - variance, motion, and density levels;
 - generation mode: FreeStyle `generate_ppt()`, Build Mode, or VI Build Mode;
 - image and template constraints;
@@ -67,10 +68,12 @@ been revised, and the user has confirmed the final direction or result.
    visual conditions that must be true in the final PNGs. Classify each
    condition as `MUST`, `SHOULD`, or `NICE_TO_HAVE`.
 2. Establish the **visual quality target before content planning**: write the
-   visual thesis, reference qualities, expected finish level, page anchors,
-   occupied zones, and the intended purpose of major whitespace. Run a thumbnail
-   preflight; a page without a focal point or a complete visual composition is
-   not ready for content or code.
+   visual thesis, expected finish level, page anchors, occupied zones, and the
+   intended purpose of major whitespace. When reference material is supplied,
+   convert its observable qualities into transfer decisions and PNG evidence;
+   do not reduce it to vague style labels or mechanically copy its content.
+   Run a thumbnail preflight; a page without a focal point or a complete visual
+   composition is not ready for content or code.
 3. Detect the domain and set the design read: page goal, core takeaway, content type, and
    relationship to surrounding pages. The domain must refine the visual target,
    not reduce it to a generic template.
@@ -100,7 +103,10 @@ been revised, and the user has confirmed the final direction or result.
    `BLOCKED`. Do not replace this comparison with a generic aesthetic opinion.
 13. If the PNG review finds a material issue or a failed `MUST` condition,
    identify the source-code/content cause, revise, regenerate, and inspect
-   again. A deck is not complete while a `MUST` condition is unresolved.
+   again. Return to the failed decision level: revise the visual direction,
+   composition, or asset strategy for a directional failure; use local edits
+   only for a local defect. A deck is not complete while a `MUST` condition is
+   unresolved.
 14. Present the reviewed PNGs or contact sheet and the acceptance result for
    user confirmation, then deliver the PPTX, source script, PDF, and PNG
    preview directory.
@@ -285,6 +291,8 @@ small acceptance contract. After rendering, assess:
 - whether the planned page goals and narrative order survived generation;
 - whether the requested brand, template, image, and editability constraints
   are respected;
+- when reference material was supplied, whether its agreed observable qualities
+  are visibly transferred rather than merely echoed through superficial styling;
 - whether `SHOULD` and `NICE_TO_HAVE` conditions are met or explicitly waived;
 
 - visual hierarchy and page-level clarity;
