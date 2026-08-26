@@ -22,3 +22,4 @@ body:not(.viewer-page) .card-meta,body:not(.viewer-page) .card-desc,body:not(.vi
 body:not(.viewer-page) .tag{border-color:#ddd7ce}
 body:not(.viewer-page) .footer{background:#f4f1eb;color:#171717;border-top-color:#ddd7ce}
 body:not(.viewer-page) .footer-links a,body:not(.viewer-page) .footer-copy{color:#77736d}
+.logo img{display:block;width:58px;height:58px}.site-header .brand-logo{display:block;width:28px;height:28px;border-radius:6px}.viewer-header .brand{display:flex;align-items:center;gap:11px}
