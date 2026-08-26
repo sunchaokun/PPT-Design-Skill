@@ -7,33 +7,21 @@
   <title>PPT Design Skill · 案例画廊</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="gallery-home">
-  <header class="site-header">
-    <a class="brand" href="index.html"><span class="brand-mark">P</span><span>PPT Design Skill</span></a>
-    <nav><a href="#gallery">案例</a><a href="https://github.com/sunchaokun/PPT-Design-Skill" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="44" height="28" rx="2.5"/><line x1="9" y1="11" x2="22" y2="11"/><line x1="9" y1="17" x2="32" y2="17"/><line x1="9" y1="23" x2="26" y2="23"/></svg></div>
+      <div class="eyebrow">开源 · MIT</div>
+      <h1>PPT Design Skill</h1>
+      <p>AI 驱动的 PowerPoint 设计工作流：从需求和视觉方向出发，生成真正原生可编辑的 PPTX，而不是一组图片。</p>
+      <div class="header-cta"><a href="https://github.com/sunchaokun/PPT-Design-Skill" class="cta-btn primary" target="_blank" rel="noreferrer">查看 GitHub ↗</a><a href="#gallery" class="cta-btn secondary">浏览案例 ↓</a></div>
+      <div class="stats"><div class="stat"><div class="stat-value" id="examples-count">—</div><div class="stat-label">案例</div></div><div class="stat"><div class="stat-value" id="pages-count">—</div><div class="stat-label">页面</div></div><div class="stat"><div class="stat-value" id="modes-count">3</div><div class="stat-label">生成模式</div></div></div>
+    </div>
   </header>
 
-  <main>
-    <section class="hero hero-premium">
-      <div class="hero-copy">
-        <div class="hero-kicker">NATIVE POWERPOINT / SELECTED WORK 2026</div>
-        <h1>设计先行，<br><em>每一页都可编辑。</em></h1>
-        <p>一组由 PPT Design Skill 设计的原生 PowerPoint 案例。浏览视觉方向、页面节奏与最终交付，而不只是一个封面截图。</p>
-        <div class="hero-meta"><span>案例 <strong id="project-count">—</strong></span><span>页面 <strong id="slide-count">—</strong></span><span>可下载 PPTX</span></div>
-      </div>
-      <a class="hero-feature" href="viewer.html?project=couture-editorial">
-        <img src="assets/couture-editorial/slide01.png" alt="Couture in Motion 高级定制案例封面">
-        <div class="hero-feature-caption"><span>01 / FEATURED CASE</span><strong>Couture in Motion</strong><span>进入案例 →</span></div>
-      </a>
-    </section>
-
-    <section id="gallery" class="gallery-section">
-      <div class="section-heading"><div><span class="eyebrow">SELECTED WORK</span><h2>案例画廊</h2></div><div id="filters" class="filters"></div></div>
-      <div id="projects" class="project-grid" aria-live="polite"></div>
-    </section>
-  </main>
-
-  <footer class="site-footer"><span>PPT Design Skill</span><span>Editable by design · Built for AI coding tools</span></footer>
+  <nav class="nav"><div class="nav-content" id="filters"></div></nav>
+  <main id="gallery" class="main"><div class="section-title"><span>精选案例</span><span class="count">原生可编辑 · 视觉方向驱动</span></div><div class="projects-grid" id="projects-grid" aria-live="polite"></div></main>
+  <footer class="footer"><div class="footer-links"><a href="https://github.com/sunchaokun/PPT-Design-Skill" target="_blank" rel="noreferrer">GitHub</a><a href="viewer.html?project=couture-editorial">案例查看器</a><a href="https://pypi.org/project/pptx-designer/" target="_blank" rel="noreferrer">pptx-designer</a></div><p class="footer-copy">PPT Design Skill · 原生可编辑 PowerPoint 设计工作流</p></footer>
   <script src="app.js"></script>
 </body>
 </html>

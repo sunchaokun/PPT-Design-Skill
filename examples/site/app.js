@@ -2,30 +2,34 @@ const DATA_URL = 'data/examples.json';
 let projects = [];
 
 async function loadProjects() {
-  const response = await fetch(DATA_URL);
+  const response = await fetch(DATA_URL, {cache: 'no-cache'});
+  if (!response.ok) throw new Error(`无法加载 ${DATA_URL}: ${response.status}`);
   projects = await response.json();
-  if (document.getElementById('projects')) renderGallery();
+  if (document.getElementById('projects-grid')) renderGallery();
   if (document.getElementById('viewer')) renderViewer();
 }
 
 function renderGallery() {
-  document.getElementById('project-count').textContent = projects.length;
-  document.getElementById('slide-count').textContent = projects.reduce((sum, p) => sum + p.slides.length, 0);
-  const filters = ['全部', ...new Set(projects.map(p => p.category))];
+  document.getElementById('examples-count').textContent = projects.length;
+  document.getElementById('pages-count').textContent = projects.reduce((sum, p) => sum + p.slides.length, 0);
+  const filters = [['全部', 'all'], ...[...new Set(projects.map(p => p.category))].map(c => [c, c])];
   const filterNode = document.getElementById('filters');
-  filterNode.innerHTML = filters.map((f, i) => `<button class="filter${i === 0 ? ' active' : ''}" data-filter="${f}">${f}</button>`).join('');
+  filterNode.innerHTML = filters.map(([label, value], i) => `<button class="nav-btn${i === 0 ? ' active' : ''}" data-filter="${value}">${label}</button>`).join('');
   filterNode.addEventListener('click', event => {
-    const button = event.target.closest('.filter');
+    const button = event.target.closest('.nav-btn');
     if (!button) return;
-    document.querySelectorAll('.filter').forEach(node => node.classList.toggle('active', node === button));
+    document.querySelectorAll('.nav-btn').forEach(node => node.classList.toggle('active', node === button));
     renderCards(button.dataset.filter);
   });
-  renderCards('全部');
+  renderCards('all');
 }
 
 function renderCards(category) {
-  const list = category === '全部' ? projects : projects.filter(p => p.category === category);
-  document.getElementById('projects').innerHTML = list.map((p, index) => `<a class="project-card" href="viewer.html?project=${encodeURIComponent(p.id)}"><div class="card-image"><img src="${p.path}/${p.slides[0].file}" alt="${p.title} 封面" loading="lazy"><div class="card-overlay"></div></div><div class="card-info"><div><h3>${p.title}</h3><p>${p.subtitle}</p></div><span class="card-number">${String(index + 1).padStart(2, '0')} / ${String(p.slides.length).padStart(2, '0')}</span></div></a>`).join('');
+  const list = category === 'all' ? projects : projects.filter(p => p.category === category);
+  document.getElementById('projects-grid').innerHTML = list.map(p => {
+    const tags = [p.category, p.mode, `${p.slides.length} 页`];
+    return `<a class="project-card" href="viewer.html?project=${encodeURIComponent(p.id)}"><div class="card-preview"><img src="${p.path}/${p.slides[0].file}" alt="${p.title} 封面" loading="lazy"></div><div class="card-content"><h2 class="card-title">${p.title}</h2><div class="card-meta"><span>${p.subtitle}</span><span>${p.year}</span></div><p class="card-desc">${p.description}</p><div class="card-tags">${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div></div></a>`;
+  }).join('');
 }
 
 function renderViewer() {
@@ -36,7 +40,7 @@ function renderViewer() {
   document.getElementById('case-category').textContent = `${project.category} / ${project.year}`;
   document.getElementById('case-title').textContent = project.title;
   document.getElementById('case-description').textContent = project.description;
-  document.getElementById('case-details').innerHTML = [['视觉方向', project.direction], ['页数', `${project.slides.length} 页`], ['生成模式', project.mode]].map(([k, v]) => `<div class="detail"><span>${k}</span><strong>${v}</strong></div>`).join('');
+  document.getElementById('case-details').innerHTML = [['视觉方向', project.direction], ['页数', `${project.slides.length} 页`], ['生成模式', project.mode]].map(([k,v]) => `<div class="detail"><span>${k}</span><strong>${v}</strong></div>`).join('');
   document.getElementById('download-pptx').href = project.pptx;
   document.getElementById('download-pdf').href = project.pdf;
   const thumbs = document.getElementById('thumbs');
@@ -45,8 +49,8 @@ function renderViewer() {
   document.getElementById('prev').onclick = () => { current = (current - 1 + project.slides.length) % project.slides.length; update(); };
   document.getElementById('next').onclick = () => { current = (current + 1) % project.slides.length; update(); };
   document.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') document.getElementById('prev').click(); if (event.key === 'ArrowRight') document.getElementById('next').click(); });
-  function update() { const slide = project.slides[current]; document.getElementById('current-slide').src = `${project.path}/${slide.file}`; document.getElementById('current-slide').alt = `${project.title} 第 ${current + 1} 页`; document.getElementById('slide-counter').textContent = `${String(current + 1).padStart(2, '0')} / ${String(project.slides.length).padStart(2, '0')}`; document.getElementById('slide-label').textContent = slide.label || ''; document.querySelectorAll('.thumb').forEach((node, i) => node.classList.toggle('active', i === current)); }
+  function update() { const slide = project.slides[current]; document.getElementById('current-slide').src = `${project.path}/${slide.file}`; document.getElementById('current-slide').alt = `${project.title} 第 ${current + 1} 页`; document.getElementById('slide-counter').textContent = `${String(current + 1).padStart(2,'0')} / ${String(project.slides.length).padStart(2,'0')}`; document.getElementById('slide-label').textContent = slide.label || ''; document.querySelectorAll('.thumb').forEach((node,i) => node.classList.toggle('active', i === current)); }
   update();
 }
 
-loadProjects().catch(error => { document.body.insertAdjacentHTML('beforeend', `<p style="padding:2rem;color:#b44c35">案例数据加载失败：${error.message}</p>`); });
+loadProjects().catch(error => { const target = document.getElementById('projects-grid') || document.body; target.innerHTML = `<p class="load-error">案例数据加载失败：${error.message}</p>`; });
