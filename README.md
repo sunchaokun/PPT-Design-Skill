@@ -119,17 +119,22 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 完成度的完整结果。更多页面和下载入口请查看[在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
 和 [examples/README.md](examples/README.md)。
 
-每个缩略图都可以直接进入在线查看器，浏览完整页面并下载 PPTX、PDF：
+每个项目展示全部页面缩略图，点击任意缩略图即可进入在线查看器，浏览完整页面并下载 PPTX、PDF：
 
-| 技术系统 | 产业研究 | 高级定制 |
-|---|---|---|
-| [![AI Agent Operating System](examples/site/assets/ai-agent-operating-system/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | [![AI Infrastructure Economics](examples/site/assets/ai-infrastructure-economics/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | [![Couture in Motion](examples/site/assets/couture-editorial/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial) |
-| [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial) |
-
-| 产品编辑 | 建筑愿景 |
-|---|---|
-| [![Luxury Fragrance Lookbook](examples/site/assets/luxury-fragrance/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [![Architecture Vision Book](examples/site/assets/architecture-vision/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
-| [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
+<table>
+<tr><th>AI Agent Operating System · 技术系统蓝图</th><th>AI Infrastructure Economics · 编辑型产业研究</th></tr>
+<tr>
+<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system"><img src="examples/site/assets/ai-agent-operating-system/slide01.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide02.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide03.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide04.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide05.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide06.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide07.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide08.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide09.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide10.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide11.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide12.png" width="23%"></a></td>
+<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics"><img src="examples/site/assets/ai-infrastructure-economics/slide01.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide02.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide03.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide04.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide05.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide06.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide07.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide08.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide09.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide10.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide11.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide12.png" width="23%"></a></td>
+</tr>
+<tr><th>Couture in Motion · 高级定制视觉研究</th><th>Luxury Fragrance Lookbook · 暗色产品编辑型画册</th></tr>
+<tr>
+<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial"><img src="examples/site/assets/couture-editorial/slide01.png" width="30%"><img src="examples/site/assets/couture-editorial/slide02.png" width="30%"><img src="examples/site/assets/couture-editorial/slide03.png" width="30%"><img src="examples/site/assets/couture-editorial/slide04.png" width="30%"><img src="examples/site/assets/couture-editorial/slide05.png" width="30%"><img src="examples/site/assets/couture-editorial/slide06.png" width="30%"></a></td>
+<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance"><img src="examples/site/assets/luxury-fragrance/slide01.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide02.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide03.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide04.png" width="30%"></a></td>
+</tr>
+<tr><th colspan="2">Architecture Vision Book · 建筑竞赛愿景书</th></tr>
+<tr><td colspan="2"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision"><img src="examples/site/assets/architecture-vision/slide01.png" width="30%"><img src="examples/site/assets/architecture-vision/slide02.png" width="30%"><img src="examples/site/assets/architecture-vision/slide03.png" width="30%"><img src="examples/site/assets/architecture-vision/slide04.png" width="30%"></a></td></tr>
+</table>
 
 ## 安装
 
