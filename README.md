@@ -99,24 +99,31 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 对照需求和页面证据，记录 `PASS`、`NEEDS_REVISION` 或 `BLOCKED`。因此 PNG
 检查不是泛泛地判断“好不好看”，而是验证结果是否真正满足用户目标。
 
-## 真实案例
+## 精选设计案例
 
-当前包含三个来自 `pptx-designer` 正式示例的完整设计案例：
+这里展示的是可以下载、打开并继续编辑的完整 PowerPoint 案例。它们覆盖
+技术系统、产业研究、品牌编辑和空间叙事，用来说明本技能如何把内容结构、
+视觉方向和原生可编辑对象结合成完整的演示设计。
 
-| 案例 | 设计方向 | 观察重点 |
+| 案例 | 设计定位 | 视觉语言与设计重点 |
 |---|---|---|
-| [Luxury Fragrance Lookbook](examples/output/luxury_fragrance_lookbook.pptx) | 暗色香水编辑型演示 | 材质图谱、氛围图片、可编辑文字和产品叙事 |
-| [Couture Editorial Deck](examples/output/couture_editorial_deck.pptx) | 解构式高级定制 | 非对称构图、轮廓研究、材料索引 |
-| [Architecture Vision Book](examples/output/architecture_vision_book.pptx) | 建筑竞赛 / 愿景书 | 空间叙事、建筑摄影、概念到邀请的递进 |
+| [AI Agent Operating System](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | 技术系统蓝图 | 深色网格、分层架构、荧光色标记、流程与治理 |
+| [AI Infrastructure Economics](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | 编辑型产业研究 | 纸张质感、物理约束隐喻、数据层级、战略叙事 |
+| [Couture in Motion](examples/output/couture_editorial_deck.pptx) | 高级定制视觉研究 | 非对称版式、材质摄影、编号系统、章节节奏 |
+| [Luxury Fragrance Lookbook](examples/output/luxury_fragrance_lookbook.pptx) | 暗色产品编辑型画册 | 香水材质、氛围摄影、克制排版、产品叙事 |
+| [Architecture Vision Book](examples/output/architecture_vision_book.pptx) | 建筑竞赛愿景书 | 建筑摄影、空间原则、概念到最终邀请的递进 |
 
-这些案例是视觉基准，不是简单的 API 冒烟测试。详见
-[examples/README.md](examples/README.md)。
+这些案例不是为了证明代码能够运行，而是为了展示从设计判断到最终页面
+完成度的完整结果。更多页面和下载入口请查看[在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
+和 [examples/README.md](examples/README.md)。
 
-### 重点案例：Couture Editorial / The White Study
+### 代表案例：Couture in Motion / The White Study
 
-这组高定编辑型案例是本技能当前的视觉基准：通过非对称构图、衬线
-标题、材质摄影、编号系统和黑白反差，展示从轮廓研究到最终试装的完整视觉
-叙事。图片来自真实的 PPTX → PDF → PNG 导出结果。
+这是一个关于体积、材质与手工感的高级定制视觉研究，而不是普通的时装
+产品画册。设计以非对称网格建立张力，以衬线标题形成编辑气质，以材质摄影
+和细节标签建立触感，再通过编号系统和黑白反差组织六页叙事，从轮廓研究、
+材料索引推进到最终试装。页面中的文字、线条、色块和图片布局均保持可编辑，
+图片来自真实的 PPTX → PDF → PNG 导出结果。
 
 <p align="center">
   <img src="docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
