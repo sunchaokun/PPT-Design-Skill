@@ -1,0 +1,24 @@
+/* Gallery identity: warm paper, ink, and terracotta. The viewer stays dark for focus. */
+body:not(.viewer-page){background:#f4f1eb;color:#171717}
+body:not(.viewer-page) .header{background:#f4f1eb;color:#171717;border-bottom-color:#ddd7ce}
+body:not(.viewer-page) .header:before{background:radial-gradient(circle,rgba(198,90,61,.12),transparent 61%)}
+body:not(.viewer-page) .header .eyebrow{background:#fff;border-color:#ddd7ce;color:#77736d}
+body:not(.viewer-page) .header p{color:#77736d}
+body:not(.viewer-page) .header-cta .secondary{color:#171717;border-color:#d4cec5}
+body:not(.viewer-page) .header-cta .secondary:hover{background:#fff;border-color:#bdb5ab}
+body:not(.viewer-page) .stats{background:#fff;border-color:#ddd7ce}
+body:not(.viewer-page) .stat{border-right-color:#ddd7ce}
+body:not(.viewer-page) .stat-label{color:#77736d}
+body:not(.viewer-page) .nav{background:rgba(244,241,235,.9);border-bottom-color:#ddd7ce}
+body:not(.viewer-page) .nav-btn{color:#77736d}
+body:not(.viewer-page) .nav-btn:hover,body:not(.viewer-page) .nav-btn.active{color:#171717;background:#fff;border-color:#ddd7ce}
+body:not(.viewer-page) .main{background:#f4f1eb;color:#171717}
+body:not(.viewer-page) .section-title .count{color:#77736d}
+body:not(.viewer-page) .project-card{background:#fff;border-color:#ddd7ce}
+body:not(.viewer-page) .project-card:hover{border-color:#bdb5ab;box-shadow:0 10px 30px rgba(50,35,25,.12)}
+body:not(.viewer-page) .card-preview{background:#ebe7df;border-bottom-color:#ddd7ce}
+body:not(.viewer-page) .card-preview img{background:#ebe7df}
+body:not(.viewer-page) .card-meta,body:not(.viewer-page) .card-desc,body:not(.viewer-page) .tag{color:#77736d}
+body:not(.viewer-page) .tag{border-color:#ddd7ce}
+body:not(.viewer-page) .footer{background:#f4f1eb;color:#171717;border-top-color:#ddd7ce}
+body:not(.viewer-page) .footer-links a,body:not(.viewer-page) .footer-copy{color:#77736d}
