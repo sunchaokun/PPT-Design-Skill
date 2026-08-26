@@ -2,7 +2,7 @@
 
 <h1 align="center">PPT Design Skill</h1>
 
-<p align="center"><strong>需求优先 · 视觉方向驱动 · PNG 视觉验收</strong></p>
+<p align="center"><strong>原生可编辑 · 视觉设计驱动 · PNG 视觉验收</strong></p>
 
 一个以设计流程为核心的 PowerPoint 技能。PPTX 的实际生成由已发布的
 [`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库

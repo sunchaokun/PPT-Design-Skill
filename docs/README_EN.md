@@ -6,7 +6,7 @@ Python library.
 
 Current release: `1.0`
 
-The library generates the editable PPTX. The skill is responsible for the
+The library generates a natively editable PPTX. The skill is responsible for the
 design process and quality gate:
 
 ```text
