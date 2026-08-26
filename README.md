@@ -119,21 +119,17 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 完成度的完整结果。更多页面和下载入口请查看[在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
 和 [examples/README.md](examples/README.md)。
 
-### 代表案例：Couture in Motion / The White Study
+每个缩略图都可以直接进入在线查看器，浏览完整页面并下载 PPTX、PDF：
 
-这是一个关于体积、材质与手工感的高级定制视觉研究，而不是普通的时装
-产品画册。设计以非对称网格建立张力，以衬线标题形成编辑气质，以材质摄影
-和细节标签建立触感，再通过编号系统和黑白反差组织六页叙事，从轮廓研究、
-材料索引推进到最终试装。页面中的文字、线条、色块和图片布局均保持可编辑，
-图片来自真实的 PPTX → PDF → PNG 导出结果。
+| 技术系统 | 产业研究 | 高级定制 |
+|---|---|---|
+| [![AI Agent Operating System](examples/site/assets/ai-agent-operating-system/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | [![AI Infrastructure Economics](examples/site/assets/ai-infrastructure-economics/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | [![Couture in Motion](examples/site/assets/couture-editorial/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial) |
+| [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial) |
 
-<p align="center">
-  <img src="docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
-</p>
-
-其他案例代表页：[Luxury Fragrance](docs/assets/cases/luxury-fragrance-slide01.png) ·
-[Couture Editorial](docs/assets/cases/couture-editorial-slide01.png) ·
-[Architecture Vision](docs/assets/cases/architecture-vision-slide01.png)
+| 产品编辑 | 建筑愿景 |
+|---|---|
+| [![Luxury Fragrance Lookbook](examples/site/assets/luxury-fragrance/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [![Architecture Vision Book](examples/site/assets/architecture-vision/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
+| [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
 
 ### 在线案例画廊
 
