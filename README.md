@@ -126,6 +126,12 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 [Couture Editorial](docs/assets/cases/couture-editorial-slide01.png) ·
 [Architecture Vision](docs/assets/cases/architecture-vision-slide01.png)
 
+### 在线案例画廊
+
+案例画廊正在持续建设中，首批案例已提供多页浏览、PPTX 和 PDF 下载：
+
+[打开在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
+
 ## 安装
 
 请先克隆仓库，再从仓库根目录执行安装：

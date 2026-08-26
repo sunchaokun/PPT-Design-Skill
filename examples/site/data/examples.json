@@ -1,0 +1,78 @@
+[
+  {
+    "id": "ai-agent-operating-system",
+    "title": "AI Agent Operating System",
+    "subtitle": "技术编辑型 · 从提示链到受控自治",
+    "category": "技术叙事",
+    "year": "2026",
+    "direction": "深色系统蓝图",
+    "mode": "Build Mode",
+    "description": "一组以系统架构为核心的技术编辑型演示，用深色网格、荧光色线索和分层流程表达 AI Agent 的运行机制。",
+    "path": "assets/ai-agent-operating-system",
+    "pptx": "downloads/ai_agent_operating_system.pptx",
+    "pdf": "downloads/ai_agent_operating_system.pdf",
+    "slides": [
+      {"file":"slide01.png","label":"系统蓝图"},{"file":"slide02.png","label":"用户意图"},{"file":"slide03.png","label":"控制平面"},{"file":"slide04.png","label":"执行平面"},{"file":"slide05.png","label":"状态与记忆"},{"file":"slide06.png","label":"工具层"},{"file":"slide07.png","label":"评估循环"},{"file":"slide08.png","label":"安全边界"},{"file":"slide09.png","label":"架构选择"},{"file":"slide10.png","label":"决策框架"},{"file":"slide11.png","label":"最小系统"},{"file":"slide12.png","label":"结论"}
+    ]
+  },
+  {
+    "id": "ai-infrastructure-economics",
+    "title": "AI Infrastructure Economics",
+    "subtitle": "数据编辑型 · 资本、算力与物理堆栈",
+    "category": "数据叙事",
+    "year": "2026",
+    "direction": "纸张与基础设施账本",
+    "mode": "Build Mode",
+    "description": "一组面向战略与平台运营者的来源型数据研究，以纸张质感、层级色彩和物理约束隐喻组织复杂的基础设施叙事。",
+    "path": "assets/ai-infrastructure-economics",
+    "pptx": "downloads/ai_infrastructure_economics.pptx",
+    "pdf": "downloads/ai_infrastructure_economics.pdf",
+    "slides": [
+      {"file":"slide01.png","label":"基础设施账本"},{"file":"slide02.png","label":"价值链"},{"file":"slide03.png","label":"资本流"},{"file":"slide04.png","label":"算力约束"},{"file":"slide05.png","label":"平台层"},{"file":"slide06.png","label":"能源与地点"},{"file":"slide07.png","label":"供给侧"},{"file":"slide08.png","label":"成本结构"},{"file":"slide09.png","label":"竞争位置"},{"file":"slide10.png","label":"风险边界"},{"file":"slide11.png","label":"行动路径"},{"file":"slide12.png","label":"结论"}
+    ]
+  },
+  {
+    "id": "couture-editorial",
+    "title": "Couture in Motion",
+    "subtitle": "高定编辑型 · 体积、材质与手工感",
+    "category": "视觉叙事",
+    "year": "2026",
+    "direction": "Atelier Research",
+    "mode": "Build Mode",
+    "description": "以非对称构图、衬线标题、材质摄影和编号系统构成的高定视觉研究，从轮廓研究推进到最终试装。",
+    "path": "assets/couture-editorial",
+    "pptx": "downloads/couture_in_motion_study.pptx",
+    "pdf": "downloads/couture_in_motion_study.pdf",
+    "slides": [
+      {"file":"slide01.png","label":"Couture in Motion"},{"file":"slide02.png","label":"The Body Is the Pattern"},{"file":"slide03.png","label":"Cut on the Bias"},{"file":"slide04.png","label":"Light Needs Texture"},{"file":"slide05.png","label":"Not a Dress"},{"file":"slide06.png","label":"The Final Fitting"}
+    ]
+  },
+  {
+    "id": "luxury-fragrance",
+    "title": "Luxury Fragrance Lookbook",
+    "subtitle": "产品编辑型 · 材质、气味与仪式",
+    "category": "视觉叙事",
+    "year": "2026",
+    "direction": "暗色香水编辑",
+    "mode": "Build Mode",
+    "description": "以暗色背景、材质图谱和克制的产品叙事建立一组可编辑的香水编辑型画册。",
+    "path": "assets/luxury-fragrance",
+    "pptx": "downloads/luxury_fragrance_lookbook.pptx",
+    "pdf": "downloads/luxury_fragrance_lookbook.pdf",
+    "slides": [{"file":"slide01.png","label":"封面"},{"file":"slide02.png","label":"原料图谱"},{"file":"slide03.png","label":"肌肤仪式"},{"file":"slide04.png","label":"产品收束"}]
+  },
+  {
+    "id": "architecture-vision",
+    "title": "Architecture Vision Book",
+    "subtitle": "空间叙事型 · 从概念到最终邀请",
+    "category": "视觉叙事",
+    "year": "2026",
+    "direction": "建筑愿景书",
+    "mode": "Build Mode",
+    "description": "以建筑摄影、空间原则和材质表达组织竞赛型愿景书，让概念逐步过渡到最终邀请。",
+    "path": "assets/architecture-vision",
+    "pptx": "downloads/architecture_vision_book.pptx",
+    "pdf": "downloads/architecture_vision_book.pdf",
+    "slides": [{"file":"slide01.png","label":"概念"},{"file":"slide02.png","label":"空间"},{"file":"slide03.png","label":"材质"},{"file":"slide04.png","label":"邀请"}]
+  }
+]
