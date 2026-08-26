@@ -131,12 +131,6 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 | [![Luxury Fragrance Lookbook](examples/site/assets/luxury-fragrance/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [![Architecture Vision Book](examples/site/assets/architecture-vision/slide01.png)](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
 | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance) | [在线查看完整案例](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision) |
 
-### 在线案例画廊
-
-案例画廊正在持续建设中，首批案例已提供多页浏览、PPTX 和 PDF 下载：
-
-[打开在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
-
 ## 安装
 
 请先克隆仓库，再从仓库根目录执行安装：

@@ -1,16 +1,22 @@
 # PPT Design Skill 真实案例
 
-这里的三个案例不是为了测试 API 而临时拼出的示例，而是完整的、可打开
+这里的五个案例不是为了测试 API 而临时拼出的示例，而是完整的、可打开
 的 PowerPoint 设计案例，用于说明 skill 应该追求的视觉完成度和页面叙事
-能力。三个案例来自 `pptx-designer` 的正式 examples，并已将生成后的
-PPTX 产物放入本目录。
+能力。案例覆盖技术系统、产业研究、品牌编辑、高级定制和建筑愿景，既有
+来自 `pptx-designer` 的正式示例，也有本技能的评估项目。
 
 ## 视觉总览
 
 在线浏览全部案例：
 [PPT Design Skill 案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
 
-### 首选视觉案例：高级定制编辑 / The White Study
+### 在线浏览完整案例
+
+每个案例都可以进入在线查看器，浏览全部页面并下载 PPTX、PDF：
+
+[打开 PPT Design Skill 案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
+
+### 页面预览
 
 <p align="center">
   <img src="../docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
@@ -19,13 +25,7 @@ PPTX 产物放入本目录。
 这组案例体现了本 Skill 对高完成度视觉设计的要求：视觉方向先行，页面
 结构服务于叙事，图片、标题、编号和材质标签共同建立版面节奏。
 
-### 其他案例
-
-[![三个真实案例的代表页](../docs/assets/cases/contact-sheet.png)](output/luxury_fragrance_lookbook.pptx)
-
-代表页：[Luxury Fragrance](../docs/assets/cases/luxury-fragrance-slide01.png) ·
-[Couture Editorial](../docs/assets/cases/couture-editorial-slide01.png) ·
-[Architecture Vision](../docs/assets/cases/architecture-vision-slide01.png)
+![案例页面预览](../docs/assets/cases/contact-sheet.png)
 
 ## 案例一：奢华香水画册
 
@@ -68,7 +68,7 @@ PPTX 产物放入本目录。
 
 ## 运行与检查
 
-这三个案例已经包含生成后的 `.pptx`，不应把它们当成只验证代码能否运行的
+这五个案例已经包含生成后的 `.pptx`，不应把它们当成只验证代码能否运行的
 简单测试。交付前应重新执行：
 
 ```powershell
