@@ -1,4 +1,6 @@
-# PPT Design Skill
+<p align="center"><img src="../examples/site/assets/brand/logo-pure-mark.svg" alt="PPT Design Skill Logo" width="76"></p>
+
+<h1 align="center">PPT Design Skill</h1>
 
 PPT Design Skill is a brief-first presentation design workflow powered
 by the published [`pptx-designer`](https://pypi.org/project/pptx-designer/)

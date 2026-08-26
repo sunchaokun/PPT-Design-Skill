@@ -1,5 +1,7 @@
 <div align="center">
 
+<p align="center"><img src="examples/site/assets/brand/logo-pure-mark.svg" alt="PPT Design Skill Logo" width="76"></p>
+
 <h1 align="center">PPT Design Skill</h1>
 
 <p align="center"><strong>原生可编辑 · 视觉设计驱动</strong></p>
