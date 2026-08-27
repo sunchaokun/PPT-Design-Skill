@@ -18,9 +18,10 @@ images, and downloadable files are defined in
 | Single-Cell CAR T Atlas | 12 | Paper-led scientific narrative, evidence boundaries, and figure-based explanation | [Open](new_examplex/car_t_single_cell_paper/) |
 | Louvre Abu Dhabi | 10 | Architectural atmosphere, geometry, climate, and cultural space | [Open](new_examplex/louvre_abudhabi/) |
 | Vertical City Retrofit | 14 | Urban retrofit strategy, systems thinking, phasing, and investment decisions | [Open](new_examplex/vertical_city_retrofit/) |
+| COUTURE COLOR — Objects of Desire | 10 | Luxury beauty editorial, product-in-use imagery, editable product geometry, and material storytelling | [Open](new_examplex/couture_lipstick_atelier/) |
 
-Together, these five projects provide sixty reviewed slides across technical,
-data, scientific, cultural, and urban-strategy presentation domains.
+Together, these six projects provide seventy reviewed slides across technical,
+data, scientific, cultural, urban-strategy, and luxury-beauty presentation domains.
 
 ## What a complete case includes
 

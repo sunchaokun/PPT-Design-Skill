@@ -78,5 +78,21 @@
     "slides": [
       {"file":"slide01.png","label":"封面"},{"file":"slide02.png","label":"显性问题"},{"file":"slide03.png","label":"五个系统"},{"file":"slide04.png","label":"改造路径"},{"file":"slide05.png","label":"能源约束"},{"file":"slide06.png","label":"共享底层"},{"file":"slide07.png","label":"日常生活"},{"file":"slide08.png","label":"改造类型"},{"file":"slide09.png","label":"在住施工"},{"file":"slide10.png","label":"顺序经济学"},{"file":"slide11.png","label":"决策矩阵"},{"file":"slide12.png","label":"运营模型"},{"file":"slide13.png","label":"36 个月路径"},{"file":"slide14.png","label":"结论"}
     ]
+  },
+  {
+    "id": "couture-color-objects-of-desire",
+    "title": "COUTURE COLOR",
+    "subtitle": "Luxury Beauty Editorial · Objects of Desire",
+    "category": "视觉叙事",
+    "year": "2026",
+    "direction": "Nocturnal Beauty Editorial",
+    "mode": "Build Mode",
+    "description": "以全屏妆效肖像、同一模特的上妆动作、可编辑产品结构与材质叙事，构成一组 10 页高定口红作品集案例。",
+    "path": "assets/couture-color-objects-of-desire",
+    "pptx": "downloads/couture_color_objects_of_desire.pptx",
+    "pdf": "downloads/couture_color_objects_of_desire.pdf",
+    "slides": [
+      {"file":"slide01.png","label":"Couture Color"},{"file":"slide02.png","label":"The Proposition"},{"file":"slide03.png","label":"Chromatic Wardrobe"},{"file":"slide04.png","label":"Object Grammar"},{"file":"slide05.png","label":"Material Choreography"},{"file":"slide06.png","label":"The Gesture"},{"file":"slide07.png","label":"The Collection"},{"file":"slide08.png","label":"The Ritual"},{"file":"slide09.png","label":"Editorial Release"},{"file":"slide10.png","label":"Coda"}
+    ]
   }
 ]

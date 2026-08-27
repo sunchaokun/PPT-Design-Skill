@@ -114,6 +114,7 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 | [Single-Cell CAR T Atlas](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=car-t-single-cell-atlas) | 论文型科学叙事 | 图证结构、研究设计、证据边界与可编辑机制图 |
 | [Louvre Abu Dhabi](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=louvre-abudhabi) | 建筑文化叙事 | 真实摄影、可编辑几何、气候逻辑与博物馆城市空间 |
 | [Vertical City Retrofit](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=vertical-city-retrofit) | 城市更新策略 | 建筑剖面、系统图、情景数据、治理与决策框架 |
+| [COUTURE COLOR — Objects of Desire](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-color-objects-of-desire) | 高定美妆编辑叙事 | 全屏妆效肖像、同一模特的上妆动作、可编辑产品结构与材质叙事 |
 
 这些案例不是为了证明代码能够运行，而是为了展示从设计判断到最终页面
 完成度的完整结果。更多页面和下载入口请查看[在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
@@ -130,7 +131,7 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 <tr>
 <td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=louvre-abudhabi"><img src="examples/site/assets/louvre-abudhabi/slide01.png" width="100%"></a></td>
 <td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=vertical-city-retrofit"><img src="examples/site/assets/vertical-city-retrofit/slide01.png" width="100%"></a></td>
-<td width="33.33%"></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-color-objects-of-desire"><img src="examples/site/assets/couture-color-objects-of-desire/slide01.png" width="100%"></a></td>
 </tr>
 </table>
 
@@ -420,7 +421,7 @@ PPT-Design-Skill/
 │   ├── contact-sheet.png
 │   └── representative slide previews
 ├── examples/new_examplex/
-│   └── five maintained case-study packages
+│   └── six maintained case-study packages
 ├── installer/
 ├── docs/
 ├── install.py

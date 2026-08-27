@@ -68,6 +68,20 @@ window.PPT_CASES = [
     pptx: 'downloads/vertical_city_retrofit_style_sample.pptx',
     pdf: 'downloads/vertical_city_retrofit_style_sample.pdf',
     slides: ['封面', '显性问题', '五个系统', '改造路径', '能源约束', '共享底层', '日常生活', '改造类型', '在住施工', '顺序经济学', '决策矩阵', '运营模型', '36 个月路径', '结论']
+  },
+  {
+    id: 'couture-color-objects-of-desire',
+    title: 'COUTURE COLOR',
+    subtitle: 'Luxury Beauty Editorial · Objects of Desire',
+    category: '视觉叙事',
+    year: '2026',
+    direction: 'Nocturnal Beauty Editorial',
+    mode: 'Build Mode',
+    description: '以全屏妆效肖像、同一模特的上妆动作、可编辑产品结构与材质叙事，构成一组 10 页高定口红作品集案例。',
+    path: 'assets/couture-color-objects-of-desire',
+    pptx: 'downloads/couture_color_objects_of_desire.pptx',
+    pdf: 'downloads/couture_color_objects_of_desire.pdf',
+    slides: ['Couture Color', 'The Proposition', 'Chromatic Wardrobe', 'Object Grammar', 'Material Choreography', 'The Gesture', 'The Collection', 'The Ritual', 'Editorial Release', 'Coda']
   }
 ].map(project => ({
   ...project,
