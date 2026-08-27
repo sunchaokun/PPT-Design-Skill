@@ -1,84 +1,78 @@
-# PPT Design Skill 真实案例
+# Presentation Case Studies
 
-这里的五个案例不是为了测试 API 而临时拼出的示例，而是完整的、可打开
-的 PowerPoint 设计案例，用于说明 skill 应该追求的视觉完成度和页面叙事
-能力。案例覆盖技术系统、产业研究、品牌编辑、高级定制和建筑愿景，既有
-来自 `pptx-designer` 的正式示例，也有本技能的评估项目。
+This directory contains the maintained case-study library for PPT Design Skill.
+Each case is a complete, editable PowerPoint project rather than a decorative
+mock-up: it pairs a delivered PPTX and PDF with the source material, build
+logic, page plan, visual direction, and review evidence used to produce it.
 
-## 视觉总览
+The browser gallery is in [site/](site/). Its published case list, preview
+images, and downloadable files are defined in
+[site/data/examples.json](site/data/examples.json).
 
-在线浏览全部案例：
-[PPT Design Skill 案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
+## Maintained cases
 
-### 在线浏览完整案例
+| Case | Pages | Focus | Project package |
+|---|---:|---|---|
+| AI Agent Operating System | 12 | Technical architecture, control planes, evaluation, and safety | [Open](new_examplex/ai_agent_operating_system/) |
+| AI Infrastructure Economics | 12 | Capital, compute, energy, platform constraints, and operating choices | [Open](new_examplex/ai_infrastructure_economics/) |
+| Single-Cell CAR T Atlas | 12 | Paper-led scientific narrative, evidence boundaries, and figure-based explanation | [Open](new_examplex/car_t_single_cell_paper/) |
+| Louvre Abu Dhabi | 10 | Architectural atmosphere, geometry, climate, and cultural space | [Open](new_examplex/louvre_abudhabi/) |
+| Vertical City Retrofit | 14 | Urban retrofit strategy, systems thinking, phasing, and investment decisions | [Open](new_examplex/vertical_city_retrofit/) |
 
-每个案例都可以进入在线查看器，浏览全部页面并下载 PPTX、PDF：
+Together, these five projects provide sixty reviewed slides across technical,
+data, scientific, cultural, and urban-strategy presentation domains.
 
-[打开 PPT Design Skill 案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
+## What a complete case includes
 
-### 页面预览
+The exact file set differs by project, but a maintained case normally contains:
 
-<p align="center">
-  <img src="../docs/assets/cases/couture-editorial-contact-sheet.png" alt="Couture Editorial — The White Study" width="980">
-</p>
+- `brief.md` — audience, scenario, content boundary, and intended takeaway.
+- `visual-direction.md` — the visual thesis, typography, palette, grid, image
+  treatment, and prohibited patterns.
+- `page-plan.md` — the role and visual form of every slide.
+- `acceptance-contract.md` and `visual-review.md` — the requirements and
+  evidence from the final review.
+- `build.py` or equivalent Build Mode source — the reproducible authoring
+  entry point.
+- `output/` — the delivered editable `.pptx` and exported `.pdf`.
+- `rendered/` — reviewed PNG slides when the case retains them.
 
-这组案例体现了本 Skill 对高完成度视觉设计的要求：视觉方向先行，页面
-结构服务于叙事，图片、标题、编号和材质标签共同建立版面节奏。
+Cases that use third-party research figures or photography include source,
+credit, or usage-boundary notes where applicable. Those materials must be
+reviewed before any external commercial reuse.
 
-![案例页面预览](../docs/assets/cases/contact-sheet.png)
+## Browse or inspect a case
 
-## 案例一：奢华香水画册
+Open the local gallery from [site/index.html](site/index.html), or serve the
+repository through a static web server. Each gallery entry opens a page-level
+viewer and links to the matching PPTX and PDF.
 
-[luxury_fragrance_lookbook.pptx](output/luxury_fragrance_lookbook.pptx)
-
-香水编辑型画册，采用暗色、克制、具有杂志感的视觉方向。四页分别承担
-封面叙事、原料图谱、肌肤仪式和产品收束功能。
-
-重点观察：
-
-- 图片只承担氛围和材质表达；文字、色块和版式保持原生可编辑。
-- 页面不是重复的卡片模板，而是围绕编辑型叙事改变结构。
-- 产品信息、材质来源和情绪文案被组织为视觉叙事，而不是堆砌卖点。
-
-## 案例二：高级定制编辑型演示
-
-[couture_editorial_deck.pptx](output/couture_editorial_deck.pptx)
-
-高级定制时装编辑型演示，采用解构式版面、留白、图片与文字的错位关系，
-页面依次呈现宣言、轮廓研究、材料索引和最终试装。
-
-重点观察：
-
-- 使用非对称关系表达“运动、体积和手工感”。
-- 图片和文字不是简单的左右分栏，而是共同构成版面节奏。
-- 细节标签、编号和材料索引承担信息结构，装饰不替代内容。
-
-## 案例三：建筑愿景书
-
-[architecture_vision_book.pptx](output/architecture_vision_book.pptx)
-
-建筑愿景书 / 竞赛型视觉叙事案例，强调概念、空间、材质和最终邀请之间
-的递进关系。
-
-重点观察：
-
-- 使用建筑摄影作为空间情绪和尺度感来源。
-- 页面从概念表达逐步过渡到空间原则和最终邀请。
-- 图像承担氛围层作用，重要的文字和结构信息仍然可编辑。
-
-## 运行与检查
-
-这五个案例已经包含生成后的 `.pptx`，不应把它们当成只验证代码能否运行的
-简单测试。交付前应重新执行：
+To inspect a delivered deck structurally, run the project command from the
+repository root. For example:
 
 ```powershell
-python skill/scripts/inspect_pptx.py examples/output/luxury_fragrance_lookbook.pptx --pretty
-python skill/scripts/inspect_pptx.py examples/output/couture_editorial_deck.pptx --pretty
-python skill/scripts/inspect_pptx.py examples/output/architecture_vision_book.pptx --pretty
+python skill/scripts/inspect_pptx.py `
+  examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx `
+  --pretty
 ```
 
-然后分别执行 `skill/scripts/render_pptx.ps1`，生成 PDF 和 PNG，并由 LLM
-逐页检查：构图、文字可读性、图片裁切、视觉节奏、页间一致性和可编辑性。
+For a full visual check, render the PPTX to PDF and PNG, then inspect every
+slide at presentation scale:
 
-案例源代码和图片资产维护在 `pptx-designer` 仓库的 examples 目录中；本仓库
-保留这里的 PPTX 产物作为 skill 视觉基准，不重新复制一份引擎源码。
+```powershell
+powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
+  -InFile examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx `
+  -OutDir output/louvre_abudhabi_review
+```
+
+Do not treat a successful build as final acceptance. A case is ready only when
+its rendered slides satisfy the brief, visual direction, and acceptance
+contract.
+
+## Contribution standard
+
+Add a new case only when it expands the library with a distinct communication
+problem or visual language. It must include a reproducible source, an editable
+PPTX, a rendered review pass, and clear provenance for any external assets.
+Avoid adding partial drafts, duplicate exports, or one-off assets to the
+gallery.

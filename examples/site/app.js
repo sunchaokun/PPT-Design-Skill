@@ -2,9 +2,13 @@ const DATA_URL = 'data/examples.json';
 let projects = [];
 
 async function loadProjects() {
-  const response = await fetch(DATA_URL, {cache: 'no-cache'});
-  if (!response.ok) throw new Error(`无法加载 ${DATA_URL}: ${response.status}`);
-  projects = await response.json();
+  if (Array.isArray(window.PPT_CASES)) {
+    projects = window.PPT_CASES;
+  } else {
+    const response = await fetch(DATA_URL, {cache: 'no-cache'});
+    if (!response.ok) throw new Error(`无法加载 ${DATA_URL}: ${response.status}`);
+    projects = await response.json();
+  }
   if (document.getElementById('projects-grid')) renderGallery();
   if (document.getElementById('viewer')) renderViewer();
 }

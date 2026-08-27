@@ -6,12 +6,12 @@
 
 <p align="center"><strong>原生可编辑 · 视觉设计驱动</strong></p>
 
-一个以设计流程为核心的 PowerPoint 技能。PPTX 的实际生成由已发布的
+一个以设计流程为核心的 PowerPoint skill。PPTX 的实际生成由已发布的
 [`pptx-designer`](https://pypi.org/project/pptx-designer/) Python 标准库
-负责；本技能负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
+负责；skill 负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0-111827?style=flat-square" alt="Version 1.0">
+  <img src="https://img.shields.io/badge/version-1.1-111827?style=flat-square" alt="Version 1.1">
   <img src="https://img.shields.io/badge/engine-pptx--designer-2563EB?style=flat-square" alt="pptx-designer engine">
   <img src="https://img.shields.io/badge/output-PPTX%20%7C%20PDF%20%7C%20PNG-C2414C?style=flat-square" alt="PPTX PDF PNG output">
 </p>
@@ -34,9 +34,9 @@
 
 | 模式 | 最适合 | 布局控制 | 速度 | 推荐度 |
 |---|---|---:|---:|---:|
-| **Build Mode** ⭐ | 客户交付、提案、战略、路演、编辑型演示、正式汇报 | 最高：逐页、逐元素控制 | 中等 | **首选** |
+| **Build Mode** ⭐ | 客户交付、提案、战略、路演、 editorial、正式汇报 | 最高：逐页、逐元素控制 | 中等 | **首选** |
 | **FreeStyle Mode** | 快速探索、方向草稿、内容已经明确的轻量 PPT | 中等：由 `generate_ppt()` 自动编排 | 最快 | 探索优先 |
-| **VI Build Mode** | 已有企业模板、母版或品牌规范的 PPT | 受模板约束：提取并保持品牌视觉基因 | 中等 | 模板优先 |
+| **VI Build Mode** | 已有企业模板、母版或品牌规范的 PPT | 受模板约束：提取并保持品牌 DNA | 中等 | 模板优先 |
 
 ### 如何判断
 
@@ -53,9 +53,9 @@ FreeStyle 的 `generate_ppt(query=...)` 和
   必须服从现有模板时，才选择 FreeStyle 或 VI Build Mode。
 </div>
 
-## 本技能的核心价值
+## Skill 的核心价值
 
-`pptx-designer` 负责把设计决策生成成可编辑 PPTX；本技能负责保证设计
+`pptx-designer` 负责把设计决策生成成可编辑 PPTX；本 Skill 负责保证设计
 决策和交付过程的质量：
 
 ```text
@@ -71,7 +71,7 @@ FreeStyle 的 `generate_ppt(query=...)` 和
   → 用户确认与交付
 ```
 
-技术上“运行成功”不等于设计完成。本技能会直接检查导出的 PNG，判断页面
+技术上“运行成功”不等于设计完成。Skill 会直接检查导出的 PNG，判断页面
 是否有视觉重心、合理密度、清晰层级、完整构图和符合用户需求的设计效果。
 
 ---
@@ -104,45 +104,44 @@ PPTX 文件成功生成、Python 没有报错、shape 数量正常，都不能�
 ## 精选设计案例
 
 这里展示的是可以下载、打开并继续编辑的完整 PowerPoint 案例。它们覆盖
-技术系统、产业研究、品牌编辑和空间叙事，用来说明本技能如何把内容结构、
-视觉方向和原生可编辑对象结合成完整的演示设计。
+技术系统、基础设施研究、科学证据、文化建筑和城市策略，用来说明本技能
+如何把内容结构、视觉方向和原生可编辑对象结合成完整的演示设计。
 
 | 案例 | 设计定位 | 视觉语言与设计重点 |
 |---|---|---|
 | [AI Agent Operating System](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system) | 技术系统蓝图 | 深色网格、分层架构、荧光色标记、流程与治理 |
 | [AI Infrastructure Economics](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics) | 编辑型产业研究 | 纸张质感、物理约束隐喻、数据层级、战略叙事 |
-| [Couture in Motion](examples/output/couture_editorial_deck.pptx) | 高级定制视觉研究 | 非对称版式、材质摄影、编号系统、章节节奏 |
-| [Luxury Fragrance Lookbook](examples/output/luxury_fragrance_lookbook.pptx) | 暗色产品编辑型画册 | 香水材质、氛围摄影、克制排版、产品叙事 |
-| [Architecture Vision Book](examples/output/architecture_vision_book.pptx) | 建筑竞赛愿景书 | 建筑摄影、空间原则、概念到最终邀请的递进 |
+| [Single-Cell CAR T Atlas](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=car-t-single-cell-atlas) | 论文型科学叙事 | 图证结构、研究设计、证据边界与可编辑机制图 |
+| [Louvre Abu Dhabi](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=louvre-abudhabi) | 建筑文化叙事 | 真实摄影、可编辑几何、气候逻辑与博物馆城市空间 |
+| [Vertical City Retrofit](https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=vertical-city-retrofit) | 城市更新策略 | 建筑剖面、系统图、情景数据、治理与决策框架 |
 
 这些案例不是为了证明代码能够运行，而是为了展示从设计判断到最终页面
 完成度的完整结果。更多页面和下载入口请查看[在线案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)
 和 [examples/README.md](examples/README.md)。
 
-每个项目展示全部页面缩略图，点击任意缩略图即可进入在线查看器，浏览完整页面并下载 PPTX、PDF：
+点击任意预览即可进入在线查看器，浏览完整页面并下载 PPTX、PDF：
 
 <table>
-<tr><th>AI Agent Operating System · 技术系统蓝图</th><th>AI Infrastructure Economics · 编辑型产业研究</th></tr>
 <tr>
-<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system"><img src="examples/site/assets/ai-agent-operating-system/slide01.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide02.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide03.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide04.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide05.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide06.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide07.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide08.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide09.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide10.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide11.png" width="23%"><img src="examples/site/assets/ai-agent-operating-system/slide12.png" width="23%"></a></td>
-<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics"><img src="examples/site/assets/ai-infrastructure-economics/slide01.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide02.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide03.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide04.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide05.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide06.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide07.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide08.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide09.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide10.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide11.png" width="23%"><img src="examples/site/assets/ai-infrastructure-economics/slide12.png" width="23%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system"><img src="examples/site/assets/ai-agent-operating-system/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics"><img src="examples/site/assets/ai-infrastructure-economics/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=car-t-single-cell-atlas"><img src="examples/site/assets/car-t-single-cell-atlas/slide01.png" width="100%"></a></td>
 </tr>
-<tr><th>Couture in Motion · 高级定制视觉研究</th><th>Luxury Fragrance Lookbook · 暗色产品编辑型画册</th></tr>
 <tr>
-<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-editorial"><img src="examples/site/assets/couture-editorial/slide01.png" width="30%"><img src="examples/site/assets/couture-editorial/slide02.png" width="30%"><img src="examples/site/assets/couture-editorial/slide03.png" width="30%"><img src="examples/site/assets/couture-editorial/slide04.png" width="30%"><img src="examples/site/assets/couture-editorial/slide05.png" width="30%"><img src="examples/site/assets/couture-editorial/slide06.png" width="30%"></a></td>
-<td><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=luxury-fragrance"><img src="examples/site/assets/luxury-fragrance/slide01.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide02.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide03.png" width="30%"><img src="examples/site/assets/luxury-fragrance/slide04.png" width="30%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=louvre-abudhabi"><img src="examples/site/assets/louvre-abudhabi/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=vertical-city-retrofit"><img src="examples/site/assets/vertical-city-retrofit/slide01.png" width="100%"></a></td>
+<td width="33.33%"></td>
 </tr>
-<tr><th colspan="2">Architecture Vision Book · 建筑竞赛愿景书</th></tr>
-<tr><td colspan="2"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=architecture-vision"><img src="examples/site/assets/architecture-vision/slide01.png" width="30%"><img src="examples/site/assets/architecture-vision/slide02.png" width="30%"><img src="examples/site/assets/architecture-vision/slide03.png" width="30%"><img src="examples/site/assets/architecture-vision/slide04.png" width="30%"></a></td></tr>
 </table>
 
-## 安装
+## Install
 
-请先克隆仓库，再从仓库根目录执行安装。安装器会自动安装已发布的
-`pptx-designer` Python 库，并把 Skill 安装到指定的 AI 编码工具：
+Clone the repository first, then run the installer from the repository root.
+The installer automatically installs the published `pptx-designer` Python
+package and copies the skill bundle to the selected coding assistant:
 
 ```powershell
-# 克隆 Skill 仓库
+# Clone the skill repository
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
@@ -150,55 +149,55 @@ python installer/install.py --platform opencode --force
 python skill/scripts/check_runtime.py
 ```
 
-可以将 `opencode` 替换为 `claude`、`codex`、`deepseek-harness` 或 `all`。
-安装完成后请重启对应的 AI 编码工具。
+请使用 `installer/install.py` 完成 Skill 安装。仓库根目录的 `install.py`
+仅用于安装 Python 运行包 `pptx-designer`，不会把 Skill 注册到编码工具中。
 
-首选渲染器是 Windows PowerPoint COM。备用方案需要 LibreOffice 和 Poppler
-（`pdftoppm`）。本技能不会静默安装桌面应用程序。
+Replace `opencode` with `claude`, `codex`, `deepseek-harness`, or `all` as
+needed. Restart the coding assistant after installation.
 
-如果你希望在 Windows 上使用 `winget` 安装备用渲染依赖，可以在安装 Skill
-时显式追加参数：
+### LibreOffice 为什么是可选依赖？
+
+PPTX 的生成本身只依赖 Python 包 `pptx-designer`，不要求安装 LibreOffice。
+但按照 Skill 的质量流程，生成 PPTX 后还需要将它渲染为 PDF 和 PNG，检查
+文字溢出、图片裁切、构图和页间节奏：
+
+- 有 Microsoft PowerPoint 时，Windows 优先使用 PowerPoint COM 渲染；
+- 没有 PowerPoint 时，使用 LibreOffice 的 `soffice` 将 PPTX 转为 PDF；
+- 再使用 Poppler 的 `pdftoppm` 将 PDF 转为 PNG。
+
+因此，LibreOffice 是无 PowerPoint 环境下的渲染后备方案，不是 PPTX 生成器，
+也不是所有用户都必须安装的依赖。运行下面的命令可以检查当前环境：
+
+```powershell
+python skill/scripts/check_runtime.py
+```
+
+安装器会检查 PATH、Windows 默认安装目录和注册表中的 LibreOffice，不会因为
+`soffice.exe` 没有加入 PATH 就误报未安装。桌面软件不会被静默安装；如果需要
+使用 winget 显式安装 LibreOffice 和 Poppler，可以执行：
+
+On Windows, users who explicitly want the installer to use `winget` may run:
 
 ```powershell
 python installer/install.py --platform opencode --force --render-deps
 ```
 
-### 可选：使用 AI 生成配图
-
-使用 AI 生成配图需要配置对应服务商的 API 密钥。将示例文件复制到运行
-`build.py` 的 PPT 项目目录：
-
-```powershell
-Copy-Item .env.example .env
-```
-
-然后在 `.env` 中配置一个服务商，例如：
-
-```dotenv
-PPT_IMAGE_LLM_PROVIDER=gpt-image
-OPENAI_API_KEY=your-api-key
-```
-
-`.env` 属于用户自己的项目，不应放入已安装的 Skill 目录，也不能提交到 Git。
-关于 Seedream、Gemini、Wanx、Kimi、OpenAI 兼容接口、素材搜索和宿主工具生成
-图片的配置，请参阅[图片与运行环境配置](skill/references/install-and-runtime.md)。
-
 ## 检查真实案例
 
 ```powershell
-python skill/scripts/inspect_pptx.py examples/output/luxury_fragrance_lookbook.pptx --pretty
+python skill/scripts/inspect_pptx.py examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx --pretty
 powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
-  -InFile examples/output/luxury_fragrance_lookbook.pptx `
-  -OutDir examples/output/luxury-fragrance-rendered
+  -InFile examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx `
+  -OutDir output/louvre-abudhabi-rendered
 ```
 
-对 couture 和 architecture 案例重复执行。导出后，LLM 必须直接查看 PNG，
+对其他维护案例重复执行。导出后，LLM 必须直接查看 PNG，
 检查构图、层级、文字可读性、图片裁切、页间节奏、用户需求匹配度和可编辑
 性。发现问题必须修改源代码或内容并重新渲染。
 
 ## 文档入口
 
-- [技能主流程](skill/SKILL.md)
+- [Skill 主流程](skill/SKILL.md)
 - [设计原则](skill/references/design-principles.md)
 - [公共 API](skill/references/public-api.md)
 - [质量与交付](skill/references/qa-and-delivery.md)
@@ -213,7 +212,7 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 仍可能存在标题层级弱、页面拥挤、图片裁切错误、图表不可读、页面重复和风格
 不统一等问题。
 
-本技能将视觉结果作为交付对象的一部分：
+本 skill 将视觉结果作为交付对象的一部分：
 
 1. 用户先确认需求和受众；
 2. LLM 先设计页面结构和视觉方向；
@@ -225,19 +224,19 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 
 ## 设计能力
 
-本技能采用成熟的设计思维，而不是把设计退化成选择一个
+本 skill 采用成熟的 Designer Mindset，而不是把设计退化成选择一个
 `style` 参数：
 
 | 能力 | 作用 |
 |---|---|
-| 受众优先 | 根据受众、场景和行动目标决定页面表达方式 |
-| 叙事规划 | 先设计页面级叙事，再生成代码 |
-| 领域范式 | 科研、论文、技术、医疗、政府和商业使用不同范式 |
-| 设计系统 | 锁定颜色、字体、间距、网格、图片和组件语言 |
-| 密度控制 | 控制页面信息量，避免用小字号塞满页面 |
-| 结构变化 | 页面结构随沟通目标变化，而不是重复同一种卡片 |
-| 原生可编辑 | 文本、形状、图表和支持的 SVG 保持可编辑 |
-| PNG 视觉检查 | 直接检查真实导出图像，而不是只检查源码 |
+| Audience-first | 根据受众、场景和行动目标决定页面表达方式 |
+| Narrative planning | 先设计页面级叙事，再生成代码 |
+| Domain paradigms | 科研、论文、技术、医疗、政府和商业使用不同范式 |
+| Design system | 锁定颜色、字体、间距、网格、图片和组件语言 |
+| Density control | 控制页面信息量，避免用小字号塞满页面 |
+| Structural variation | 页面结构随沟通目标变化，而不是重复同一种卡片 |
+| Native editability | 文本、形状、图表和支持的 SVG 保持可编辑 |
+| PNG visual review | 直接检查真实导出图像，而不是只检查源码 |
 
 ## 模式详细说明
 
@@ -367,11 +366,11 @@ Build Mode 规则：
 `pptx-designer`：
 
 ```powershell
-python installer/install.py --platform opencode --force
+python installer/install.py --platform all --force
 python skill/scripts/check_runtime.py
 ```
 
-安装技能到编码工具：
+安装 skill 到编码工具：
 
 ```powershell
 python installer/install.py --platform claude --force
@@ -384,8 +383,8 @@ python installer/install.py --platform deepseek-harness --force
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
-  -InFile examples/output/luxury_fragrance_lookbook.pptx `
-  -OutDir output/luxury-fragrance-rendered
+  -InFile examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx `
+  -OutDir output/louvre-abudhabi-rendered
 ```
 
 渲染器优先使用 Microsoft PowerPoint COM；无 PowerPoint 时使用 LibreOffice
@@ -420,10 +419,8 @@ PPT-Design-Skill/
 ├── docs/assets/cases/
 │   ├── contact-sheet.png
 │   └── representative slide previews
-├── examples/output/
-│   ├── luxury_fragrance_lookbook.pptx
-│   ├── couture_editorial_deck.pptx
-│   └── architecture_vision_book.pptx
+├── examples/new_examplex/
+│   └── five maintained case-study packages
 ├── installer/
 ├── docs/
 ├── install.py
