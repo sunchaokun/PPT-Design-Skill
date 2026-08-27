@@ -1,14 +1,12 @@
-<p align="center"><img src="../examples/site/assets/brand/logo-pure-mark.svg" alt="PPT Design Skill Logo" width="76"></p>
-
-<h1 align="center">PPT Design Skill</h1>
+# PPT Design Skill
 
 PPT Design Skill is a brief-first presentation design workflow powered
 by the published [`pptx-designer`](https://pypi.org/project/pptx-designer/)
 Python library.
 
-Current release: `1.0`
+Current release: `1.1`
 
-The library generates a natively editable PPTX. The skill is responsible for the
+The library generates the editable PPTX. The skill is responsible for the
 design process and quality gate:
 
 ```text
@@ -40,12 +38,11 @@ through the PPTX -> PDF -> PNG visual review gate for delivery work.
 
 ## Install
 
-Clone the repository first and run the installer from its root. The installer
+Clone the repository first, then run the installer from its root. The installer
 automatically installs the published `pptx-designer` Python package and copies
 the skill bundle to the selected coding assistant:
 
 ```powershell
-# Clone the skill repository
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
@@ -53,12 +50,23 @@ python installer/install.py --platform all --force
 python skill/scripts/check_runtime.py
 ```
 
-For a single assistant, replace `all` with `opencode`, `codex`, `claude`, or
-another supported platform key. Restart the assistant after installation.
-
 The installer supports Claude Code, Codex, DeepSeek Harness, OpenCode, Cursor,
 Windsurf, Roo Code, Gemini CLI, Trae, Continue, Droid, KiloCode, Augment, and
 GitHub Copilot. See [installer/README.md](../installer/README.md).
+
+### Why LibreOffice is an optional dependency
+
+PPTX generation only requires the Python package `pptx-designer`. LibreOffice
+is needed only as the headless rendering fallback when Microsoft PowerPoint
+COM is unavailable on Windows. In that fallback, LibreOffice (`soffice`)
+converts PPTX to PDF and Poppler (`pdftoppm`) converts the PDF to PNG for
+visual QA. It is not required to create the editable PPTX itself.
+
+Run `python skill/scripts/check_runtime.py` to verify the environment. On
+Windows, the check also looks in standard LibreOffice installation folders and
+the registry, so LibreOffice does not need to be on PATH. Desktop applications
+are never installed silently; use `python installer/install.py --render-deps`
+only when you explicitly want winget to install LibreOffice and Poppler.
 
 ## Three modes
 
@@ -120,27 +128,27 @@ the deck “looks good” is not sufficient.
 - [QA and delivery](../skill/references/qa-and-delivery.md)
 - [Examples](../examples/README.md)
 
-## Real design cases
+## Reviewed case studies
 
-The repository includes three complete editorial PPTX artifacts from the maintained
-`pptx-designer` examples:
+The repository maintains six complete, reviewed case studies. Each package
+includes a reproducible source, editable PPTX, PDF export, PNG review evidence,
+and a written visual-direction and acceptance record.
 
-- [Luxury Fragrance Lookbook](../examples/output/luxury_fragrance_lookbook.pptx)
-- [Couture Editorial Deck](../examples/output/couture_editorial_deck.pptx)
-- [Architecture Vision Book](../examples/output/architecture_vision_book.pptx)
+| Case | Pages | Design domain |
+|---|---:|---|
+| AI Agent Operating System | 12 | Technical architecture |
+| AI Infrastructure Economics | 12 | Data and infrastructure research |
+| Single-Cell CAR T Atlas | 12 | Scientific narrative |
+| Louvre Abu Dhabi | 10 | Architecture and culture |
+| Vertical City Retrofit | 14 | Urban strategy |
+| COUTURE COLOR — Objects of Desire | 10 | Luxury beauty editorial |
 
-These are visual reference cases, not disposable smoke-test decks. They show
-how the skill should use distinct page structures, atmosphere imagery, native
-editable text and shapes, and a coherent editorial narrative.
+Browse the full [case-study library](../examples/README.md) or the published
+[gallery](https://sunchaokun.github.io/PPT-Design-Skill/). The Louvre Abu Dhabi
+and COUTURE COLOR packages each use one final `build.py` entry point rather
+than a collection of sequential draft scripts.
 
-### Visual preview
-
-[![Three PPT Design Skill case studies](assets/cases/contact-sheet.png)](../examples/README.md)
-
-The preview is rendered from the actual case PPTX files through the confirmed
-PPTX -> PDF -> PNG path. Open the [Luxury Fragrance](assets/cases/luxury-fragrance-slide01.png),
-[Couture Editorial](assets/cases/couture-editorial-slide01.png), or
-[Architecture Vision](assets/cases/architecture-vision-slide01.png) representative page.
+![COUTURE COLOR cover](../examples/site/assets/couture-color-objects-of-desire/slide01.png)
 
 ## What the skill does
 

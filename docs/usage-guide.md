@@ -19,6 +19,11 @@
 
 Python 运行成功不是完成条件。PNG 视觉检查通过后才可以进入最终交付。
 
+当前发布版本为 `1.1`。仓库维护 6 个完整案例，覆盖技术架构、基础设施研究、
+科学叙事、建筑文化、城市策略和高定美妆编辑。案例库见
+[examples/README.md](../examples/README.md)，在线预览与下载见
+[案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)。
+
 在生成前，先把用户需求写成验收合同，并在 PNG 检查时逐项对照：
 
 | 编号 | 用户要求 | PNG 中应看到的证据 | 优先级 |
@@ -32,11 +37,10 @@ Python 运行成功不是完成条件。PNG 视觉检查通过后才可以进入
 
 ## 2. 安装
 
-先获取仓库，并在仓库根目录执行安装。安装器会自动安装已发布的
+请先克隆仓库，并从仓库根目录运行安装器。安装器会自动安装已发布的
 `pptx-designer` Python 库，同时安装 Skill 文件包：
 
 ```powershell
-# 克隆 Skill 仓库
 git clone https://github.com/sunchaokun/PPT-Design-Skill.git
 cd PPT-Design-Skill
 
