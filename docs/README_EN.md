@@ -148,7 +148,21 @@ Browse the full [case-study library](../examples/README.md) or the published
 and COUTURE COLOR packages each use one final `build.py` entry point rather
 than a collection of sequential draft scripts.
 
-![COUTURE COLOR cover](../examples/site/assets/couture-color-objects-of-desire/slide01.png)
+Click any preview to open the page-level viewer and download the matching PPTX
+or PDF.
+
+<table>
+<tr>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-agent-operating-system"><img src="../examples/site/assets/ai-agent-operating-system/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=ai-infrastructure-economics"><img src="../examples/site/assets/ai-infrastructure-economics/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=car-t-single-cell-atlas"><img src="../examples/site/assets/car-t-single-cell-atlas/slide01.png" width="100%"></a></td>
+</tr>
+<tr>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=louvre-abudhabi"><img src="../examples/site/assets/louvre-abudhabi/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=vertical-city-retrofit"><img src="../examples/site/assets/vertical-city-retrofit/slide01.png" width="100%"></a></td>
+<td width="33.33%"><a href="https://sunchaokun.github.io/PPT-Design-Skill/viewer.html?project=couture-color-objects-of-desire"><img src="../examples/site/assets/couture-color-objects-of-desire/slide01.png" width="100%"></a></td>
+</tr>
+</table>
 
 ## What the skill does
 
