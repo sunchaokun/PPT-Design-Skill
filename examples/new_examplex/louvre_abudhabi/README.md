@@ -3,16 +3,10 @@
 An in-progress flagship architecture-and-culture portfolio case, designed in
 Build Mode with editable PowerPoint text, shapes, and SVG diagrams.
 
-## Current material
+## Project structure
 
-- P1: `build_page01_cover.py` — reviewed hero cover with a single
-  photographic anchor and editable star field.
-- P2: `build_page02_spatial_prologue.py` — spatial prologue.
-- P3–P5: `build_pages03_05_dome_to_water.py` — geometry, urban figure, and civic interior.
-- P6–P10: `build_pages06_10_climate_to_coda.py` — climate, sequence, material, manifesto,
-  and coda.
-- `build_louvre_abudhabi_complete.py` — master build entry point for the complete P1–P10
-  editable deck.
+- `build.py` — the sole build entry point for the complete, editable P1–P10
+  deck; all page logic is contained in this file.
 - `output/louvre_abudhabi_complete.pptx` — the single reviewed delivery.
 
 ## Directory guide
@@ -23,5 +17,5 @@ Build Mode with editable PowerPoint text, shapes, and SVG diagrams.
 - `output/` — one current PPTX/PDF delivery set only.
 - `rendered/` — PowerPoint-exported PNG review images for all ten pages.
 
-The next design work must happen in this directory. Do not create parallel
-project folders at the repository root.
+The root contains only final delivery, documentation, and the single build
+entry point; no draft, sequential, or auxiliary build files remain.
