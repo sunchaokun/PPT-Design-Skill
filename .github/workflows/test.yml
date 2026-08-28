@@ -33,3 +33,4 @@ jobs:
       - name: Validate installer and runtime
         run: |
           python installer/install.py --check
+          python -m unittest tests.test_installer -v

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+from importlib.metadata import PackageNotFoundError, version as package_version
 import platform as host_platform
 import shutil
 import subprocess
@@ -26,21 +27,23 @@ def copy_bundle(destination: Path, force: bool) -> bool:
         print(f"[SKIP] {destination} exists; use --force to replace it")
         return False
     destination.parent.mkdir(parents=True, exist_ok=True)
+    # A skill installation is a complete bundle, not an additive overlay.
+    # Older releases shipped a ``src/ppt_pro_max`` tree and legacy entrypoint
+    # files. Replace the dedicated skill directory so those files cannot be
+    # discovered as part of the new Skill runtime path.
+    staging = destination.with_name(f".{destination.name}.installing")
+    if staging.exists():
+        shutil.rmtree(staging)
     shutil.copytree(
         SOURCE,
-        destination,
-        dirs_exist_ok=True,
+        staging,
         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
     )
-    # Remove stale interpreter caches from an existing installation. These are
-    # generated artifacts, not part of the skill bundle, and can otherwise
-    # survive an upgrade because copytree(..., dirs_exist_ok=True) is additive.
-    for cache_dir in destination.rglob("__pycache__"):
-        if cache_dir.is_dir():
-            shutil.rmtree(cache_dir)
-    for cache_file in destination.rglob("*.pyc"):
-        if cache_file.is_file():
-            cache_file.unlink()
+    # Build the replacement completely before removing the current bundle. If
+    # copying fails, the existing installation is left intact.
+    if destination.exists():
+        shutil.rmtree(destination)
+    staging.replace(destination)
     print(f"[OK] skill bundle -> {destination}")
     return True
 
@@ -54,8 +57,22 @@ def install_python_package(with_images: bool = False, with_ai_images: bool = Fal
         extras.append("ai-images")
     if extras:
         package += "[" + ",".join(extras) + "]"
+    before = installed_package_version("pptx-designer")
+    print(f"Checking pptx-designer (installed: {before or 'missing'})...")
     result = subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", package], check=False)
+    if result.returncode == 0:
+        after = installed_package_version("pptx-designer") or "unknown version"
+        status = "updated" if before and before != after else "ready"
+        print(f"[OK] pptx-designer {after} ({status})")
     return result.returncode == 0
+
+
+def installed_package_version(distribution_name: str) -> str | None:
+    """Return the installed distribution version without changing the environment."""
+    try:
+        return package_version(distribution_name)
+    except PackageNotFoundError:
+        return None
 
 
 def render_dependency_status() -> dict[str, bool]:
@@ -77,8 +94,15 @@ def install_render_deps() -> None:
 
 def check() -> int:
     print("Python packages:")
-    for module, label in (("pptx_designer", "pptx-designer"), ("pptx", "python-pptx"), ("PIL", "Pillow")):
-        print(f"  {'OK' if importlib.util.find_spec(module) else 'MISSING'} {label}")
+    for module, label, distribution in (
+        ("pptx_designer", "pptx-designer", "pptx-designer"),
+        ("pptx", "python-pptx", "python-pptx"),
+        ("PIL", "Pillow", "Pillow"),
+    ):
+        found = importlib.util.find_spec(module) is not None
+        installed = installed_package_version(distribution) if found else None
+        suffix = f" {installed}" if installed else ""
+        print(f"  {'OK' if found else 'MISSING'} {label}{suffix}")
     print("Render dependencies:")
     for name, available in render_dependency_status().items():
         print(f"  {'OK' if available else 'MISSING'} {name}")

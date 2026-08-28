@@ -7,6 +7,7 @@ silently installed because they require system-level user approval.
 from __future__ import annotations
 
 import argparse
+from importlib.metadata import PackageNotFoundError, version as package_version
 import platform
 import shutil
 import subprocess
@@ -37,6 +38,12 @@ def main() -> int:
     result = subprocess.run(command, check=False)
     if result.returncode:
         return result.returncode
+
+    try:
+        installed_version = package_version("pptx-designer")
+    except PackageNotFoundError:
+        installed_version = "unknown version"
+    print("Installed pptx-designer:", installed_version)
 
     if args.render_deps:
         if platform.system() != "Windows":

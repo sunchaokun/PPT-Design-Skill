@@ -4,6 +4,14 @@
 编码工具使用的标准 `ppt-design-skill/` 目录中。如果没有提供 `--no-pip`，
 同时会安装已经发布的 `pptx-designer` Python 软件包。
 
+使用 `--force` 时，目标 `ppt-design-skill` 目录会被完整替换，而不是增量
+覆盖。这会清理迁移前版本残留的 `src/ppt_pro_max` 和旧生成脚本。系统中
+独立安装的旧 Python 包可以继续存在，但不会成为新版 Skill 的运行路径。
+
+每次安装都会执行 `pip install --upgrade pptx-designer`。pip 会比较已安装
+版本与软件包索引，仅在有更新版本时下载升级。`--check` 只读检查并显示
+当前版本，不会修改环境。
+
 ## 开始安装
 
 执行任何安装命令前，请先克隆仓库：
