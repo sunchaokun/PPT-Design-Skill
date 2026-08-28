@@ -26,7 +26,7 @@ jobs:
 
       - name: Validate metadata and Python sources
         run: |
-          python -c "import json; d=json.load(open('skill.json', encoding='utf-8')); assert d['name']=='ppt-design-skill'; assert d['version']=='1.0'"
+          python -c "import json; d=json.load(open('skill.json', encoding='utf-8')); assert d['name']=='ppt-design-skill'; assert d['version']=='1.2'"
           python -m py_compile install.py installer/install.py skill/scripts/check_runtime.py skill/scripts/inspect_pptx.py
           python -m py_compile evals/001-chinese-enterprise-strategy/build.py evals/002-couture-editorial/build.py evals/003-scientific-research/build.py
 

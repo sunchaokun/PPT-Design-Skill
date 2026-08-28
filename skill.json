@@ -1,6 +1,6 @@
 {
   "name": "ppt-design-skill",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Brief-first, visually reviewed PowerPoint design workflow powered by the published pptx-designer Python library.",
   "license": "MIT",
   "entrypoint": "skill/SKILL.md",

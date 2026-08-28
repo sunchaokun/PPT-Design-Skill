@@ -37,6 +37,16 @@ the communication goal, not from the list of available Python functions.
 
 ## Stop before writing code
 
+For a new delivery-grade presentation task, initialize the task from
+`templates/task-init/` and keep task-specific requirements in those task
+files. Run `init_presentation_task.py` from the loaded Skill's `scripts/`
+directory (use its absolute path if the working directory is the project):
+`python <skill-root>/scripts/init_presentation_task.py --project <project-root>
+--name <lowercase-task-slug>`. It creates an isolated
+`<project-root>/ppt_tasks/<task-slug>/` and refuses to overwrite it. Do not
+begin implementation while a required research or direction decision remains
+unresolved.
+
 For a delivery-grade deck, do not write the build script until these decisions
 are explicit:
 

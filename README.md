@@ -11,7 +11,7 @@
 负责；skill 负责需求确认、结构设计、视觉方案、生成编排和最终视觉验收。
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.1-111827?style=flat-square" alt="Version 1.1">
+  <img src="https://img.shields.io/badge/version-1.2-111827?style=flat-square" alt="Version 1.2">
   <img src="https://img.shields.io/badge/engine-pptx--designer-2563EB?style=flat-square" alt="pptx-designer engine">
   <img src="https://img.shields.io/badge/output-PPTX%20%7C%20PDF%20%7C%20PNG-C2414C?style=flat-square" alt="PPTX PDF PNG output">
 </p>

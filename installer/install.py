@@ -16,7 +16,7 @@ except ModuleNotFoundError:  # direct execution: python installer/install.py
     from platforms import PLATFORMS, global_path, normalize, project_path
 
 SKILL_NAME = "ppt-design-skill"
-SKILL_VERSION = "1.0"
+SKILL_VERSION = "1.2"
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "skill"
 
