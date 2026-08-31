@@ -245,7 +245,7 @@ powershell -ExecutionPolicy Bypass -File skill/scripts/render_pptx.ps1 `
 |---|---|---|
 | Build Mode | 交付级空白画布精确设计 | Python + `pptx_designer.tools.*` |
 | FreeStyle Mode | 快速探索或目标驱动生成 | `generate_ppt(query=...)` / `generate_ppt(content=...)` |
-| VI Build Mode | 企业模板和品牌合规 | 模板 + `extract_design_dna()` + 新内容页 |
+| VI Build Mode | 企业模板和品牌合规 | `extract_design_context()` + 原子 Build + `VIBuildDelivery` |
 
 ### FreeStyle
 
@@ -253,10 +253,12 @@ FreeStyle 使用 `pptx-designer.generate_ppt()` 完成库内的目标驱动生�
 
 ```python
 from pptx_designer import generate_ppt
+from pptx_designer.renderer.theme import ThemeComposer
 
+theme = ThemeComposer().compose(style="dark-tech", seed=17)
 result = generate_ppt(
     "AI startup investor pitch",
-    style="dark cyberpunk",
+    theme=theme,
     output="output/pitch.pptx",
 )
 ```
@@ -279,23 +281,29 @@ result = generate_ppt(
             ]},
         ],
     },
-    style="professional",
+    theme=theme,
     output="output/review.pptx",
 )
 ```
 
 `query` 和 `content` 都属于 FreeStyle，不是两个不同的渲染引擎。`content`
 只是让 LLM 更明确地控制页面目标和文案；需要精确坐标时应使用 Build Mode。
+`theme` 必须是 `ThemeComposer.compose()` 返回的完整 resolved theme；传入后不要
+再同时传入 `style`、`palette`、`fonts`、`decoration`、`layout`、`mood` 或
+`style_seed`。
 
 ### VI Build Mode
 
 当用户提供 `template.pptx`、企业母版或明确要求品牌合规时使用 VI Build：
 
-1. 使用 `extract_design_dna()` 分析模板；
-2. 提取颜色、字体、安全边距、页脚、Logo 和重复装饰；
-3. 保留封面、目录、章节页和结尾等框架页；
-4. 基于模板增加内容页；
+1. 使用 `extract_design_context()` 提取确定性的视觉证据；
+2. 人工确认框架页、可写文本槽位、固定视觉层和视觉 grammar；
+3. 用 `content_model`、原子组件、精确几何和 `relation_bindings` 设计内容页；
+4. 用 `VITemplateAdapter.compile_atomic()` 编译内容页，并用 `VIBuildDelivery` 交付；
 5. 通过 PPTX -> PDF -> PNG 检查原有页面和新增页面的一致性。
+
+将品牌、主题或页面上下文叠加到模板证据时，使用
+`merge_vi_design_context()`，不要使用通用的 `merge_design_context()`。
 
 VI Build 不能承诺对所有 PowerPoint master、SmartArt、动画和 OOXML 行为
 进行像素级复刻，详细边界见 [template-brand.md](skill/references/template-brand.md)。
@@ -307,23 +315,17 @@ Build Mode 是交付级路径。LLM 生成普通 Python 文件，布局、文案
 
 ```python
 from pptx_designer import Presentation
+from pptx_designer.renderer.theme import ThemeComposer
 from pptx_designer.tools.cards import kpi_card
 from pptx_designer.tools.layout import page_header
 from pptx_designer.tools.shapes import rect
 
-C = {
-    "primary": "#1D78FA",
-    "accent": "#FF6B35",
-    "background": "#FFFFFF",
-    "text_dark": "#172554",
-    "text_body": "#475569",
-}
-
-prs = Presentation()
+theme = ThemeComposer().compose(style="professional", seed=17)
+prs = Presentation(theme=theme, strict_theme=True)
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-page_header(slide, "Q4 Revenue Report", "Financial Summary", C=C)
-kpi_card(slide, 1.0, 2.0, 3.5, 1.5, "$12.8M", "Revenue", "+23%", C=C)
-rect(slide, 0.5, 6.8, 12.3, 0.08, fill="primary", C=C)
+page_header(slide, "Q4 Revenue Report", "Financial Summary")
+kpi_card(slide, 1.0, 2.0, 3.5, 1.5, "$12.8M", "Revenue", "+23%")
+rect(slide, 0.5, 6.8, 12.3, 0.08, fill="primary")
 prs.save("output/report.pptx")
 ```
 

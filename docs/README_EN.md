@@ -74,7 +74,7 @@ only when you explicitly want winget to install LibreOffice and Poppler.
 |---|---|---|
 | Build Mode | Delivery-grade blank-canvas composition | Python + public `pptx_designer.tools.*` |
 | FreeStyle Mode | Fast exploration or goal-driven generation | `generate_ppt(query=...)` or `generate_ppt(content=...)` |
-| VI Build Mode | Existing template and enterprise brand compliance | Template + `extract_design_dna()` + controlled new pages |
+| VI Build Mode | Existing template and enterprise brand compliance | `extract_design_context()` + atomic Build + `VIBuildDelivery` |
 
 ### Build Mode
 
@@ -91,8 +91,9 @@ provides pixel-level element placement.
 ### VI Build Mode
 
 Use VI Build when the user supplies a corporate template or requires brand
-compliance. Analyze the template, extract design DNA, preserve framework pages,
-add content pages using the template's visual system, and review the complete
+compliance. Extract deterministic evidence with `extract_design_context()`,
+confirm framework pages and writable slots, build content pages with
+`compile_atomic()`, finalize with `VIBuildDelivery`, and review the complete
 deck through PPTX -> PDF -> PNG. Read
 [template-brand.md](../skill/references/template-brand.md).
 
@@ -208,9 +209,11 @@ pipeline:
 
 ```python
 from pptx_designer import generate_ppt
+from pptx_designer.renderer.theme import ThemeComposer
 
 # Topic-driven draft
-generate_ppt("AI startup pitch", style="professional", output="output/pitch.pptx")
+theme = ThemeComposer().compose(style="professional", seed=17)
+generate_ppt("AI startup pitch", theme=theme, output="output/pitch.pptx")
 
 # Content-driven draft
 generate_ppt(
@@ -221,7 +224,7 @@ generate_ppt(
             {"goal": "data", "title": "Key metrics", "bullets": ["Revenue: $12M"]},
         ],
     },
-    style="professional",
+    theme=theme,
     output="output/review.pptx",
 )
 ```

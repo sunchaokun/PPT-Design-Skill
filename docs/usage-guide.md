@@ -19,7 +19,7 @@
 
 Python 运行成功不是完成条件。PNG 视觉检查通过后才可以进入最终交付。
 
-当前发布版本为 `1.1`。仓库维护 6 个完整案例，覆盖技术架构、基础设施研究、
+当前示例适用于 `pptx-designer 1.0.0b10`。仓库维护 6 个完整案例，覆盖技术架构、基础设施研究、
 科学叙事、建筑文化、城市策略和高定美妆编辑。案例库见
 [examples/README.md](../examples/README.md)，在线预览与下载见
 [案例画廊](https://sunchaokun.github.io/PPT-Design-Skill/)。
@@ -62,13 +62,15 @@ python skill/scripts/check_runtime.py
 
 ### FreeStyle Mode
 
-使用 `generate_ppt()`。主题 query 和结构化 `content` 是同一 FreeStyle
-模式的两种输入形式。
+使用 `generate_ppt()`。自然语言 `query` 和结构化 `content` 是同一 FreeStyle
+模式的两种输入形式；需要复现主题时，应先用 `ThemeComposer` 解析完整主题，
+再通过 `theme=` 传入。
 
 ### VI Build Mode
 
-使用企业模板或品牌母版时进入 VI Build：分析模板、提取设计 DNA、保留框架
-页、基于模板添加内容页，并对完整结果导出 PNG 检查。不能默认承诺复杂
+使用企业模板或品牌母版时进入 VI Build：使用 `extract_design_context()` 分析
+模板、确认框架页和可写槽位，使用 `compile_atomic()` 添加内容页，再通过
+`VIBuildDelivery` 完成交付并对完整结果导出 PNG 检查。不能默认承诺复杂
 PowerPoint master、SmartArt、动画和私有 OOXML 的完全复刻。详细流程见
 [template-brand.md](../skill/references/template-brand.md)。
 
@@ -80,11 +82,13 @@ FreeStyle 是库的自动生成路径，有两种输入形式：
 
 ```python
 from pptx_designer import generate_ppt
+from pptx_designer.renderer.theme import ThemeComposer
 
 # 主题驱动的快速草稿
-generate_ppt(
+theme = ThemeComposer().compose(style="dark-tech", seed=17)
+result = generate_ppt(
     "AI startup investor pitch",
-    style="dark cyberpunk",
+    theme=theme,
     output="output/draft.pptx",
 )
 
@@ -97,13 +101,15 @@ generate_ppt(
             {"goal": "data", "title": "Key metrics", "bullets": ["Revenue: $12.8M"]},
         ],
     },
-    style="professional",
+    theme=theme,
     output="output/structured.pptx",
 )
 ```
 
 两者都是 FreeStyle；`content` 只提供更强的内容和页面目标控制，不提供逐
-元素坐标控制。
+元素坐标控制。传入完整 `theme` 后，不要同时传 `style`、`palette`、`fonts`、
+`decoration`、`layout`、`mood` 或 `style_seed`；这些发现参数会被忽略并产生
+警告。跨进程或持久化主题前，可用 `validate_resolved_theme(theme)` 校验。
 
 ### Build Mode：可复现的精确设计
 
@@ -111,25 +117,22 @@ generate_ppt(
 
 ```python
 from pptx_designer import Presentation
+from pptx_designer.renderer.theme import ThemeComposer
 from pptx_designer.tools.cards import kpi_card
 from pptx_designer.tools.layout import page_header
 from pptx_designer.tools.shapes import rect
 
-C = {
-    "primary": "#1D78FA",
-    "accent": "#FF6B35",
-    "background": "#FFFFFF",
-    "text_dark": "#172554",
-    "text_body": "#475569",
-}
-
-prs = Presentation()
+theme = ThemeComposer().compose(style="professional", seed=17)
+prs = Presentation(theme=theme, strict_theme=True)
 slide = prs.slides.add_slide(prs.slide_layouts[6])
-page_header(slide, "Q4 Revenue Report", "Financial Summary", C=C)
-kpi_card(slide, 1.0, 2.0, 3.5, 1.5, "$12.8M", "Revenue", "+23%", C=C)
-rect(slide, 0.5, 6.8, 12.3, 0.08, fill="primary", C=C)
+page_header(slide, "Q4 Revenue Report", "Financial Summary")
+kpi_card(slide, 1.0, 2.0, 3.5, 1.5, "$12.8M", "Revenue", "+23%")
+rect(slide, 0.5, 6.8, 12.3, 0.08, fill="primary")
 prs.save("output/report.pptx")
 ```
+
+`Presentation()` 默认创建 16:9 画布（13.333 × 7.5 英寸）。完整主题会让公共
+helper 自动继承颜色和字体；显式传入的 `C`、颜色或字体仍可用于刻意的局部覆盖。
 
 ## 5. 交付与质量门
 
