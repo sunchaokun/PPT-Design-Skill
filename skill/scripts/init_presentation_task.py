@@ -13,7 +13,7 @@ from shutil import copytree
 from typing import NoReturn
 
 
-SKILL_VERSION = "1.2"
+SKILL_VERSION = "1.3"
 TASK_TEMPLATE = Path(__file__).resolve().parents[1] / "templates" / "task-init"
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 

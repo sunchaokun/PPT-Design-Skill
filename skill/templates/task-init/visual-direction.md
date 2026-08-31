@@ -8,6 +8,21 @@
 
 ## Visual thesis
 
+## Theme Lock
+
+- Version:
+- Status: DRAFT / ACTIVE / SUPERSEDED
+- User-confirmed at:
+- Forbidden patterns:
+
+## Resolved theme record
+
+- Source: `ThemeComposer.compose(...)`
+- Resolved-theme file:
+- Seed:
+- `pptx-designer` version:
+- Imported module path:
+
 ## Design system
 
 - Mood and audience fit:

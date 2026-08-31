@@ -20,6 +20,17 @@ Use `skill/scripts/check_runtime.py` before a generation task. It reports
 missing Python or rendering dependencies without silently changing the user's
 environment.
 
+For a theme-guided task, record the installed package version and module path
+before generation. The requested package version is not sufficient evidence:
+
+```powershell
+python -c "import pptx_designer; print(pptx_designer.__version__); print(pptx_designer.__file__)"
+```
+
+Require `pptx-designer >= 1.0.0b8` for resolved-theme validation and protected
+VI context merging. If the printed module path or version is unexpected, stop
+and repair the environment before generating or running QA.
+
 ## Image generation credentials
 
 Image generation is optional. When a build needs AI-generated images, place a

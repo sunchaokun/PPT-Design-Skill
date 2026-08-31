@@ -7,4 +7,10 @@ research_required: false
 research_question: ""
 generation_mode: Build
 direction_confirmation_required: true
+theme_lock_version: null
+resolved_theme_path: ""
+resolved_theme_fingerprint: ""
+resolved_theme_seed: null
+pptx_designer_version: ""
+pptx_designer_module_path: ""
 status: INIT

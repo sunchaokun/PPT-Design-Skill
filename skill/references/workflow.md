@@ -103,6 +103,24 @@ Write a compact design brief containing:
 The same direction must govern the entire deck. Small variations are allowed;
 unrelated theme changes are not.
 
+### Theme Lock and resolved theme
+
+Save the approved design decision as a versioned Theme Lock in the task
+directory. It records the visual thesis, audience promise, intended tokens,
+visual grammar, page rhythm, forbidden patterns, and the user's confirmation.
+It is not a library theme object.
+
+Resolve it once through `ThemeComposer.compose(...)`, then save the complete
+returned mapping separately (for example `resolved-theme-v1.json`). Record its
+source, seed, package version, module path, and a SHA-256 fingerprint of its
+canonical JSON in the task manifest and QA record. Generation uses only the active resolved-theme
+file. On a confirmed style change, create a new Theme Lock and resolved theme;
+retain prior versions for audit, but never silently reuse them.
+
+Before generation, verify that the task manifest, page plan, script, Theme
+Lock, and resolved-theme file name the same active version. Inspect actual
+loaded package version and module path, not merely the requested dependency.
+
 ## 5. Select the generation path
 
 Use FreeStyle when the library's goal-based renderer is sufficient:
@@ -120,6 +138,13 @@ master, or explicit brand-compliance requirement. Analyze the template with
 pages from the template base, and review both inherited and new pages through
 the same PDF/PNG gate. Read [template-brand.md](template-brand.md) for the
 specific preservation rules and unsupported PowerPoint behaviors.
+
+For VI Build, merge in this policy order through
+`merge_vi_design_context(template_context, resolved_theme, page_context)`.
+Template-locked paths win. Treat a non-empty `diagnostics.conflicts` list as a
+preflight failure. To permit an exceptional brand change, first create a newly
+approved template context with the relevant lock deliberately changed or
+removed, then rerun the protected merge.
 
 ## 6. Build and inspect loop
 

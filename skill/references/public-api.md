@@ -6,13 +6,18 @@ package requires Python 3.10+.
 ## Top-level pipeline
 
 ```python
-from pptx_designer import Presentation, extract_design_dna, fetch_image, generate_ppt
+from pptx_designer import (
+    Presentation, extract_design_context, extract_design_dna, fetch_image, generate_ppt,
+    merge_vi_design_context, validate_resolved_theme,
+)
 ```
 
 - `generate_ppt(query, style=..., output=...)` is the quick path.
 - `generate_ppt(content={...}, style=..., output=...)` is the structured path.
-- `Presentation(template_path=None)` creates a 16:9 presentation.
+- `Presentation(template_path=None, theme=..., strict_theme=False)` creates a
+  16:9 presentation and can attach a theme context.
 - `extract_design_dna(path)` analyzes an existing presentation.
+- `extract_design_context(path)` returns the template context used by VI Build.
 - `fetch_image(...)` is optional and may require image credentials.
 
 ## Design intelligence and theme atoms
@@ -30,12 +35,41 @@ from pptx_designer.search.adapters import search_color, search_style, search_typ
   generate candidate vocabulary and options.
 - Use `ThemeComposer().compose(...)` after direction lock to pin explicit
   palette, font, decoration, layout, mood, and seed choices.
-- For reproducible Build Mode work, copy the selected roles into an explicit
-  `C` dictionary and typography configuration rather than relying on implicit
-  random defaults.
+- Store the `ThemeComposer().compose(...)` result as the resolved theme. It is
+  the only object accepted by `generate_ppt(theme=...)`; a Theme Lock is a
+  separate skill-level design record and must not be passed directly.
+- In ordinary Build Mode, use `Presentation(theme=resolved_theme,
+  strict_theme=True)` and semantic roles. A local `C` override is permitted
+  only for an explained page-level semantic need; derive it from the current
+  resolved theme rather than a stale hard-coded token set.
 - Treat library suggestions as candidates. They do not understand every user
   nuance, and a generic preset must not override a domain paradigm or brand
   constraint.
+
+### Theme contract and VI composition
+
+```python
+from pptx_designer import (
+    Presentation, extract_design_context, merge_vi_design_context,
+    validate_resolved_theme,
+)
+from pptx_designer.renderer.theme import ThemeComposer
+
+resolved_theme = ThemeComposer().compose(style="dark-tech", seed=17)
+validate_resolved_theme(resolved_theme)
+prs = Presentation(theme=resolved_theme, strict_theme=True)
+
+template_context = extract_design_context(template_path)
+page_context = {"page_role": "content"}  # Add only approved page-level fields.
+# For a supplied template, locked template fields win over later inputs.
+vi_context = merge_vi_design_context(template_context, resolved_theme, page_context)
+if vi_context["diagnostics"]["conflicts"]:
+    raise ValueError("Revise the theme/page context; it attempted to override a template lock")
+```
+
+When `theme=resolved_theme` is passed to `generate_ppt()`, do not also pass
+`style`, palette atoms, or `style_seed`; those are discovery inputs and are
+ignored for an already resolved theme.
 
 ## Build Mode modules
 

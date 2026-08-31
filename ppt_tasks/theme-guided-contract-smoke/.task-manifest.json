@@ -1,0 +1,10 @@
+{
+  "task_id": "be21674b-ff5c-4071-bedb-bd1e84d8379d",
+  "task_name": "theme-guided-contract-smoke",
+  "skill": "ppt-design-skill",
+  "skill_version": "1.2",
+  "template_source": "skill/templates/task-init",
+  "project_root": "E:\\PPT-Design-Skill-V2",
+  "task_root": "E:\\PPT-Design-Skill-V2\\ppt_tasks\\theme-guided-contract-smoke",
+  "created_at": "2026-08-31T08:27:55.191026+00:00"
+}

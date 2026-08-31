@@ -39,6 +39,23 @@ composition, underfilled pages, generic template feel, and a missing visual
 thesis at the moment they are easiest to recognize. The defect gate is retained
 from the mature workflow and must still catch serious design and delivery risks.
 
+## Theme evidence and runtime trace
+
+For every theme-guided delivery, record alongside the acceptance contract:
+
+- Theme Lock version and confirmation state;
+- resolved-theme file, fingerprint, source, and seed;
+- loaded `pptx-designer` version and module path;
+- FreeStyle `theme_application` diagnostics, including fallbacks,
+  `not_applied`, warnings, and ignored discovery arguments;
+- for VI Build, every `merge_vi_design_context()` conflict and its approved
+  resolution, if any.
+
+These records verify that the active theme was actually used. They do not by
+themselves prove visual quality: the PNG review below must establish that the
+theme changes composition, focal point, density, rhythm, typography, chart
+language, or decoration purposefully—not merely the palette.
+
 ### Gate 1 — visual effect first
 
 Look at the contact sheet and then each PNG at presentation scale. Ask first:
@@ -52,6 +69,8 @@ Look at the contact sheet and then each PNG at presentation scale. Ask first:
 - If a reference was supplied, are the agreed observable qualities visible in
   the result without copying the reference's content or relying on superficial
   colour, font, or decoration changes?
+- Does the active Theme Lock's visual thesis appear in page composition and
+  deck rhythm, without forcing identical layouts or generic cards?
 
 If the answer is no, mark the relevant slide `NEEDS_REVISION` even when the file
 is technically valid and no object overlaps. Record the visual cause and revise
@@ -87,6 +106,8 @@ Then inspect every slide and record:
 - palette, typography, contrast, and consistency;
 - domain and audience fit;
 - whether the page looks deliberate rather than generic.
+- whether the rendered deck reflects the resolved theme rather than a stale
+  token set or default fallback.
 
 Apply a higher bar to whitespace: first identify the intended role of the empty
 area (focus, pacing, hierarchy, or image breathing room). If no such role is

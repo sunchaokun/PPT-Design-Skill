@@ -90,13 +90,17 @@ been revised, and the user has confirmed the final direction or result.
 4. Coach the user through the visual direction: infer the design read, present
    two or three genuinely different directions when needed, explain the
    tradeoffs in plain language, and recommend one.
-5. Lock the selected direction: mood, visual thesis, palette, typography,
-   grid, spacing, density, image treatment, chart language, page archetypes,
-   and forbidden patterns.
+5. Lock the selected direction in a versioned **Theme Lock**: mood, visual
+   thesis, palette intent, typography intent, grid, spacing, density, image
+   treatment, chart language, page archetypes, and forbidden patterns. A Theme
+   Lock is a project design record, not a `pptx-designer` API object. Resolve
+   it once with `ThemeComposer.compose(...)`, save the resulting complete
+   **resolved theme**, and pass that object to the generation API.
 6. Present the structure and visual direction for confirmation before building
    a delivery-grade deck, unless the user explicitly requests a one-shot draft.
 7. Generate a reproducible Python build script or structured `content` using documented public
-   `pptx_designer` APIs.
+   `pptx_designer` APIs. Record the Theme Lock version, resolved-theme source,
+   seed, package version, and module path with the generation result.
 8. Run the generation path and perform basic structural checks.
 9. Export the PPTX to PDF and PNG using `skill/scripts/render_pptx.ps1`.
 10. Inspect the rendered PNGs directly using two gates. **Gate 1 is visual
@@ -156,6 +160,11 @@ delivery-grade work when no supplied template must be preserved. The LLM writes
 a reproducible Python script using `Presentation()` and public
 `pptx_designer.tools.*` APIs.
 
+Pass the complete resolved theme with `Presentation(theme=resolved_theme,
+strict_theme=True)` for ordinary themed Build Mode. Partial contexts are only
+for VI/template work and must be visibly diagnosed; do not pass a Theme Lock
+directly as a theme.
+
 ### FreeStyle Mode
 
 The library completes the deck through `generate_ppt()`. A topic query is the
@@ -163,6 +172,11 @@ quick path; a structured `content` dictionary gives the LLM more control over
 page goals and copy. They are two input forms of the same FreeStyle mode, not
 separate rendering engines. FreeStyle does not provide pixel-level placement
 control and does not replace the PNG review gate.
+
+When a direction is locked, call `generate_ppt(theme=resolved_theme, ...)`.
+Do not also pass `style`, palette atoms, or `style_seed`: FreeStyle treats a
+supplied resolved theme as authoritative and reports those discovery arguments
+as ignored.
 
 ### VI Build Mode
 
@@ -173,9 +187,12 @@ compliance requirement. The workflow is:
 2. preserve the template's framework pages, logo treatment, margins, fonts,
    colors, and recurring decorations;
 3. translate the extracted DNA into explicit brand tokens;
-4. add new content pages using the template as the base and public
+4. combine template context, resolved theme, and page constraints through
+   `merge_vi_design_context(template_context, resolved_theme, page_context)`;
+   template-locked fields must remain unchanged and conflicts must be reviewed;
+5. add new content pages using the template as the base and public
    `pptx_designer` helpers;
-5. render every page to PNG and verify that the new pages belong to the same
+6. render every page to PNG and verify that the new pages belong to the same
    visual system.
 
 Do not promise exact reproduction of unsupported PowerPoint master, SmartArt,
