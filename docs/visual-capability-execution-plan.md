@@ -22,7 +22,7 @@
 | 4 | 工作流状态 | `run_visual_workflow.py`、task 状态文件 | route、P01、暂停、恢复、失败回退测试 |
 | 5 | 案例证据 | 6～8 条有效 Prototype 或明确 `BLOCKED` | PPTX、预览、Recipe、object map、许可证据；`audit_case_outputs.py` |
 | 6 | 视觉资产 | 首轮 2 Pack、4 Family | 真实案例原型和 Pack 校验 |
-| 7 | 回归验收 | 技术、科研、品牌/建筑三套回归 | baseline/upgraded 逐页评分和复核 |
+| 7 | 回归验收 | 技术、科研、品牌/建筑三套回归 | baseline/upgraded 逐页评分和复核；`validate_acceptance_record.py` |
 | 8 | 安装交付 | 安装器、README、完整测试 | runtime、installer、pytest、diff check |
 
 ## 状态和降级
@@ -33,6 +33,8 @@
 - 快速 FreeStyle 可以不使用 Prototype，但必须记录降级原因；交付级 Build 不允许使用 stale / invalid Prototype。
 
 案例输出审计只证明 PPTX/PDF/PNG 的文件和页数闭环，输出 `render_ready` 不等于视觉评分、provenance 或许可证通过；缺少完整预览的案例继续保持 `BLOCKED`。
+
+Acceptance Record 还必须通过 `python skill/scripts/validate_acceptance_record.py <record.json>`：六项固定 criteria、逐项证据、总分求和、PASS 阈值以及 readability/editability 下限均由脚本复核。
 
 ## 分支与提交策略
 

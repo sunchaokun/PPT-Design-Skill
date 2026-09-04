@@ -31,6 +31,28 @@ def test_asset_inventory_is_machine_readable() -> None:
     assert "status=inventory_only" in result.stdout
 
 
+def test_acceptance_record_enforces_score_and_status_semantics(tmp_path: Path) -> None:
+    criteria = [
+        {"id": "visual_thesis", "name": "Visual thesis", "score": 2, "evidence": ["p01"]},
+        {"id": "composition", "name": "Composition", "score": 2, "evidence": ["p01"]},
+        {"id": "material", "name": "Material", "score": 2, "evidence": ["p01"]},
+        {"id": "readability", "name": "Readability", "score": 2, "evidence": ["p01"]},
+        {"id": "editability", "name": "Editability", "score": 2, "evidence": ["inspect"]},
+        {"id": "reproducibility", "name": "Reproducibility", "score": 1, "evidence": ["build"]},
+    ]
+    record = tmp_path / "acceptance.json"
+    value = {"record_id": "demo", "target_id": "demo-p01", "criteria": criteria, "score": 11,
+             "reviewer": "reviewer-a", "evidence": ["p01"], "status": "PASS"}
+    record.write_text(json.dumps(value), encoding="utf-8")
+    result = run_script("validate_acceptance_record.py", str(record))
+    assert result.returncode == 0, result.stdout + result.stderr
+    value["score"] = 10
+    record.write_text(json.dumps(value), encoding="utf-8")
+    result = run_script("validate_acceptance_record.py", str(record))
+    assert result.returncode == 1
+    assert "criteria sum" in result.stdout
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
