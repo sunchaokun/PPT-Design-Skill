@@ -12,7 +12,7 @@
 | `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | — | `PASS` |
 | `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS、Recipe、object map | — | `PASS` |
 | `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | — | `PASS` |
-| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材、Recipe、object map | Pack 兼容性 | `BLOCKED` |
+| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材、Recipe、object map | — | `PASS` |
 | `ai-agent-operating-system` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | — | `PASS` |
 
 ## 首轮接入动作

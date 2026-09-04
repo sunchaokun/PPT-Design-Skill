@@ -13,7 +13,7 @@ MVP 在这里不是降低最终目标，也不是把架构拆成一个“简陋�
 - 能从真实案例得到可追溯的 Prototype Record，或明确证明该案例仍然 `BLOCKED`；
 - 能让一次 Skill 使用完成路由、选择、P01、生成和验收追踪。
 
-当前仓库有 6 个案例目录，六个案例均已具备候选 PPTX/PDF 和完整 PNG 渲染；8 条代表页已登记 Recipe、object map 和结构化 `BLOCKED` Prototype Record。项目负责人已确认案例素材均为自制并批准使用，因此素材许可、context permission 和脱敏不再是当前阻塞项；剩余阻塞主要是 `build.py` 与候选 PPTX 的历史 provenance，以及 Couture 案例的 Pack 兼容性。MVP 所需的编排已由 `run_visual_workflow.py` 的持久化 workflow runner 覆盖，不把“尚未引入专用多代理服务”误列为首轮阻塞；多角色 orchestrator 仍属于后续扩展。此时直接宣称完成 36 条原型，会把“文件数量”误当成“有效设计资产”。因此 MVP 是证据门，不是最终能力上限。
+当前仓库有 6 个案例目录，六个案例均已具备候选 PPTX/PDF 和完整 PNG 渲染；8 条代表页已登记 Recipe、object map 和结构化 Prototype Record。项目负责人已确认案例素材均为自制并批准使用，六个案例也均已通过源码权威的双重重建；因此素材许可、context permission、脱敏、provenance 和首轮 Pack 兼容性不再是当前阻塞项。MVP 所需的编排已由 `run_visual_workflow.py` 的持久化 workflow runner 覆盖，不把“尚未引入专用多代理服务”误列为首轮阻塞；多角色 orchestrator 仍属于后续扩展。此时直接宣称完成 36 条原型，会把“文件数量”误当成“有效设计资产”。因此 MVP 是证据门，不是最终能力上限。
 
 长期目标仍保持不变：6 个 Rendering Pack、12 个 Composition Family、36 条案例派生 Prototype Record，以及三种生成模式的完整回归覆盖。
 

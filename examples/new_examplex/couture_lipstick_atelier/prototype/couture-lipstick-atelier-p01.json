@@ -6,7 +6,7 @@
   "pack_id": "dark-cinematic-tech",
   "composition_ids": ["c1-01"],
   "page_roles": ["cover"],
-  "summary": "Editorial product cover with a dominant hero image and restrained native typography; Pack mapping remains unresolved.",
+  "summary": "Editorial product cover with a dominant hero image and restrained native typography, mapped to the product-compatible dark cinematic Pack.",
   "source_paths": ["output/couture_color_objects_of_desire.pptx"],
   "preview_paths": ["rendered/slide01.png", "rendered/couture_color_objects_of_desire.pdf"],
   "recipe_paths": ["prototype/recipe.md"],
