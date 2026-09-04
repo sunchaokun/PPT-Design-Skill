@@ -62,6 +62,16 @@ def test_refresh_writes_atomic_state_for_registered_case(tmp_path: Path) -> None
     assert result.returncode == 0, result.stdout + result.stderr
     state = json.loads(cache.read_text(encoding="utf-8"))
     assert state["records"]["demo-case-p01"]["status"] == "valid"
+    assert state["records"]["demo-case-p01"]["change"] == "new"
+    result = run_script("refresh_case_prototypes.py", "--root", str(tmp_path), "--index", str(index), "--cache", str(cache), "--lock", str(lock))
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = json.loads(cache.read_text(encoding="utf-8"))
+    assert state["records"]["demo-case-p01"]["change"] == "unchanged"
+    (case / "marker.txt").write_text("v2", encoding="utf-8")
+    result = run_script("refresh_case_prototypes.py", "--root", str(tmp_path), "--index", str(index), "--cache", str(cache), "--lock", str(lock))
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = json.loads(cache.read_text(encoding="utf-8"))
+    assert state["records"]["demo-case-p01"]["change"] == "changed"
     assert not lock.exists()
 
 

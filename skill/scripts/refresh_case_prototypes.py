@@ -113,13 +113,22 @@ def main() -> int:
             case_root = Path(case_root)
             status, error = record_status(args.root, prototype, blocked)
             prototype_id = prototype.get("prototype_id", case_id)
+            case_fingerprint = fingerprint(case_root)
+            previous = old.get(prototype_id, {})
+            if not previous:
+                change = "new"
+            elif previous.get("case_fingerprint") == case_fingerprint:
+                change = "unchanged"
+            else:
+                change = "changed"
             records[prototype.get("prototype_id", case_id)] = {
-                "case_fingerprint": fingerprint(case_root),
+                "case_fingerprint": case_fingerprint,
                 "status": status,
                 "error": error,
                 "blocked": blocked,
+                "change": change,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
-                "previous_status": old.get(prototype_id, {}).get("status"),
+                "previous_status": previous.get("status"),
             }
         atomic_write(args.cache, {"schema_version": 1, "cases_root": str(cases_root), "records": records})
     print(json.dumps({"updated": len(records), "cache": str(args.cache)}, ensure_ascii=False))
