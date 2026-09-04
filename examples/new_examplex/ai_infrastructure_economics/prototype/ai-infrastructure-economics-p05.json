@@ -1,0 +1,17 @@
+{
+  "prototype_id": "ai-infrastructure-economics-p05",
+  "case_id": "ai-infrastructure-economics",
+  "case_root": "examples/new_examplex/ai_infrastructure_economics",
+  "slide_ids": ["P05"],
+  "pack_id": "dark-cinematic-tech",
+  "composition_ids": ["c2-01"],
+  "page_roles": ["constraint-map"],
+  "summary": "Editable four-system constraint map that turns infrastructure bottlenecks into a legible operating relationship.",
+  "source_paths": ["output/ai_infrastructure_economics.pptx"],
+  "preview_paths": ["rendered/slide05.png", "output/ai_infrastructure_economics.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "unknown",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}

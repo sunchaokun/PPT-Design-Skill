@@ -1,0 +1,17 @@
+{
+  "prototype_id": "ai-agent-operating-system-p04",
+  "case_id": "ai-agent-operating-system",
+  "case_root": "examples/new_examplex/ai_agent_operating_system",
+  "slide_ids": ["P04"],
+  "pack_id": "dark-cinematic-tech",
+  "composition_ids": ["c2-01"],
+  "page_roles": ["systems-diagram"],
+  "summary": "Editable control-plane and execution-plane systems diagram for an agent operating model.",
+  "source_paths": ["output/agent_operating_system.pptx"],
+  "preview_paths": ["rendered/slide04.png", "output/agent_operating_system.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "unknown",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}

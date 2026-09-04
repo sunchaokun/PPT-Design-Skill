@@ -37,6 +37,20 @@
       "slide_ids": ["P04"],
       "path": "examples/new_examplex/vertical_city_retrofit/prototype/vertical-city-retrofit-p04.json",
       "reason": "license/context permission is not yet verified"
+    },
+    {
+      "prototype_id": "ai-infrastructure-economics-p05",
+      "case_id": "ai-infrastructure-economics",
+      "slide_ids": ["P05"],
+      "path": "examples/new_examplex/ai_infrastructure_economics/prototype/ai-infrastructure-economics-p05.json",
+      "reason": "license/context permission is not yet verified"
+    },
+    {
+      "prototype_id": "ai-agent-operating-system-p04",
+      "case_id": "ai-agent-operating-system",
+      "slide_ids": ["P04"],
+      "path": "examples/new_examplex/ai_agent_operating_system/prototype/ai-agent-operating-system-p04.json",
+      "reason": "license/context permission is not yet verified"
     }
   ]
 }
