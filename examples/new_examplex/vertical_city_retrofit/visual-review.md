@@ -13,7 +13,7 @@ phasing, economics, decision matrix, governance network, and final takeaway.
 ## QA evidence
 
 - PPTX structural inspection: 14 slides, 16:9, editable shapes and text.
-- PPTX → PDF → PNG render: `rendered-final14-r2/slide01.png` through `slide14.png`.
+- PPTX → PDF → PNG render: `rendered/slide01.png` through `slide14.png`.
 - All 14 PNGs visually reviewed at 1280 × 720.
 - Corrected: page 3 callout collision, page 5 numeric wrapping, page 9 phase
   numbering, and page 10 negative-bar labels.
