@@ -53,6 +53,23 @@ def test_acceptance_record_enforces_score_and_status_semantics(tmp_path: Path) -
     assert "criteria sum" in result.stdout
 
 
+def test_runtime_trace_rejects_inconsistent_gate_states(tmp_path: Path) -> None:
+    trace = tmp_path / "trace.json"
+    value = {
+        "run_id": "run-1", "mode": "build", "prototype_ids": [], "recipe_ids": [],
+        "seed": 17, "package_version": "1.0.0b10", "p01_gate": "PASS",
+        "final_visual_gate": "PASS",
+    }
+    trace.write_text(json.dumps(value), encoding="utf-8")
+    result = run_script("validate_runtime_trace.py", str(trace))
+    assert result.returncode == 0, result.stdout + result.stderr
+    value["p01_gate"] = "BLOCKED"
+    trace.write_text(json.dumps(value), encoding="utf-8")
+    result = run_script("validate_runtime_trace.py", str(trace))
+    assert result.returncode == 1
+    assert "cannot PASS" in result.stdout
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
