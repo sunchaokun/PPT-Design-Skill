@@ -21,6 +21,13 @@ def main() -> int:
     print(f"compositions={len(compositions.get('entries', []))}")
     print(f"prototypes={len(prototypes.get('prototypes', []))}")
     print(f"blocked_prototypes={len(prototypes.get('blocked', []))}")
+    registered_case_ids = {
+        item.get("case_id")
+        for group in (prototypes.get("prototypes", []), prototypes.get("blocked", []))
+        for item in group
+        if isinstance(item, dict) and item.get("case_id")
+    }
+    print(f"registered_cases={len(registered_case_ids)}")
     print(f"prototype_cases_root={prototypes.get('cases_root', '')}")
     print("status=inventory_only; no aesthetic score is produced")
     return 0

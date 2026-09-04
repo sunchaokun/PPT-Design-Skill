@@ -28,6 +28,7 @@ def test_asset_inventory_is_machine_readable() -> None:
     result = run_script("inspect_visual_assets.py")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "packs=" in result.stdout
+    assert "registered_cases=6" in result.stdout
     assert "status=inventory_only" in result.stdout
 
 
