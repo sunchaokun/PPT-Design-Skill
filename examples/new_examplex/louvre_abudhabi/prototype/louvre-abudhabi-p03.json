@@ -1,0 +1,17 @@
+{
+  "prototype_id": "louvre-abudhabi-p03",
+  "case_id": "louvre-abudhabi",
+  "case_root": "examples/new_examplex/louvre_abudhabi",
+  "slide_ids": ["P03"],
+  "pack_id": "dark-cinematic-tech",
+  "composition_ids": ["c2-01"],
+  "page_roles": ["evidence"],
+  "summary": "Asymmetric technical explanation using native factual text and editable dome geometry.",
+  "source_paths": ["output/louvre_abudhabi_complete.pptx"],
+  "preview_paths": ["rendered/slide03.png", "output/louvre_abudhabi_complete.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "restricted",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}

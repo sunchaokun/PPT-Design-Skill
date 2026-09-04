@@ -65,6 +65,31 @@ def exclusive_lock(path: Path):
             pass
 
 
+def record_status(root: Path, entry: dict, blocked: bool) -> tuple[str, str | None]:
+    """Return a conservative cache status for one indexed prototype."""
+    case_root_value = entry.get("case_root")
+    case_root = root / case_root_value if case_root_value else root / "examples/new_examplex" / entry.get("case_id", "")
+    if not case_root.is_dir():
+        return "invalid", f"missing case root: {case_root}"
+    if blocked:
+        return "blocked", entry.get("reason")
+    record_path = entry.get("path")
+    if not record_path:
+        return "valid", None
+    try:
+        record = json.loads((root / record_path).read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        return "invalid", f"invalid prototype record: {record_path} ({exc})"
+    if record.get("license_status") != "verified" or record.get("context_allowed") is not True:
+        return "blocked", "license or context permission is not verified"
+    for field in ("source_paths", "preview_paths", "recipe_paths", "object_map_paths"):
+        for rel in record.get(field, []):
+            candidate = (case_root / rel).resolve()
+            if case_root.resolve() not in candidate.parents or not candidate.is_file():
+                return "invalid", f"missing or escaping evidence: {rel}"
+    return "valid", None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
@@ -79,16 +104,22 @@ def main() -> int:
         old_state = json.loads(args.cache.read_text(encoding="utf-8")) if args.cache.exists() else {}
         old = old_state.get("records", {})
         records = {}
-        for prototype in index.get("prototypes", []):
+        entries = [(prototype, False) for prototype in index.get("prototypes", [])]
+        entries.extend((prototype, True) for prototype in index.get("blocked", []))
+        for prototype, blocked in entries:
             case_id = prototype.get("case_id", "")
             case_root_value = prototype.get("case_root")
             case_root = args.root / case_root_value if case_root_value else cases_root / case_id
             case_root = Path(case_root)
+            status, error = record_status(args.root, prototype, blocked)
+            prototype_id = prototype.get("prototype_id", case_id)
             records[prototype.get("prototype_id", case_id)] = {
                 "case_fingerprint": fingerprint(case_root),
-                "status": "valid" if case_root.exists() else "invalid",
+                "status": status,
+                "error": error,
+                "blocked": blocked,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
-                "previous_status": old.get(prototype.get("prototype_id", case_id), {}).get("status"),
+                "previous_status": old.get(prototype_id, {}).get("status"),
             }
         atomic_write(args.cache, {"schema_version": 1, "cases_root": str(cases_root), "records": records})
     print(json.dumps({"updated": len(records), "cache": str(args.cache)}, ensure_ascii=False))

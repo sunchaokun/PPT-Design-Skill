@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -92,6 +93,44 @@ def relative_inside(case_root: Path, rel: str) -> Path:
     return resolved
 
 
+def pptx_slide_count(path: Path) -> int:
+    """Count presentation slides without importing the optional PPTX stack."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return sum(
+                1
+                for name in archive.namelist()
+                if re.fullmatch(r"ppt/slides/slide\d+\.xml", name)
+            )
+    except (FileNotFoundError, zipfile.BadZipFile) as exc:
+        raise ValidationError(f"invalid PPTX source: {path}") from exc
+
+
+def validate_prototype_record(record: dict[str, Any], record_label: str, record_path: Path) -> None:
+    """Validate the evidence chain behind a prototype record."""
+    case_root = ROOT / record["case_root"]
+    if not case_root.is_dir():
+        raise ValidationError(f"{record_label}: missing case root {record['case_root']}")
+    for field in ("source_paths", "preview_paths", "recipe_paths", "object_map_paths"):
+        for rel in record[field]:
+            resolved = relative_inside(case_root, rel)
+            if not resolved.is_file():
+                raise ValidationError(f"{record_label}.{field}: missing file {rel}")
+    source_pptx = [relative_inside(case_root, rel) for rel in record["source_paths"] if rel.lower().endswith(".pptx")]
+    if not source_pptx:
+        raise ValidationError(f"{record_label}.source_paths: at least one PPTX is required")
+    slide_count = pptx_slide_count(source_pptx[0])
+    for slide_id in record["slide_ids"]:
+        match = re.fullmatch(r"P(\d+)", slide_id)
+        if not match or int(match.group(1)) > slide_count:
+            raise ValidationError(f"{record_label}.slide_ids: {slide_id} is outside PPTX slide count {slide_count}")
+    if record.get("license_status") != "verified" or record.get("context_allowed") is not True:
+        if record_label.startswith("prototype["):
+            raise ValidationError(f"{record_label}: unverified or disallowed evidence must remain blocked")
+    if not record_path.is_file():
+        raise ValidationError(f"{record_label}: missing record file {record_path}")
+
+
 def validate_indexes() -> list[str]:
     errors: list[str] = []
     loaded: dict[str, dict[str, Any]] = {}
@@ -128,6 +167,27 @@ def validate_indexes() -> list[str]:
                 blocked_ids = {item.get("prototype_id") for item in index.get("blocked", []) if isinstance(item, dict)}
                 if blocked_ids & set(loaded[label]):
                     raise ValidationError("blocked prototype ID is also registered as active")
+                prototype_schema = load_json(SCHEMA_DIR / "prototype-record.schema.json")
+                for i, item in enumerate(index.get(expected, [])):
+                    if not isinstance(item, dict) or not item.get("path"):
+                        continue
+                    record_path = (ROOT / item["path"]).resolve()
+                    if ROOT.resolve() not in record_path.parents:
+                        raise ValidationError(f"prototypes[{i}] path escapes repository")
+                    record = load_json(record_path)
+                    check_schema(record, prototype_schema, f"prototypes[{i}].record", prototype_schema)
+                    validate_prototype_record(record, f"prototype[{i}]", record_path)
+                for i, item in enumerate(index.get("blocked", [])):
+                    if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+                        raise ValidationError(f"blocked[{i}] must contain a metadata path")
+                    record_path = (ROOT / item["path"]).resolve()
+                    if ROOT.resolve() not in record_path.parents:
+                        raise ValidationError(f"blocked[{i}] path escapes repository")
+                    record = load_json(record_path)
+                    check_schema(record, prototype_schema, f"blocked[{i}].record", prototype_schema)
+                    if record.get("prototype_id") != item.get("prototype_id") or record.get("case_id") != item.get("case_id"):
+                        raise ValidationError(f"blocked[{i}] summary does not match record")
+                    validate_prototype_record(record, f"blocked[{i}]", record_path)
         except ValidationError as exc:
             errors.append(f"{path}: {exc}")
     if not errors:

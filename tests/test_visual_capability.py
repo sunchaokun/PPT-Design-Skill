@@ -65,6 +65,33 @@ def test_refresh_writes_atomic_state_for_registered_case(tmp_path: Path) -> None
     assert not lock.exists()
 
 
+def test_refresh_keeps_blocked_prototypes_out_of_valid_runtime_state(tmp_path: Path) -> None:
+    case = tmp_path / "cases" / "blocked-case"
+    case.mkdir(parents=True)
+    index = tmp_path / "index.json"
+    index.write_text(json.dumps({
+        "schema_version": 1,
+        "cases_root": "cases",
+        "prototypes": [],
+        "blocked": [{
+            "prototype_id": "blocked-case-p01",
+            "case_id": "blocked-case",
+            "case_root": "cases/blocked-case",
+            "reason": "permission pending",
+        }],
+    }), encoding="utf-8")
+    cache = tmp_path / "cache.json"
+    result = run_script(
+        "refresh_case_prototypes.py",
+        "--root", str(tmp_path), "--index", str(index),
+        "--cache", str(cache), "--lock", str(tmp_path / "cache.lock"),
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    state = json.loads(cache.read_text(encoding="utf-8"))
+    assert state["records"]["blocked-case-p01"]["status"] == "blocked"
+    assert state["records"]["blocked-case-p01"]["blocked"] is True
+
+
 def test_refresh_fails_cleanly_when_lock_is_busy(tmp_path: Path) -> None:
     index = tmp_path / "index.json"
     index.write_text(json.dumps({"schema_version": 1, "cases_root": "cases", "prototypes": []}), encoding="utf-8")

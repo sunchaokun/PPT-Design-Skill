@@ -7,18 +7,21 @@
       "prototype_id": "louvre-abudhabi-p01",
       "case_id": "louvre-abudhabi",
       "slide_ids": ["P01"],
+      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p01.json",
       "reason": "license/context permission is not yet verified"
     },
     {
       "prototype_id": "louvre-abudhabi-p03",
       "case_id": "louvre-abudhabi",
       "slide_ids": ["P03"],
+      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p03.json",
       "reason": "license/context permission is not yet verified"
     },
     {
       "prototype_id": "louvre-abudhabi-p07",
       "case_id": "louvre-abudhabi",
       "slide_ids": ["P07"],
+      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p07.json",
       "reason": "license/context permission is not yet verified"
     }
   ]
