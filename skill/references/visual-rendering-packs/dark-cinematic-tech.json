@@ -9,7 +9,7 @@
   "rendering": {"line": "fine luminous strokes", "texture": "subtle grid and controlled grain", "depth": "glow and layered dark planes", "material": "graphite, glass, and light field", "mood": "precise, nocturnal, engineered"},
   "typography_behavior": ["large condensed headline", "small high-contrast metadata", "short labels instead of paragraphs"],
   "image_treatment": ["registered crops", "deep tonal range", "single focal subject"],
-  "composition_families": ["c1-01", "c2-01"],
+  "composition_families": ["c1-01", "c2-01", "c3-01"],
   "anti_patterns": ["purple gradient background", "equal card grid without semantic equality", "decorative circuit lines unrelated to content", "tiny body copy used to preserve density", "multiple competing hero visuals"],
   "prompt_fragment": "Use a dark engineered visual field, asymmetrical scale contrast, one dominant system relationship, and restrained luminous accents.",
   "review_focus": ["Does the diagram carry the page memory?", "Are glow and lines explaining a relationship rather than decorating?", "Is the text readable against the dark field?"]
