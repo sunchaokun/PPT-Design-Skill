@@ -73,3 +73,22 @@ def test_refresh_fails_cleanly_when_lock_is_busy(tmp_path: Path) -> None:
     result = run_script("refresh_case_prototypes.py", "--root", str(tmp_path), "--index", str(index), "--cache", str(tmp_path / "cache.json"), "--lock", str(lock))
     assert result.returncode == 1
     assert "busy" in result.stderr or "busy" in result.stdout
+
+
+def test_vi_build_delivery_removes_template_pages_and_runs_qa(tmp_path: Path) -> None:
+    from pptx_designer import Presentation
+    from pptx_designer.enterprise import VIBuildDelivery
+
+    template = ROOT / "examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx"
+    presentation = Presentation(template_path=str(template))
+
+    class FixtureAdapter:
+        def render(self, spec, prs):
+            return prs.slides.add_slide(prs.slide_layouts[6])
+
+    delivery = VIBuildDelivery(presentation, FixtureAdapter())
+    delivery.add({"delivery_origin": "build_components", "page_role": "content"})
+    output = tmp_path / "vi-delivery.pptx"
+    report = delivery.finalize(str(output), check_overlaps=True)
+    assert output.exists()
+    assert report.status == "pass"

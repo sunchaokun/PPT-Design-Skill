@@ -17,10 +17,16 @@
 结果包含 `diagnostics`，且没有 conflict。该测试证明的是导出和基本合并行为，
 不是完整模板交付兼容性。
 
+## 已完成的最小 delivery fixture
+
+测试使用真实模板 Presentation、fixture adapter 和
+`VIBuildDelivery.add → finalize`，确认模板源页被移除、交付页数量匹配，且
+结构 QA 返回 `pass`。该测试已纳入 `tests/test_visual_capability.py`。
+
 ## 未完成 / 阻塞
 
-`VIBuildDelivery` 尚未用最小真实模板和 adapter 完成 `add → finalize` 回归，
-因此 VI Build 的完整 MVP 仍为 `BLOCKED`。在该回归完成前，文档只推荐：
+`VITemplateAdapter` 的完整模板内容页编译、真实 slot/atomic plan 和模板品牌
+冲突回归仍未完成，因此 VI Build 的完整 MVP 仍为 `BLOCKED`。在该回归完成前，文档只推荐：
 
 ```text
 extract_design_context()
