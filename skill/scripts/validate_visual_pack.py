@@ -94,6 +94,7 @@ def relative_inside(case_root: Path, rel: str) -> Path:
 
 def validate_indexes() -> list[str]:
     errors: list[str] = []
+    loaded: dict[str, dict[str, Any]] = {}
     for label, path in INDEXES.items():
         try:
             index = load_json(path)
@@ -102,6 +103,12 @@ def validate_indexes() -> list[str]:
             expected = "packs" if label == "packs" else "entries" if label == "compositions" else "prototypes"
             if not isinstance(index.get(expected), list):
                 raise ValidationError(f"{expected} must be an array")
+            ids = []
+            for item in index[expected]:
+                if isinstance(item, dict):
+                    ids.append(item.get("pack_id", item.get("composition_id", item.get("prototype_id"))))
+            if len(ids) != len(set(ids)):
+                raise ValidationError(f"{expected} contains duplicate IDs")
             if label in {"packs", "compositions"}:
                 schema_name = "rendering-pack.schema.json" if label == "packs" else "composition-entry.schema.json"
                 schema = load_json(SCHEMA_DIR / schema_name)
@@ -115,8 +122,27 @@ def validate_indexes() -> list[str]:
                     check_schema(asset, schema, f"{expected}[{i}].asset", schema)
                     if asset.get("pack_id", asset.get("composition_id")) != item.get("pack_id", item.get("composition_id")):
                         raise ValidationError(f"{expected}[{i}] index id does not match asset")
+                    loaded.setdefault(label, {})[asset.get("pack_id", asset.get("composition_id"))] = asset
+            else:
+                loaded[label] = {str(item.get("prototype_id")): item for item in index[expected] if isinstance(item, dict) and item.get("prototype_id")}
+                blocked_ids = {item.get("prototype_id") for item in index.get("blocked", []) if isinstance(item, dict)}
+                if blocked_ids & set(loaded[label]):
+                    raise ValidationError("blocked prototype ID is also registered as active")
         except ValidationError as exc:
             errors.append(f"{path}: {exc}")
+    if not errors:
+        pack_index = load_json(INDEXES["packs"])
+        composition_index = load_json(INDEXES["compositions"])
+        composition_ids = {item.get("composition_id") for item in composition_index.get("entries", []) if isinstance(item, dict)}
+        prototype_ids = {item.get("prototype_id") for item in load_json(INDEXES["prototypes"]).get("prototypes", []) if isinstance(item, dict)}
+        for pack in loaded.get("packs", {}).values():
+            missing = set(pack.get("composition_families", [])) - composition_ids
+            if missing:
+                errors.append(f"pack {pack.get('pack_id')}: missing composition references {sorted(missing)}")
+        for entry in loaded.get("compositions", {}).values():
+            missing = set(entry.get("prototype_ids", [])) - prototype_ids
+            if missing:
+                errors.append(f"composition {entry.get('composition_id')}: missing prototype references {sorted(missing)}")
     return errors
 
 
