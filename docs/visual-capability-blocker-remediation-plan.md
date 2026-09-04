@@ -62,7 +62,7 @@ skill/schemas/acceptance-record.schema.json
 
 通过标准：VI Build 文档只保留一条推荐调用链；实际公开 API、示例代码和测试一致；不支持的名称只能作为明确标注的兼容别名或内部实现，不能继续作为并列入口。
 
-初步审计结果和行为记录见 [`docs/visual-capability-api-matrix.md`](visual-capability-api-matrix.md)。当前推荐主链统一为 `extract_design_context() → merge_vi_design_context() → VIBuildDelivery`；`extract_design_dna()` 仅保留为兼容/底层分析入口。由于 `VIBuildDelivery.add → finalize` 尚未用最小模板 fixture 和 adapter 完成回归，VI Build 完整能力仍保持 `BLOCKED`。
+初步审计结果和行为记录见 [`docs/visual-capability-api-matrix.md`](visual-capability-api-matrix.md)。当前推荐主链统一为 `extract_design_context() → merge_vi_design_context() → VIBuildDelivery`；`extract_design_dna()` 仅保留为兼容/底层分析入口。`VIBuildDelivery.add → finalize` 已通过最小 fixture、adapter 和模板页所有权回归；真实品牌模板的 slot/atomic plan、模板锁冲突和完整交付回归仍未完成，因此 VI Build 完整能力继续保持 `BLOCKED`。
 
 ### Track C：案例证据与 Prototype 登记
 
