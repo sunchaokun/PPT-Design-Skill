@@ -22,7 +22,7 @@
 | 4 | 工作流状态 | `run_visual_workflow.py`、task 状态文件、`validate_runtime_trace.py` | route、P01、暂停、恢复、失败回退和 gate 一致性测试 |
 | 5 | 案例证据 | 6～8 条有效 Prototype 或明确 `BLOCKED` | PPTX、预览、Recipe、object map、许可证据、provenance；`audit_case_outputs.py`、`audit_prototype_provenance.py` |
 | 6 | 视觉资产 | 首轮 2 Pack、4 Family | 真实案例原型和 Pack 校验 |
-| 7 | 回归验收 | 技术、科研、品牌/建筑三套回归、`regression-manifest.json`、`regression-readiness.md` | baseline/upgraded 文件对、页数一致、逐页评分和复核；`validate_acceptance_record.py`、`audit_regression_pairs.py` |
+| 7 | 回归验收 | 技术、科研、品牌/建筑三套回归、`regression-manifest.json`、`regression-readiness.md`、`audit_visual_review_records.py` | baseline/upgraded 文件对、页数一致、Review 路径一致、逐页评分和复核；`validate_acceptance_record.py`、`audit_regression_pairs.py` |
 | 8 | 安装交付 | 安装器、README、完整测试 | runtime、installer（非零失败码）、pytest、diff check |
 
 ## 状态和降级

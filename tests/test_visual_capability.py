@@ -119,6 +119,15 @@ def test_provenance_audit_reports_hashes_without_overclaiming() -> None:
     assert all(item["hashes"].get("build") for item in report["records"])
 
 
+def test_visual_review_audit_matches_current_case_outputs() -> None:
+    result = run_script("audit_visual_review_records.py")
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["status"] == "PASS"
+    assert len(report["cases"]) == 6
+    assert all(item["status"] == "PASS" for item in report["cases"])
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
