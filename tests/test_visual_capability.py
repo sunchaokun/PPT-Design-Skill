@@ -33,6 +33,7 @@ def test_asset_inventory_is_machine_readable() -> None:
     assert "unreferenced_compositions=[]" in result.stdout
     assert '"dark-cinematic-tech": ["architectural-section", "constraint-map", "cover", "evidence", "sequence", "systems-diagram"]' in result.stdout
     assert '"scientific-atlas": ["evidence-wall", "key-finding", "study-map"]' in result.stdout
+    assert "pack_role_gaps=[]" in result.stdout
     assert "status=inventory_only" in result.stdout
 
 

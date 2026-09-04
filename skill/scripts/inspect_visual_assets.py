@@ -47,6 +47,8 @@ def main() -> int:
             if isinstance(record, dict) and record.get("pack_id") in roles_by_pack:
                 roles_by_pack[record["pack_id"]].update(record.get("page_roles", []))
     print(f"pack_role_coverage={json.dumps({key: sorted(value) for key, value in roles_by_pack.items()}, ensure_ascii=False, sort_keys=True)}")
+    role_gaps = sorted(key for key, roles in roles_by_pack.items() if len(roles) < 3)
+    print(f"pack_role_gaps={role_gaps}")
     print(f"prototype_cases_root={prototypes.get('cases_root', '')}")
     print("status=inventory_only; no aesthetic score is produced")
     return 0
