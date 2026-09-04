@@ -79,6 +79,25 @@ def test_regression_audit_does_not_invent_missing_baseline(tmp_path: Path) -> No
     assert all("missing baseline PPTX" in item["blocking_reasons"] for item in report["entries"])
 
 
+def test_regression_audit_rejects_self_comparison(tmp_path: Path) -> None:
+    import zipfile
+
+    pptx = tmp_path / "deck.pptx"
+    with zipfile.ZipFile(pptx, "w") as archive:
+        archive.writestr("ppt/slides/slide1.xml", "<slide/>")
+    manifest = tmp_path / "manifest.json"
+    entries = []
+    for domain in ("technical", "scientific", "brand_architecture"):
+        entries.append({"regression_id": domain, "domain": domain, "case_id": domain,
+                        "baseline": "deck.pptx", "upgraded": "deck.pptx",
+                        "status": "PASS", "reason": ""})
+    manifest.write_text(json.dumps({"schema_version": 1, "entries": entries}), encoding="utf-8")
+    result = run_script("audit_regression_pairs.py", "--root", str(tmp_path), "--manifest", str(manifest))
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert all(any("different PPTX files" in reason for reason in item["blocking_reasons"]) for item in report["entries"])
+
+
 def test_installer_check_uses_runtime_dependency_resolution() -> None:
     result = subprocess.run(
         [sys.executable, str(ROOT / "installer/install.py"), "--check"],

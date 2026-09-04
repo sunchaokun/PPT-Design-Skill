@@ -45,6 +45,8 @@ def audit(root: Path, manifest_path: Path) -> tuple[list[dict], bool]:
             reasons.append("missing baseline PPTX")
         if upgraded is None or not upgraded.is_file():
             reasons.append("missing upgraded PPTX")
+        if baseline is not None and upgraded is not None and baseline.resolve() == upgraded.resolve():
+            reasons.append("baseline and upgraded must be different PPTX files")
         if not reasons:
             base_pages = slide_count(baseline)
             upgraded_pages = slide_count(upgraded)
