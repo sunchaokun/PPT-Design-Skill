@@ -27,3 +27,5 @@
 6. 通过逐页评分和 `case-prototype-index.json` 登记。
 
 在以上步骤完成前，案例可以作为人工设计参考，但不能作为运行时 Prototype 候选，也不能计入 6～8 条首轮合格记录。
+
+可先运行 `python skill/scripts/audit_case_outputs.py` 检查输出文件与页数闭环。该命令不会把 `render_ready` 误报为许可证、provenance 或视觉评分通过；当前缺少完整 PNG 的案例仍保持 `BLOCKED`。

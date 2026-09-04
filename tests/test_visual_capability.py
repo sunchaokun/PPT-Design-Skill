@@ -31,6 +31,16 @@ def test_asset_inventory_is_machine_readable() -> None:
     assert "status=inventory_only" in result.stdout
 
 
+def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
+    result = run_script("audit_case_outputs.py")
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert len(report["cases"]) == 6
+    statuses = {item["status"] for item in report["cases"]}
+    assert "render_ready" in statuses
+    assert "BLOCKED" in statuses
+
+
 def test_workflow_state_machine_supports_resume(tmp_path: Path) -> None:
     state = tmp_path / "state.json"
     for action in ("route", "directions", "confirm", "p01", "pass", "review", "pass"):

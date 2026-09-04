@@ -20,7 +20,7 @@
 | 2 | 资产校验 | `validate_visual_pack.py`、`inspect_visual_assets.py` | 路径、引用、Schema、可选 SVG 检查通过 |
 | 3 | 案例刷新 | `refresh_case_prototypes.py`、缓存状态机、锁 | unchanged / changed / concurrent 三种测试 |
 | 4 | 工作流状态 | `run_visual_workflow.py`、task 状态文件 | route、P01、暂停、恢复、失败回退测试 |
-| 5 | 案例证据 | 6～8 条有效 Prototype 或明确 `BLOCKED` | PPTX、预览、Recipe、object map、许可证据 |
+| 5 | 案例证据 | 6～8 条有效 Prototype 或明确 `BLOCKED` | PPTX、预览、Recipe、object map、许可证据；`audit_case_outputs.py` |
 | 6 | 视觉资产 | 首轮 2 Pack、4 Family | 真实案例原型和 Pack 校验 |
 | 7 | 回归验收 | 技术、科研、品牌/建筑三套回归 | baseline/upgraded 逐页评分和复核 |
 | 8 | 安装交付 | 安装器、README、完整测试 | runtime、installer、pytest、diff check |
@@ -31,6 +31,8 @@
 - `NEEDS_REVISION`：有可定位的局部或方向性问题，不能宣布完成；
 - `BLOCKED`：缺少源文件、许可、模板决策或 API 证据，必须排除出正式候选集；
 - 快速 FreeStyle 可以不使用 Prototype，但必须记录降级原因；交付级 Build 不允许使用 stale / invalid Prototype。
+
+案例输出审计只证明 PPTX/PDF/PNG 的文件和页数闭环，输出 `render_ready` 不等于视觉评分、provenance 或许可证通过；缺少完整预览的案例继续保持 `BLOCKED`。
 
 ## 分支与提交策略
 
