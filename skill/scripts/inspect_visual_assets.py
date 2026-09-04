@@ -20,6 +20,7 @@ def main() -> int:
     print(f"packs={len(packs.get('packs', []))}")
     print(f"compositions={len(compositions.get('entries', []))}")
     print(f"prototypes={len(prototypes.get('prototypes', []))}")
+    print(f"blocked_prototypes={len(prototypes.get('blocked', []))}")
     print(f"prototype_cases_root={prototypes.get('cases_root', '')}")
     print("status=inventory_only; no aesthetic score is produced")
     return 0
