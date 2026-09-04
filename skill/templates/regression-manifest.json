@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "regression_id": "technical-infrastructure",
+      "domain": "technical",
+      "case_id": "ai-infrastructure-economics",
+      "baseline": null,
+      "upgraded": "examples/new_examplex/ai_infrastructure_economics/output/ai_infrastructure_economics.pptx",
+      "status": "BLOCKED",
+      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+    },
+    {
+      "regression_id": "scientific-evidence",
+      "domain": "scientific",
+      "case_id": "car-t-single-cell-paper",
+      "baseline": null,
+      "upgraded": "examples/new_examplex/car_t_single_cell_paper/output/car_t_single_cell_atlas_blue_editorial.pptx",
+      "status": "BLOCKED",
+      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+    },
+    {
+      "regression_id": "brand-architecture",
+      "domain": "brand_architecture",
+      "case_id": "louvre-abudhabi",
+      "baseline": null,
+      "upgraded": "examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx",
+      "status": "BLOCKED",
+      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+    }
+  ]
+}

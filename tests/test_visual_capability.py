@@ -70,6 +70,15 @@ def test_runtime_trace_rejects_inconsistent_gate_states(tmp_path: Path) -> None:
     assert "cannot PASS" in result.stdout
 
 
+def test_regression_audit_does_not_invent_missing_baseline(tmp_path: Path) -> None:
+    result = run_script("audit_regression_pairs.py")
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert report["status"] == "BLOCKED"
+    assert len(report["entries"]) == 3
+    assert all("missing baseline PPTX" in item["blocking_reasons"] for item in report["entries"])
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
