@@ -13,7 +13,7 @@ MVP 在这里不是降低最终目标，也不是把架构拆成一个“简陋�
 - 能从真实案例得到可追溯的 Prototype Record，或明确证明该案例仍然 `BLOCKED`；
 - 能让一次 Skill 使用完成路由、选择、P01、生成和验收追踪。
 
-当前仓库只有 6 个案例目录。扫描发现每个案例都有位于 `output/` 或 `rendered/` 的候选 PPTX/PDF，但尚未确认它们与 `build.py` 的 provenance；统一 Recipe/object map 仍缺失。VI Build 的 API 文档存在术语不一致，运行时也没有已经存在的多角色 orchestrator。此时直接宣称完成 36 条原型，会把“文件数量”误当成“有效设计资产”。因此 MVP 是证据门，不是最终能力上限。
+当前仓库有 6 个案例目录，六个案例均已具备候选 PPTX/PDF 和完整 PNG 渲染；8 条代表页已登记 Recipe、object map 和结构化 `BLOCKED` Prototype Record。但它们与 `build.py` 的历史 provenance、素材许可、context permission 和脱敏结论仍未确认；当前也尚未形成完整的多角色 orchestrator。此时直接宣称完成 36 条原型，会把“文件数量”误当成“有效设计资产”。因此 MVP 是证据门，不是最终能力上限。
 
 长期目标仍保持不变：6 个 Rendering Pack、12 个 Composition Family、36 条案例派生 Prototype Record，以及三种生成模式的完整回归覆盖。
 
