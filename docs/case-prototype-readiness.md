@@ -8,8 +8,8 @@
 
 | case_id | 当前可见资产 | 关键缺口 | 当前状态 |
 |---|---|---|---|
-| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、封面 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、完整预览、Recipe、object map、许可清单 | `BLOCKED` |
-| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、`output/*.pptx`、`output/*.pdf` | PPTX provenance、完整预览、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
+| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可清单 | `BLOCKED` |
+| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
 | `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS | PPTX provenance、Recipe、object map、脱敏状态 | `BLOCKED` |
 | `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
 | `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材 | PPTX provenance、Recipe、object map、脱敏状态 | `BLOCKED` |
@@ -28,4 +28,4 @@
 
 在以上步骤完成前，案例可以作为人工设计参考，但不能作为运行时 Prototype 候选，也不能计入 6～8 条首轮合格记录。
 
-可先运行 `python skill/scripts/audit_case_outputs.py` 检查输出文件与页数闭环。该命令不会把 `render_ready` 误报为许可证、provenance 或视觉评分通过；当前缺少完整 PNG 的案例仍保持 `BLOCKED`。
+可先运行 `python skill/scripts/audit_case_outputs.py` 检查输出文件与页数闭环。该命令不会把 `render_ready` 误报为许可证、provenance 或视觉评分通过；若后续案例缺少完整 PNG，仍必须保持 `BLOCKED`。
