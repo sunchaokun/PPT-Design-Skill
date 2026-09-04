@@ -35,6 +35,9 @@ persistence page and P2 study-design pipeline into the full 12-page deck.
 ## QA evidence
 
 - PPTX structural inspection: 12 slides, 16:9, expected picture/text/shape mix;
-- PPTX → PDF → PNG render: `rendered-blue-final4/slide01.png` through `slide12.png`;
+- PPTX → PDF → PNG render: `rendered/slide01.png` through `slide12.png`;
 - All 12 PNGs visually reviewed at 1280 × 720 after the final merge; slides 6
   and 11 were rechecked after removing the rectangular evidence containers.
+- Revision 5: P03 output metric spacing was corrected after review found the
+  `695,819` value touching the `analyzed cells` label; the PPTX was regenerated,
+  re-rendered, and P03 was visually rechecked.
