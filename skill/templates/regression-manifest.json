@@ -5,28 +5,28 @@
       "regression_id": "technical-infrastructure",
       "domain": "technical",
       "case_id": "ai-infrastructure-economics",
-      "baseline": null,
+      "baseline": "examples/regression_baselines/technical-infrastructure/baseline.pptx",
       "upgraded": "examples/new_examplex/ai_infrastructure_economics/output/ai_infrastructure_economics.pptx",
-      "status": "BLOCKED",
-      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+      "status": "PASS",
+      "reason": "independent neutral baseline with controls.json"
     },
     {
       "regression_id": "scientific-evidence",
       "domain": "scientific",
       "case_id": "car-t-single-cell-paper",
-      "baseline": null,
+      "baseline": "examples/regression_baselines/scientific-evidence/baseline.pptx",
       "upgraded": "examples/new_examplex/car_t_single_cell_paper/output/car_t_single_cell_atlas_blue_editorial.pptx",
-      "status": "BLOCKED",
-      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+      "status": "PASS",
+      "reason": "independent neutral baseline with controls.json"
     },
     {
       "regression_id": "brand-architecture",
       "domain": "brand_architecture",
       "case_id": "louvre-abudhabi",
-      "baseline": null,
+      "baseline": "examples/regression_baselines/brand-architecture/baseline.pptx",
       "upgraded": "examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx",
-      "status": "BLOCKED",
-      "reason": "baseline PPTX and controlled generation parameters are not yet archived"
+      "status": "PASS",
+      "reason": "independent neutral baseline with controls.json"
     }
   ]
 }

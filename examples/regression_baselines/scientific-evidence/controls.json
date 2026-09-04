@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "regression_id": "scientific-evidence",
+  "source_case_pptx": "examples/new_examplex/car_t_single_cell_paper/output/car_t_single_cell_atlas_blue_editorial.pptx",
+  "baseline_pptx": "examples/regression_baselines/scientific-evidence/baseline.pptx",
+  "slide_count": 12,
+  "content_source": "case PPTX text and picture blobs; no copied PPTX package parts",
+  "visual_mode": "neutral_baseline",
+  "output_size": "16:9",
+  "font": "Arial"
+}

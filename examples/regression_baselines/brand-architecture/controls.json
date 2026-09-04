@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "regression_id": "brand-architecture",
+  "source_case_pptx": "examples/new_examplex/louvre_abudhabi/output/louvre_abudhabi_complete.pptx",
+  "baseline_pptx": "examples/regression_baselines/brand-architecture/baseline.pptx",
+  "slide_count": 10,
+  "content_source": "case PPTX text and picture blobs; no copied PPTX package parts",
+  "visual_mode": "neutral_baseline",
+  "output_size": "16:9",
+  "font": "Arial"
+}
