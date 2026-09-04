@@ -76,7 +76,11 @@ def installed_package_version(distribution_name: str) -> str | None:
 
 
 def render_dependency_status() -> dict[str, bool]:
-    return {name: shutil.which(command) is not None for name, command in (("libreoffice", "soffice"), ("poppler", "pdftoppm"))}
+    scripts_dir = ROOT / "skill" / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    from runtime_deps import resolve_executable
+    return {name: resolve_executable(command) is not None for name, command in (("libreoffice", "soffice"), ("poppler", "pdftoppm"))}
 
 
 def install_render_deps() -> None:
@@ -93,6 +97,7 @@ def install_render_deps() -> None:
 
 
 def check() -> int:
+    package_ok = True
     print("Python packages:")
     for module, label, distribution in (
         ("pptx_designer", "pptx-designer", "pptx-designer"),
@@ -100,13 +105,15 @@ def check() -> int:
         ("PIL", "Pillow", "Pillow"),
     ):
         found = importlib.util.find_spec(module) is not None
+        package_ok = package_ok and found
         installed = installed_package_version(distribution) if found else None
         suffix = f" {installed}" if installed else ""
         print(f"  {'OK' if found else 'MISSING'} {label}{suffix}")
     print("Render dependencies:")
     for name, available in render_dependency_status().items():
+        package_ok = package_ok and available
         print(f"  {'OK' if available else 'MISSING'} {name}")
-    return 0
+    return 0 if package_ok else 1
 
 
 def selected_platforms(name: str | None) -> list[str]:

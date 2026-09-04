@@ -79,6 +79,16 @@ def test_regression_audit_does_not_invent_missing_baseline(tmp_path: Path) -> No
     assert all("missing baseline PPTX" in item["blocking_reasons"] for item in report["entries"])
 
 
+def test_installer_check_uses_runtime_dependency_resolution() -> None:
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "installer/install.py"), "--check"],
+        cwd=ROOT, text=True, capture_output=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "OK libreoffice" in result.stdout
+    assert "OK poppler" in result.stdout
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
