@@ -87,7 +87,7 @@ def build():
         tx(s,x-.28,y+.78,1.45,.38,head,10,col,True,"Consolas","center"); multiline(s,x-.47,y+1.28,1.85,.48,body.split("\n"),font_size=10,color="navy",C=C,line_spacing=1.08,align="center")
         if i<4: arrow(s,x+.58,y+.25,1.34,0,C["cyan"],C=C)
     rect(s,.76,4.76,7.0,1.28,fill=C["panel"],line=C["line"],C=C); cover_image(s,.86,4.88,6.8,1.04,str(crop(1,"top",(0,0,2122,360)))); tx(s,.88,6.08,6.7,.12,"Source figure / Fig. 1a · cohort → measurement layers → data analysis",7.5,"muted",False,"Consolas")
-    tx(s,8.42,4.82,3.8,.18,"THE SYSTEM OUTPUT",9,"cyan",True,"Consolas"); line(s,8.42,5.14,3.85,.025,"cyan"); tx(s,8.42,5.42,3.4,.28,"695,819",26,"blue",True,"Aptos Display"); tx(s,9.96,5.54,2.0,.18,"analyzed cells",11,"navy",True); tx(s,8.42,5.92,3.6,.18,"17 cell states  ·  5 BCA strata",11,"navy",True); tx(s,8.42,6.34,3.8,.18,"Clinical observation becomes measurable state space.",10,"muted")
+    tx(s,8.42,4.82,3.8,.18,"THE SYSTEM OUTPUT",9,"cyan",True,"Consolas"); line(s,8.42,5.14,3.85,.025,"cyan"); tx(s,8.42,5.42,2.35,.28,"695,819",26,"blue",True,"Aptos Display"); tx(s,10.92,5.54,1.45,.18,"analyzed cells",11,"navy",True); tx(s,8.42,5.92,3.6,.18,"17 cell states  ·  5 BCA strata",11,"navy",True); tx(s,8.42,6.34,3.8,.18,"Clinical observation becomes measurable state space.",10,"muted")
     foot(s,"Source figure / Fig. 1a. The pipeline is editorially redrawn; cohort and assay facts remain tied to the paper.")
 
     # 4 atlas
