@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ppt-design-skill.local/schemas/composition-recipe.schema.json",
+  "title": "Composition Recipe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recipe_id", "page_id", "page_job", "primary_structure", "visual_anchor", "occupied_zones", "native_object_plan", "svg_assistance", "review_questions"],
+  "properties": {
+    "recipe_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "page_id": { "type": "string", "pattern": "^P[0-9]{2,3}$" },
+    "page_job": { "type": "string", "minLength": 1 },
+    "primary_structure": { "type": "string", "minLength": 1 },
+    "modifiers": { "type": "array", "items": { "type": "string" } },
+    "visual_anchor": { "type": "string", "minLength": 1 },
+    "occupied_zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "x", "y", "w", "h", "role"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "x": { "type": "number", "minimum": 0, "maximum": 1 },
+          "y": { "type": "number", "minimum": 0, "maximum": 1 },
+          "w": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+          "h": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+          "role": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "content_texture": { "type": "string" },
+    "motif_behavior": { "type": "string" },
+    "native_object_plan": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "object_type", "editable", "required"],
+        "properties": {
+          "role": { "type": "string" },
+          "object_type": { "type": "string" },
+          "editable": { "type": "boolean" },
+          "required": { "type": "boolean" }
+        }
+      }
+    },
+    "svg_assistance": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "purpose", "allowed", "editable"],
+        "properties": {
+          "id": { "type": "string" },
+          "purpose": { "type": "string", "minLength": 1 },
+          "allowed": { "type": "boolean" },
+          "editable": { "type": "boolean" }
+        }
+      }
+    },
+    "avoid": { "type": "array", "items": { "type": "string" } },
+    "review_questions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "extensions": { "type": "object" }
+  }
+}

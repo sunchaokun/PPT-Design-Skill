@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ppt-design-skill.local/schemas/rendering-pack.schema.json",
+  "title": "Rendering Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["pack_id", "version", "summary", "compatible_domains", "composition_families", "rendering", "visual_thesis", "composition_behavior", "typography_behavior", "image_treatment", "anti_patterns", "prompt_fragment", "review_focus"],
+  "properties": {
+    "pack_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "version": { "type": "integer", "minimum": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "best_for": { "type": "array", "items": { "type": "string" } },
+    "compatible_domains": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "visual_thesis": { "type": "string" },
+    "composition_behavior": { "type": "array", "items": { "type": "string" } },
+    "rendering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "texture", "depth", "material", "mood"],
+      "properties": {
+        "line": { "type": "string" },
+        "texture": { "type": "string" },
+        "depth": { "type": "string" },
+        "material": { "type": "string" },
+        "mood": { "type": "string" }
+      }
+    },
+    "typography_behavior": { "type": "array", "items": { "type": "string" } },
+    "image_treatment": { "type": "array", "items": { "type": "string" } },
+    "composition_families": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } },
+    "anti_patterns": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "prompt_fragment": { "type": "string" },
+    "review_focus": { "type": "array", "items": { "type": "string" } },
+    "prototype_ids": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } },
+    "extensions": { "type": "object" }
+  }
+}

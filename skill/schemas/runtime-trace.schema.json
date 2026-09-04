@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ppt-design-skill.local/schemas/runtime-trace.schema.json",
+  "title": "Visual Runtime Trace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "mode", "prototype_ids", "recipe_ids", "seed", "package_version", "p01_gate", "final_visual_gate"],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "mode": { "type": "string", "enum": ["build", "freestyle", "vi_build"] },
+    "prototype_ids": { "type": "array", "items": { "type": "string" } },
+    "recipe_ids": { "type": "array", "items": { "type": "string" } },
+    "rendering_pack": { "type": "string" },
+    "composition_ids": { "type": "array", "items": { "type": "string" } },
+    "grammar_lock_version": { "type": "string" },
+    "theme_lock_version": { "type": "string" },
+    "resolved_theme_fingerprint": { "type": "string" },
+    "seed": { "type": "integer" },
+    "package_version": { "type": "string", "minLength": 1 },
+    "package_module_path": { "type": "string" },
+    "svg_assistance": { "type": "array", "items": { "type": "object" } },
+    "p01_gate": { "$ref": "#/$defs/gate" },
+    "final_visual_gate": { "$ref": "#/$defs/gate" },
+    "failure_reason": { "type": "string" },
+    "extensions": { "type": "object" }
+  },
+  "$defs": {
+    "gate": { "type": "string", "enum": ["PASS", "NEEDS_REVISION", "BLOCKED"] }
+  }
+}

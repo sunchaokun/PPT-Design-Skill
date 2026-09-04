@@ -1,0 +1,13 @@
+{
+  "composition_id": "c2-01",
+  "name": "asymmetric split",
+  "page_jobs": ["explain-mechanism", "evidence", "comparison"],
+  "content_textures": ["claim-plus-evidence", "figure-plus-caption", "before-after"],
+  "structure": "An unequal split where one side carries the primary relationship and the other provides context.",
+  "geometry_recipe": ["use a 35/65 or 40/60 split", "align the supporting text to a deliberate safe edge", "avoid equal-width panels unless equality is the meaning"],
+  "compatible_modifiers": ["directional-scrim", "contour-echo", "registered-crop"],
+  "compatible_domains": ["technical", "scientific", "academic", "product", "architecture"],
+  "editable_boundary": {"native": ["title", "body", "chart", "diagram", "caption"], "svg_assisted": ["complex local contour"], "forbidden_as_svg": ["title", "body", "chart", "data", "citation"]},
+  "failure_modes": ["split becomes two equal cards", "supporting text overwhelms the evidence", "the relationship between sides is not explicit"],
+  "prototype_ids": []
+}

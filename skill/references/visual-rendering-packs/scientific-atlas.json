@@ -1,0 +1,16 @@
+{
+  "pack_id": "scientific-atlas",
+  "version": 1,
+  "summary": "An evidence-first atlas language for scientific claims, figures, and uncertainty.",
+  "best_for": ["scientific", "academic", "medical"],
+  "compatible_domains": ["scientific", "academic", "medical"],
+  "visual_thesis": "Let evidence, annotation, and scale create the visual drama while preserving scientific boundaries.",
+  "composition_behavior": ["figure-plus-caption structure", "measured annotation layers", "clear distinction between evidence and interpretation"],
+  "rendering": {"line": "fine cartographic rules", "texture": "paper grain and restrained field marks", "depth": "flat atlas layers with selective emphasis", "material": "paper, ink, and specimen plate", "mood": "curious, exact, archival"},
+  "typography_behavior": ["legible serif or humanist body", "compact figure labels", "consistent source and limitation notes"],
+  "image_treatment": ["faithful figure crops", "caption-safe margins", "no decorative image replacement for evidence"],
+  "composition_families": ["c1-01", "c2-01"],
+  "anti_patterns": ["marketing KPI cards for scientific evidence", "unlabeled decorative diagrams", "claims without citations", "false precision", "cropping away axes or controls"],
+  "prompt_fragment": "Use an evidence-first atlas composition: one readable figure, explicit caption and source, measured annotation, and visible uncertainty.",
+  "review_focus": ["Can the audience distinguish data from interpretation?", "Are axes, captions, citations, and limitations readable?", "Does the material treatment support evidence rather than sensationalize it?"]
+}

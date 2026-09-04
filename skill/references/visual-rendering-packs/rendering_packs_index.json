@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "packs": [
+    {"pack_id": "dark-cinematic-tech", "path": "skill/references/visual-rendering-packs/dark-cinematic-tech.json"},
+    {"pack_id": "scientific-atlas", "path": "skill/references/visual-rendering-packs/scientific-atlas.json"}
+  ]
+}

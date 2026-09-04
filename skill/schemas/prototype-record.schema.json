@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ppt-design-skill.local/schemas/prototype-record.schema.json",
+  "title": "Case-derived Prototype Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prototype_id", "case_id", "slide_ids", "pack_id", "composition_ids", "page_roles", "summary", "source_paths", "preview_paths", "recipe_paths", "object_map_paths"],
+  "properties": {
+    "prototype_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "case_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "case_root": { "type": "string", "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$)).+" },
+    "slide_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^P[0-9]{2,3}$" } },
+    "pack_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "composition_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "page_roles": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "summary": { "type": "string", "minLength": 1 },
+    "source_paths": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/relativePath" } },
+    "preview_paths": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/relativePath" } },
+    "recipe_paths": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/relativePath" } },
+    "object_map_paths": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/relativePath" } },
+    "license_status": { "type": "string", "enum": ["verified", "restricted", "unknown", "blocked"] },
+    "context_allowed": { "type": "boolean" },
+    "extensions": { "type": "object" }
+  },
+  "$defs": {
+    "relativePath": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$)).+" }
+  }
+}

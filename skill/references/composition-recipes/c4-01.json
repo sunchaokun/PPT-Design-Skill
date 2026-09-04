@@ -1,0 +1,13 @@
+{
+  "composition_id": "c4-01",
+  "name": "oversized numeral / glyph",
+  "page_jobs": ["data", "chapter-emphasis", "key-finding"],
+  "content_textures": ["single-stat-plus-context", "finding-plus-evidence"],
+  "structure": "A large low-opacity numeral or glyph anchors the page while evidence remains foregrounded.",
+  "geometry_recipe": ["place the glyph outside the reading path", "keep its contrast subordinate to evidence", "pair it with one factual source or caption"],
+  "compatible_modifiers": ["localized-accent", "paper-field"],
+  "compatible_domains": ["scientific", "academic", "product", "technical"],
+  "editable_boundary": {"native": ["numeral", "label", "chart", "source"], "svg_assisted": ["decorative glyph contour"], "forbidden_as_svg": ["data", "chart", "source", "claim"]},
+  "failure_modes": ["glyph is mistaken for data", "decorative number competes with factual number", "context is omitted"],
+  "prototype_ids": []
+}

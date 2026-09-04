@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {"composition_id": "c1-01", "path": "skill/references/composition-recipes/c1-01.json"},
+    {"composition_id": "c2-01", "path": "skill/references/composition-recipes/c2-01.json"},
+    {"composition_id": "c3-01", "path": "skill/references/composition-recipes/c3-01.json"},
+    {"composition_id": "c4-01", "path": "skill/references/composition-recipes/c4-01.json"}
+  ]
+}

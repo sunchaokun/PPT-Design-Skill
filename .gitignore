@@ -4,6 +4,7 @@ __pycache__/
 .env.local
 .env.*.local
 .pytest_cache/
+.cache/
 .ruff_cache/
 examples/output/
 output/

@@ -1,0 +1,13 @@
+{
+  "composition_id": "c1-01",
+  "name": "quiet field / dominant mass",
+  "page_jobs": ["cover", "opening", "section-transition"],
+  "content_textures": ["one-claim-plus-anchor", "title-plus-context"],
+  "structure": "A quiet text field balanced against one oversized visual mass.",
+  "geometry_recipe": ["reserve a calm title zone", "make the anchor at least twice the visual weight of supporting objects", "keep one edge intentionally open"],
+  "compatible_modifiers": ["localized-accent", "registered-crop", "oversized-glyph"],
+  "compatible_domains": ["technical", "scientific", "academic", "product", "architecture"],
+  "editable_boundary": {"native": ["title", "subtitle", "image", "caption"], "svg_assisted": ["local contour or texture"], "forbidden_as_svg": ["title", "body", "data", "citation"]},
+  "failure_modes": ["anchor becomes decoration", "title competes with the dominant mass", "empty field has no pacing purpose"],
+  "prototype_ids": []
+}

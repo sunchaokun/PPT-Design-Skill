@@ -1,0 +1,13 @@
+{
+  "composition_id": "c3-01",
+  "name": "detached shape sequence",
+  "page_jobs": ["process", "sequence", "evolution"],
+  "content_textures": ["stepwise-process", "state-change"],
+  "structure": "A sequence of separated visual states with deliberate gaps that show progression.",
+  "geometry_recipe": ["order states along one directional axis", "vary scale at the turning point", "use gaps to mark transitions"],
+  "compatible_modifiers": ["cross-page-motif", "contour-echo"],
+  "compatible_domains": ["technical", "scientific", "product", "architecture"],
+  "editable_boundary": {"native": ["labels", "nodes", "arrows", "captions"], "svg_assisted": ["complex state silhouette"], "forbidden_as_svg": ["labels", "data", "citations"]},
+  "failure_modes": ["sequence reads as a row of cards", "gaps do not communicate transition", "all states have equal emphasis"],
+  "prototype_ids": []
+}

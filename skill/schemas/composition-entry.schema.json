@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ppt-design-skill.local/schemas/composition-entry.schema.json",
+  "title": "Composition Entry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["composition_id", "page_jobs", "structure", "compatible_modifiers", "editable_boundary", "prototype_ids"],
+  "properties": {
+    "composition_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "name": { "type": "string" },
+    "page_jobs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "content_textures": { "type": "array", "items": { "type": "string" } },
+    "structure": { "type": "string", "minLength": 1 },
+    "geometry_recipe": { "type": "array", "items": { "type": "string" } },
+    "compatible_modifiers": { "type": "array", "items": { "type": "string" } },
+    "compatible_domains": { "type": "array", "items": { "type": "string" } },
+    "editable_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native", "svg_assisted", "forbidden_as_svg"],
+      "properties": {
+        "native": { "type": "array", "items": { "type": "string" } },
+        "svg_assisted": { "type": "array", "items": { "type": "string" } },
+        "forbidden_as_svg": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "failure_modes": { "type": "array", "items": { "type": "string" } },
+    "prototype_ids": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } },
+    "extensions": { "type": "object" }
+  }
+}
