@@ -10,7 +10,8 @@
     "target_id": { "type": "string", "minLength": 1 },
     "criteria": {
       "type": "array",
-      "minItems": 1,
+      "minItems": 6,
+      "maxItems": 6,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -23,7 +24,7 @@
         }
       }
     },
-    "score": { "type": "number", "minimum": 0, "maximum": 12 },
+    "score": { "type": "integer", "minimum": 0, "maximum": 12 },
     "reviewer": { "type": "string", "minLength": 1 },
     "second_reviewer": { "type": "string" },
     "evidence": { "type": "array", "minItems": 1, "items": { "type": "string" } },

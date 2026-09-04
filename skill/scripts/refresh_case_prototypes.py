@@ -6,12 +6,15 @@ import hashlib
 import json
 import os
 import tempfile
+import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 INDEX = ROOT / "skill/templates/case-prototype-index.json"
 CACHE = ROOT / ".cache/case-prototype-state.json"
+LOCK = ROOT / ".cache/case-prototype-state.lock"
 
 
 def fingerprint(path: Path) -> str:
@@ -41,26 +44,54 @@ def atomic_write(path: Path, value: dict) -> None:
             os.unlink(name)
 
 
+@contextmanager
+def exclusive_lock(path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(120):
+        try:
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            break
+        except FileExistsError:
+            time.sleep(0.05)
+    else:
+        raise RuntimeError(f"refresh lock is busy: {path}")
+    try:
+        yield
+    finally:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--cases-root", type=Path)
+    parser.add_argument("--index", type=Path, default=INDEX)
+    parser.add_argument("--cache", type=Path, default=CACHE)
+    parser.add_argument("--lock", type=Path, default=LOCK)
     args = parser.parse_args()
-    index = json.loads(INDEX.read_text(encoding="utf-8"))
+    index = json.loads(args.index.read_text(encoding="utf-8"))
     cases_root = args.cases_root or (args.root / index.get("cases_root", "examples/new_examplex"))
-    old = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
-    records = {}
-    for prototype in index.get("prototypes", []):
-        case_id = prototype.get("case_id", "")
-        case_root = args.root / prototype.get("case_root", cases_root / case_id)
-        records[prototype.get("prototype_id", case_id)] = {
-            "case_fingerprint": fingerprint(case_root),
-            "status": "valid" if case_root.exists() else "invalid",
-            "checked_at": datetime.now(timezone.utc).isoformat(),
-            "previous_status": old.get(prototype.get("prototype_id", case_id), {}).get("status"),
-        }
-    atomic_write(CACHE, {"schema_version": 1, "cases_root": str(cases_root), "records": records})
-    print(json.dumps({"updated": len(records), "cache": str(CACHE)}, ensure_ascii=False))
+    with exclusive_lock(args.lock):
+        old_state = json.loads(args.cache.read_text(encoding="utf-8")) if args.cache.exists() else {}
+        old = old_state.get("records", {})
+        records = {}
+        for prototype in index.get("prototypes", []):
+            case_id = prototype.get("case_id", "")
+            case_root_value = prototype.get("case_root")
+            case_root = args.root / case_root_value if case_root_value else cases_root / case_id
+            case_root = Path(case_root)
+            records[prototype.get("prototype_id", case_id)] = {
+                "case_fingerprint": fingerprint(case_root),
+                "status": "valid" if case_root.exists() else "invalid",
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+                "previous_status": old.get(prototype.get("prototype_id", case_id), {}).get("status"),
+            }
+        atomic_write(args.cache, {"schema_version": 1, "cases_root": str(cases_root), "records": records})
+    print(json.dumps({"updated": len(records), "cache": str(args.cache)}, ensure_ascii=False))
     return 0
 
 
