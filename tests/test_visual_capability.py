@@ -92,3 +92,36 @@ def test_vi_build_delivery_removes_template_pages_and_runs_qa(tmp_path: Path) ->
     report = delivery.finalize(str(output), check_overlaps=True)
     assert output.exists()
     assert report.status == "pass"
+
+
+def test_vi_template_adapter_rebinds_confirmed_framework_slot(tmp_path: Path) -> None:
+    from pptx_designer import Presentation
+    from pptx_designer.enterprise import VIBuildDelivery, VITemplateAdapter
+
+    presentation = Presentation()
+    slide = presentation.slides.add_slide(presentation.slide_layouts[6])
+    slide.shapes.add_textbox(100000, 100000, 1000000, 300000).text = "PLACEHOLDER"
+    context = {
+        "framework_pages": [{"id": "title-1", "role": "title", "reference_slide": 1,
+                             "text_contract": {"strict": True, "clear_shape_indices": []}}],
+        "content_slots": [{"id": "title", "page_role": "title", "target": {"shape_index": 0}}],
+        "locks": [], "source": {"template_fingerprint": "fixture"}, "visual_grammar": {},
+    }
+    adapter = VITemplateAdapter(context)
+    spec = adapter.compile(page_role="title", content={"slots": {"title": "Confirmed title"}})
+    delivery = VIBuildDelivery(presentation, adapter)
+    delivery.add(spec)
+    report = delivery.finalize(str(tmp_path / "framework-rebind.pptx"), check_overlaps=False)
+    assert report.status == "pass"
+
+
+def test_vi_template_adapter_rejects_unowned_content_page() -> None:
+    from pptx_designer.enterprise import VITemplateAdapter
+
+    adapter = VITemplateAdapter({"framework_pages": [], "content_slots": [], "locks": []})
+    try:
+        adapter.compile(page_role="content")
+    except ValueError as exc:
+        assert "compile_atomic" in str(exc)
+    else:
+        raise AssertionError("content page must require an atomic Build plan")

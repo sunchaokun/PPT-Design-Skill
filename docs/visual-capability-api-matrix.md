@@ -25,8 +25,9 @@
 
 ## 未完成 / 阻塞
 
-`VITemplateAdapter` 的完整模板内容页编译、真实 slot/atomic plan 和模板品牌
-冲突回归仍未完成，因此 VI Build 的完整 MVP 仍为 `BLOCKED`。在该回归完成前，文档只推荐：
+`VITemplateAdapter` 的最小 framework slot rebind 和 content-page ownership
+拒绝已经有回归测试；真实品牌模板的 slot/atomic plan 和模板冲突回归仍未完成，
+因此 VI Build 的完整 MVP 仍为 `BLOCKED`。在该回归完成前，文档只推荐：
 
 ```text
 extract_design_context()
