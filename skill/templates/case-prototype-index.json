@@ -51,6 +51,13 @@
       "slide_ids": ["P04"],
       "path": "examples/new_examplex/ai_agent_operating_system/prototype/ai-agent-operating-system-p04.json",
       "reason": "license/context permission is not yet verified"
+    },
+    {
+      "prototype_id": "couture-lipstick-atelier-p01",
+      "case_id": "couture-lipstick-atelier",
+      "slide_ids": ["P01"],
+      "path": "examples/new_examplex/couture_lipstick_atelier/prototype/couture-lipstick-atelier-p01.json",
+      "reason": "no compatible first-round Pack, license and provenance are not yet verified"
     }
   ]
 }

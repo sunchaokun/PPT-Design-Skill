@@ -1,0 +1,17 @@
+{
+  "prototype_id": "couture-lipstick-atelier-p01",
+  "case_id": "couture-lipstick-atelier",
+  "case_root": "examples/new_examplex/couture_lipstick_atelier",
+  "slide_ids": ["P01"],
+  "pack_id": "dark-cinematic-tech",
+  "composition_ids": ["c1-01"],
+  "page_roles": ["cover"],
+  "summary": "Editorial product cover with a dominant hero image and restrained native typography; Pack mapping remains unresolved.",
+  "source_paths": ["output/couture_color_objects_of_desire.pptx"],
+  "preview_paths": ["rendered/slide01.png", "rendered/couture_color_objects_of_desire.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "unknown",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}
