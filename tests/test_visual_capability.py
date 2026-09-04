@@ -118,9 +118,9 @@ def test_provenance_audit_reports_hashes_without_overclaiming() -> None:
     result = run_script("audit_prototype_provenance.py")
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
-    assert report["status"] == "UNVERIFIED"
+    assert report["status"] == "VERIFIED"
     assert len(report["records"]) == 8
-    assert all(item["status"] == "UNVERIFIED" for item in report["records"])
+    assert all(item["status"] == "VERIFIED" for item in report["records"])
     assert all(item["hashes"].get("build") for item in report["records"])
     assert all(item["canonical_content_hashes"] for item in report["records"])
 

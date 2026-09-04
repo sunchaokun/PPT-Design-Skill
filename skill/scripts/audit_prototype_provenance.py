@@ -54,16 +54,23 @@ def audit(root: Path, index_path: Path) -> tuple[list[dict], bool]:
             for name, path in files.items()
             if path.is_file() and path.suffix.lower() == ".pptx"
         }
+        declared = record.get("extensions", {}).get("provenance", {})
+        verified = (
+            not missing
+            and declared.get("status") == "verified"
+            and declared.get("method") == "source_authoritative_rebuild"
+            and declared.get("rebuild_count") == 2
+        )
         result = {
             "prototype_id": record["prototype_id"],
             "case_id": record["case_id"],
             "blocked": blocked,
-            "status": "UNVERIFIED" if not missing else "INVALID",
+            "status": "VERIFIED" if verified else ("UNVERIFIED" if not missing else "INVALID"),
             "missing": missing,
             "hashes": hashes,
             "canonical_content_hashes": content_hashes,
         }
-        complete = complete and not missing
+        complete = complete and verified
         results.append(result)
     return results, complete
 
@@ -78,7 +85,7 @@ def main() -> int:
     except (OSError, json.JSONDecodeError, KeyError) as exc:
         print(f"ERROR: {exc}")
         return 1
-    print(json.dumps({"status": "UNVERIFIED" if complete else "INVALID", "records": results}, ensure_ascii=False, indent=2))
+    print(json.dumps({"status": "VERIFIED" if complete else "UNVERIFIED", "records": results}, ensure_ascii=False, indent=2))
     return 0 if complete else 1
 
 

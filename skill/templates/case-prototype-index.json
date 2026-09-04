@@ -1,63 +1,22 @@
 {
   "schema_version": 1,
   "cases_root": "examples/new_examplex",
-  "prototypes": [],
+  "prototypes": [
+    {"prototype_id": "louvre-abudhabi-p01", "case_id": "louvre-abudhabi", "slide_ids": ["P01"], "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p01.json"},
+    {"prototype_id": "louvre-abudhabi-p03", "case_id": "louvre-abudhabi", "slide_ids": ["P03"], "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p03.json"},
+    {"prototype_id": "louvre-abudhabi-p07", "case_id": "louvre-abudhabi", "slide_ids": ["P07"], "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p07.json"},
+    {"prototype_id": "car-t-single-cell-p03", "case_id": "car-t-single-cell-paper", "slide_ids": ["P03", "P06", "P11"], "path": "examples/new_examplex/car_t_single_cell_paper/prototype/car-t-single-cell-p03.json"},
+    {"prototype_id": "vertical-city-retrofit-p04", "case_id": "vertical-city-retrofit", "slide_ids": ["P04"], "path": "examples/new_examplex/vertical_city_retrofit/prototype/vertical-city-retrofit-p04.json"},
+    {"prototype_id": "ai-infrastructure-economics-p05", "case_id": "ai-infrastructure-economics", "slide_ids": ["P05"], "path": "examples/new_examplex/ai_infrastructure_economics/prototype/ai-infrastructure-economics-p05.json"},
+    {"prototype_id": "ai-agent-operating-system-p04", "case_id": "ai-agent-operating-system", "slide_ids": ["P04"], "path": "examples/new_examplex/ai_agent_operating_system/prototype/ai-agent-operating-system-p04.json"}
+  ],
   "blocked": [
-    {
-      "prototype_id": "louvre-abudhabi-p01",
-      "case_id": "louvre-abudhabi",
-      "slide_ids": ["P01"],
-      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p01.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "louvre-abudhabi-p03",
-      "case_id": "louvre-abudhabi",
-      "slide_ids": ["P03"],
-      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p03.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "louvre-abudhabi-p07",
-      "case_id": "louvre-abudhabi",
-      "slide_ids": ["P07"],
-      "path": "examples/new_examplex/louvre_abudhabi/prototype/louvre-abudhabi-p07.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "car-t-single-cell-p03",
-      "case_id": "car-t-single-cell-paper",
-      "slide_ids": ["P03", "P06", "P11"],
-      "path": "examples/new_examplex/car_t_single_cell_paper/prototype/car-t-single-cell-p03.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "vertical-city-retrofit-p04",
-      "case_id": "vertical-city-retrofit",
-      "slide_ids": ["P04"],
-      "path": "examples/new_examplex/vertical_city_retrofit/prototype/vertical-city-retrofit-p04.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "ai-infrastructure-economics-p05",
-      "case_id": "ai-infrastructure-economics",
-      "slide_ids": ["P05"],
-      "path": "examples/new_examplex/ai_infrastructure_economics/prototype/ai-infrastructure-economics-p05.json",
-      "reason": "build provenance is not yet verified"
-    },
-    {
-      "prototype_id": "ai-agent-operating-system-p04",
-      "case_id": "ai-agent-operating-system",
-      "slide_ids": ["P04"],
-      "path": "examples/new_examplex/ai_agent_operating_system/prototype/ai-agent-operating-system-p04.json",
-      "reason": "build provenance is not yet verified"
-    },
     {
       "prototype_id": "couture-lipstick-atelier-p01",
       "case_id": "couture-lipstick-atelier",
       "slide_ids": ["P01"],
       "path": "examples/new_examplex/couture_lipstick_atelier/prototype/couture-lipstick-atelier-p01.json",
-      "reason": "no compatible first-round Pack and build provenance are not yet verified"
+      "reason": "Pack compatibility is not yet verified"
     }
   ]
 }

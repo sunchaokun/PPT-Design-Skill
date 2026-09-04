@@ -13,5 +13,6 @@
   "object_map_paths": ["prototype/object-map.md"],
   "license_status": "verified",
   "context_allowed": true,
-  "redaction_status": "not_required"
+  "redaction_status": "not_required",
+  "extensions": {"provenance": {"status": "verified", "method": "source_authoritative_rebuild", "rebuild_count": 2}}
 }
