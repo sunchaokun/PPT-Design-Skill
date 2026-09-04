@@ -2,18 +2,18 @@
 
 盘点时间：2026-09-04
 
-本报告只记录当前仓库中可观察到的文件状态，不把 PNG 或 Markdown 说明自动视为可编辑 Prototype。合格 Prototype 必须能够从同一案例取得可重开的 PPTX、预览、Recipe、object map、素材许可和脱敏状态。这里明确区分：`build.py` 是可复现源代码，`output/*.pptx` 是已生成的候选源文件；在 provenance 未确认前，不能把 output PPTX 自动当作唯一事实源。
+本报告只记录当前仓库中可观察到的文件状态，不把 PNG 或 Markdown 说明自动视为可编辑 Prototype。合格 Prototype 必须能够从同一案例取得可重开的 PPTX、预览、Recipe、object map、素材许可和脱敏状态。这里明确区分：`build.py` 是可复现源代码，`output/*.pptx` 是已生成的候选源文件；在 provenance 未确认前，不能把 output PPTX 自动当作唯一事实源。PPTX 是 ZIP 容器，raw SHA-256 可能因容器元数据变化而改变，因此 provenance 审计同时输出 canonical content hash；canonical hash 一致只能证明内容可复现，不能单独证明历史生成来源。
 
 ## 当前案例目录
 
 | case_id | 当前可见资产 | 关键缺口 | 当前状态 |
 |---|---|---|---|
-| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
-| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
-| `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS | PPTX provenance、Recipe、object map | `BLOCKED` |
-| `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
-| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材 | PPTX provenance、Recipe、object map、Pack 兼容性 | `BLOCKED` |
-| `ai-agent-operating-system` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
+| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | 历史 PPTX provenance | `BLOCKED` |
+| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | 历史 PPTX provenance | `BLOCKED` |
+| `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS、Recipe、object map | 历史 PPTX provenance | `BLOCKED` |
+| `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | 历史 PPTX provenance | `BLOCKED` |
+| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材、Recipe、object map | 历史 PPTX provenance、Pack 兼容性 | `BLOCKED` |
+| `ai-agent-operating-system` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、Recipe、object map | 历史 PPTX provenance | `BLOCKED` |
 
 ## 首轮接入动作
 

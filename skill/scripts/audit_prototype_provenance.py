@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -15,6 +16,20 @@ def sha256(path: Path) -> str:
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+def canonical_content_sha256(path: Path) -> str:
+    """Hash ZIP entry names and bytes, excluding container metadata."""
+    digest = hashlib.sha256()
+    with zipfile.ZipFile(path) as archive:
+        for name in sorted(archive.namelist()):
+            name_bytes = name.encode("utf-8")
+            payload = archive.read(name)
+            digest.update(len(name_bytes).to_bytes(8, "big"))
+            digest.update(name_bytes)
+            digest.update(len(payload).to_bytes(8, "big"))
+            digest.update(payload)
     return digest.hexdigest()
 
 
@@ -33,13 +48,20 @@ def audit(root: Path, index_path: Path) -> tuple[list[dict], bool]:
             for rel in record.get(field, []):
                 files[f"{field}:{rel}"] = case_root / rel
         missing = [name for name, path in files.items() if not path.is_file()]
+        hashes = {name: sha256(path) for name, path in files.items() if path.is_file()}
+        content_hashes = {
+            name: canonical_content_sha256(path)
+            for name, path in files.items()
+            if path.is_file() and path.suffix.lower() == ".pptx"
+        }
         result = {
             "prototype_id": record["prototype_id"],
             "case_id": record["case_id"],
             "blocked": blocked,
             "status": "UNVERIFIED" if not missing else "INVALID",
             "missing": missing,
-            "hashes": {name: sha256(path) for name, path in files.items() if path.is_file()},
+            "hashes": hashes,
+            "canonical_content_hashes": content_hashes,
         }
         complete = complete and not missing
         results.append(result)

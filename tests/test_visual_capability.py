@@ -122,6 +122,7 @@ def test_provenance_audit_reports_hashes_without_overclaiming() -> None:
     assert len(report["records"]) == 8
     assert all(item["status"] == "UNVERIFIED" for item in report["records"])
     assert all(item["hashes"].get("build") for item in report["records"])
+    assert all(item["canonical_content_hashes"] for item in report["records"])
 
 
 def test_visual_review_audit_matches_current_case_outputs() -> None:
