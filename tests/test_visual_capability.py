@@ -154,6 +154,15 @@ def test_workflow_rejects_invalid_transition(tmp_path: Path) -> None:
     assert "invalid" in result.stdout
 
 
+def test_workflow_blocks_non_valid_prototype_before_routing(tmp_path: Path) -> None:
+    state = tmp_path / "state.json"
+    result = run_script("run_visual_workflow.py", str(state), "route", "--prototype-status", "blocked")
+    assert result.returncode == 1
+    data = json.loads(state.read_text(encoding="utf-8"))
+    assert data["status"] == "BLOCKED"
+    assert data["history"][0]["prototype_status"] == "blocked"
+
+
 def test_refresh_writes_atomic_state_for_registered_case(tmp_path: Path) -> None:
     case = tmp_path / "cases" / "demo-case"
     case.mkdir(parents=True)

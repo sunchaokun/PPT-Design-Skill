@@ -19,7 +19,7 @@
 | 1 | 契约和索引 | `skill/schemas/`、三个 index、字段约束 | Schema 加载、非法 fixture 失败 |
 | 2 | 资产校验 | `validate_visual_pack.py`、`inspect_visual_assets.py` | 路径、引用、Schema、可选 SVG 检查通过 |
 | 3 | 案例刷新 | `refresh_case_prototypes.py`、缓存状态机、锁 | unchanged / changed / concurrent 三种测试 |
-| 4 | 工作流状态 | `run_visual_workflow.py`、task 状态文件、`validate_runtime_trace.py` | route、P01、暂停、恢复、失败回退和 gate 一致性测试 |
+| 4 | 工作流状态 | `run_visual_workflow.py`、Prototype preflight、task 状态文件、`validate_runtime_trace.py` | route、P01、暂停、恢复、失败回退、候选阻断和 gate 一致性测试 |
 | 5 | 案例证据 | 6～8 条有效 Prototype 或明确 `BLOCKED` | PPTX、预览、Recipe、object map、许可证据、provenance；`audit_case_outputs.py`、`audit_prototype_provenance.py` |
 | 6 | 视觉资产 | 首轮 2 Pack、4 Family | 真实案例原型和 Pack 校验 |
 | 7 | 回归验收 | 技术、科研、品牌/建筑三套回归、`regression-manifest.json`、`regression-readiness.md`、`audit_visual_review_records.py` | baseline/upgraded 文件对、页数一致、Review 路径一致、逐页评分和复核；`validate_acceptance_record.py`、`audit_regression_pairs.py` |

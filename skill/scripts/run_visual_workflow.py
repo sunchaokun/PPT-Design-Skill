@@ -41,10 +41,23 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("state_file", type=Path)
     parser.add_argument("action", choices=sorted({a for actions in TRANSITIONS.values() for a in actions}))
+    parser.add_argument("--prototype-status", choices=["valid", "stale", "invalid", "blocked"])
     args = parser.parse_args()
     now = datetime.now(timezone.utc).isoformat()
     state = json.loads(args.state_file.read_text(encoding="utf-8")) if args.state_file.exists() else {"status": "INIT", "attempt": 0, "history": []}
     current = state.get("status", "INIT")
+    if args.prototype_status and args.prototype_status != "valid" and current != "BLOCKED" and args.action != "resume":
+        state.update({"status": "BLOCKED", "attempt": state.get("attempt", 0) + 1, "updated_at": now})
+        state.setdefault("history", []).append({
+            "from": current,
+            "action": "preflight_block",
+            "to": "BLOCKED",
+            "prototype_status": args.prototype_status,
+            "at": now,
+        })
+        write_atomic(args.state_file, state)
+        print(json.dumps(state, ensure_ascii=False))
+        return 1
     if current not in STATES or args.action not in TRANSITIONS.get(current, {}):
         print(f"ERROR: action {args.action!r} is invalid from {current!r}")
         return 1
