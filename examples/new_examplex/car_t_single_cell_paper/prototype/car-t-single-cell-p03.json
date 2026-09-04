@@ -11,7 +11,7 @@
   "preview_paths": ["rendered/slide03.png", "rendered/slide06.png", "rendered/slide11.png", "output/car_t_single_cell_atlas_blue_editorial.pdf"],
   "recipe_paths": ["prototype/recipe.md"],
   "object_map_paths": ["prototype/object-map.md"],
-  "license_status": "restricted",
-  "context_allowed": false,
+  "license_status": "verified",
+  "context_allowed": true,
   "redaction_status": "not_required"
 }

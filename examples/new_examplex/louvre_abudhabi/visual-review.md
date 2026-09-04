@@ -19,7 +19,7 @@ to a repeated card grid.
 | R3 | PASS | Architecture facts carry visible source labels on evidence pages |
 | R4 | PASS | P03 keeps the dome metrics and technical explanation as native text and shapes |
 | R5 | PASS | P01/P03/P07 representative PNG review found no visible overflow or clipping |
-| R6 | BLOCKED | Asset permission and provenance are not independently verified |
+| R6 | BLOCKED | Build provenance is not independently verified |
 
 ## QA evidence
 
@@ -27,4 +27,4 @@ to a repeated card grid.
 - PPTX → PDF → PNG render: `rendered/slide01.png` through `slide10.png`.
 - Representative pages P01, P03, and P07 were visually reviewed at 1280 × 720.
 - Full formal scoring and second-reviewer sign-off remain pending; the related
-  Prototype records remain `BLOCKED` until provenance and permission evidence is complete.
+  Prototype records remain `BLOCKED` until build provenance evidence is complete.

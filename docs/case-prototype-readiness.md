@@ -8,12 +8,12 @@
 
 | case_id | 当前可见资产 | 关键缺口 | 当前状态 |
 |---|---|---|---|
-| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可清单 | `BLOCKED` |
-| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
-| `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS | PPTX provenance、Recipe、object map、脱敏状态 | `BLOCKED` |
-| `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
-| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材 | PPTX provenance、Recipe、object map、脱敏状态 | `BLOCKED` |
-| `ai-agent-operating-system` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map、许可/脱敏状态 | `BLOCKED` |
+| `vertical-city-retrofit` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
+| `car-t-single-cell-paper` | brief、visual direction、page plan、acceptance contract、论文图片素材、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
+| `louvre-abudhabi` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf`、ASSET_CREDITS | PPTX provenance、Recipe、object map | `BLOCKED` |
+| `ai-infrastructure-economics` | brief、visual direction、page plan、acceptance contract、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
+| `couture-lipstick-atelier` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`rendered/*.pdf`、ASSET_CREDITS、图片素材 | PPTX provenance、Recipe、object map、Pack 兼容性 | `BLOCKED` |
+| `ai-agent-operating-system` | brief、visual direction、page plan、README、完整 PNG、`output/*.pptx`、`output/*.pdf` | PPTX provenance、Recipe、object map | `BLOCKED` |
 
 ## 首轮接入动作
 

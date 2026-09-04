@@ -11,7 +11,7 @@
   "preview_paths": ["rendered/slide05.png", "output/ai_infrastructure_economics.pdf"],
   "recipe_paths": ["prototype/recipe.md"],
   "object_map_paths": ["prototype/object-map.md"],
-  "license_status": "unknown",
-  "context_allowed": false,
+  "license_status": "verified",
+  "context_allowed": true,
   "redaction_status": "not_required"
 }
