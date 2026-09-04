@@ -1,0 +1,17 @@
+{
+  "prototype_id": "vertical-city-retrofit-p04",
+  "case_id": "vertical-city-retrofit",
+  "case_root": "examples/new_examplex/vertical_city_retrofit",
+  "slide_ids": ["P04"],
+  "pack_id": "dark-cinematic-tech",
+  "composition_ids": ["c2-01"],
+  "page_roles": ["architectural-section"],
+  "summary": "Editable architectural section showing the retrofit stack, intervention bands, and systems relationships.",
+  "source_paths": ["output/vertical_city_retrofit_style_sample.pptx"],
+  "preview_paths": ["rendered/slide04.png", "output/vertical_city_retrofit_style_sample.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "unknown",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}

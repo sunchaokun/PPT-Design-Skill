@@ -1,0 +1,17 @@
+{
+  "prototype_id": "car-t-single-cell-p03",
+  "case_id": "car-t-single-cell-paper",
+  "case_root": "examples/new_examplex/car_t_single_cell_paper",
+  "slide_ids": ["P03"],
+  "pack_id": "scientific-atlas",
+  "composition_ids": ["c2-01"],
+  "page_roles": ["study-map"],
+  "summary": "Evidence-first multi-omic study map with an editable five-layer pipeline and explicit source boundary.",
+  "source_paths": ["output/car_t_single_cell_atlas_blue_editorial.pptx"],
+  "preview_paths": ["rendered/slide03.png", "output/car_t_single_cell_atlas_blue_editorial.pdf"],
+  "recipe_paths": ["prototype/recipe.md"],
+  "object_map_paths": ["prototype/object-map.md"],
+  "license_status": "restricted",
+  "context_allowed": false,
+  "redaction_status": "not_required"
+}
