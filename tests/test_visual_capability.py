@@ -109,6 +109,16 @@ def test_installer_check_uses_runtime_dependency_resolution() -> None:
     assert "OK poppler" in result.stdout
 
 
+def test_provenance_audit_reports_hashes_without_overclaiming() -> None:
+    result = run_script("audit_prototype_provenance.py")
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["status"] == "UNVERIFIED"
+    assert len(report["records"]) == 8
+    assert all(item["status"] == "UNVERIFIED" for item in report["records"])
+    assert all(item["hashes"].get("build") for item in report["records"])
+
+
 def test_case_output_audit_reports_render_readiness_without_overclaiming() -> None:
     result = run_script("audit_case_outputs.py")
     assert result.returncode == 0
