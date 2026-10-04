@@ -210,6 +210,10 @@ full deck.
 - Design for the audience and page goal, not for generic decoration.
 - Treat a deck as one visual system: lock palette, typography, spacing,
   margins, component language, and image treatment across pages.
+- Treat font coverage as part of the typography lock: a resolved theme's Latin
+  font names carry no CJK glyphs, so a CJK deck needs a recorded font-role
+  override on a `C` dictionary derived from the resolved theme, verified in the
+  PNG (no tofu, no mixed-font lines). See `references/install-and-runtime.md`.
 - Prefer restraint, hierarchy, whitespace, and meaningful visual variation.
 - Put visual quality before technical completeness: every page needs a focal
   point, a deliberate composition, and a complete takeaway. Whitespace must be

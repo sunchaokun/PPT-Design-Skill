@@ -101,6 +101,9 @@ from pptx_designer.compiler import SVGCompileError
 
 - Use a blank slide layout and explicit coordinates in Build Mode.
 - Keep colors in a `C` dictionary or explicit theme tokens.
+- Derive that `C` from the current resolved theme, and override the font roles
+  (`font_heading`, `font_body`, `font_cjk`) when the theme font cannot cover the
+  deck language; record the substitution and verify it in the rendered PNG.
 - Prefer native shapes, text, charts, and diagrams.
 - Use `cover_image()` for image placement.
 - Avoid private modules and invented signatures.

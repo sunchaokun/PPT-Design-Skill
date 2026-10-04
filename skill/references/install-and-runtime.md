@@ -86,3 +86,35 @@ implicitly.
 Fonts are part of visual correctness. Detect the target language and use fonts
 available on the target machine. If a requested font is unavailable, report
 the substitution before final delivery and inspect the PNG again.
+
+### Theme fonts do not guarantee glyph coverage
+
+A resolved theme carries Latin-oriented font names (for example `Inter` or
+`Arial`) that contain no CJK glyphs. Passing such a theme to a Chinese,
+Japanese, or Korean deck is not a build error: the renderer substitutes a
+system font, the PPTX still opens, and the defect is only visible in the
+rendered PNG — usually as boxes, tofu, or a mixed-font line.
+
+Verify coverage before generation, and when the theme font cannot cover the
+deck language, override the font roles on a per-slide `C` dictionary derived
+from the resolved theme. Do not substitute a stale hard-coded token set:
+
+```python
+from pptx_designer.tools import layout
+
+CJK = "Microsoft YaHei"  # confirm the file exists, e.g. C:\Windows\Fonts\msyh.ttc
+
+def ctx(slide):
+    """Resolved-theme colors with the language-appropriate font roles."""
+    c = dict(layout.resolve_color_context(slide))
+    c["font_heading"] = CJK
+    c["font_body"] = CJK
+    c["font_cjk"] = CJK
+    return c
+```
+
+Record the substitution in the Theme Lock and the resolved-theme record, the
+same way a color or spacing override is recorded. Then confirm it in the PNG
+review: no tofu, no missing-glyph boxes, and no line whose weight changes
+mid-sentence because two fonts were mixed. A clean `check_runtime.py` result
+does not prove glyph coverage.

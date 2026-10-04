@@ -226,3 +226,24 @@ python skill/scripts/check_runtime.py
 
 核心依赖由 `pptx-designer` 安装。PPTX 到 PDF 的渲染优先使用 PowerPoint
 COM；无 PowerPoint 时需要 LibreOffice 和 Poppler。
+
+## 9. 中文字体
+
+主题自带的字体名（如 `Inter`、`Arial`）不含中文字形。用这类主题生成中文牌面**不会报错**：
+渲染器会替换字体，PPTX 也照常打开，缺陷只在渲染出的 PNG 里以方框/豆腐块或"半句变字重"暴露。
+所以生成前先确认字形覆盖，确认不覆盖时从 `resolve_color_context()` 派生的 `C` 上覆盖字体角色：
+
+```python
+from pptx_designer.tools import layout
+
+CJK = "Microsoft YaHei"  # 确认本机存在，例如 C:\Windows\Fonts\msyh.ttc
+
+def ctx(slide):
+    """主题颜色 + 与实际语言匹配的字体角色。"""
+    c = dict(layout.resolve_color_context(slide))
+    c["font_heading"] = c["font_body"] = c["font_cjk"] = CJK
+    return c
+```
+
+把这次替换记进 Theme Lock 和 resolved theme 记录（和颜色、间距的覆盖一样），并在 PNG 复核里
+逐页确认：没有方框、没有半句变字重。`check_runtime.py` 全绿**不代表**字形覆盖通过。
